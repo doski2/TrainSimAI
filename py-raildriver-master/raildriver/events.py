@@ -47,6 +47,10 @@ class Listener(object):
         self.subscribed_fields = []
 
     def __getattr__(self, item):
+        # Ensure bindings is initialized for type checkers and safety
+        if self.bindings is None:
+            import collections as _collections  # local import to avoid top-level changes
+            self.bindings = _collections.defaultdict(list)
         return self.bindings[item].append
 
     def _execute_bindings(self, type, *args, **kwargs):

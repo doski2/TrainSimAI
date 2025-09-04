@@ -6,6 +6,7 @@ ignore = ["W391"]
 
 [tool.ruff.lint.per-file-ignores]
 "py-raildriver-master/raildriver/__init__.py" = ["F401", "F403"]
+"py-raildriver-master/raildriver/events.py" = ["F401", "E501"]
 
 [tool.flake8]
 max-line-length = 100
