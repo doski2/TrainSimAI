@@ -29,6 +29,55 @@ from raildriver.events import Listener  # type: ignore  # noqa: E402
 SPECIAL_KEYS: List[str] = list(Listener.special_fields.keys())  # type: ignore[attr-defined]
 
 
+import platform
+from pathlib import Path
+
+
+def _locate_raildriver_dll() -> str | None:
+    """Try to pick the DLL that matches current Python bitness.
+
+    - On 64-bit Python prefer 'RailDriver64.dll'
+    - On 32-bit Python prefer 'RailDriver.dll'
+    - Search typical Steam paths; allow override via env RAILWORKS_PLUGINS
+    """
+    wants_64 = platform.architecture()[0] == "64bit"
+    candidates: list[Path] = []
+    # User override
+    env_plugins = os.environ.get("RAILWORKS_PLUGINS")
+    if env_plugins:
+        base = Path(env_plugins)
+        candidates += [base / "RailDriver64.dll", base / "RailDriver.dll"]
+    # Common Steam locations
+    common_bases = [
+        Path(os.environ.get("PROGRAMFILES(X86)", r"C:\\Program Files (x86)"))
+        / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
+        Path(os.environ.get("PROGRAMFILES", r"C:\\Program Files"))
+        / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
+    ]
+    # Try registry SteamPath, if available
+    try:
+        import winreg  # type: ignore
+
+        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam")
+        steam_path, _ = winreg.QueryValueEx(key, "SteamPath")
+        reg_base = Path(steam_path) / "steamapps" / "common" / "RailWorks" / "plugins"
+        common_bases.insert(0, reg_base)
+    except Exception:
+        pass
+    for base in common_bases:
+        candidates += [base / "RailDriver64.dll", base / "RailDriver.dll"]
+    # Choose best match
+    existing = [p for p in candidates if p.exists()]
+    if not existing:
+        return None
+    if wants_64:
+        for p in existing:
+            if p.name.lower() == "raildriver64.dll":
+                return str(p)
+    # Fallback to 32-bit or first found
+    return str(existing[0])
+
+
 class RDClient:
     """
     Wrapper de py-raildriver con utilidades de lectura puntual y streaming.
@@ -42,7 +91,9 @@ class RDClient:
             self.poll_dt = 1.0 / float(poll_hz)
         else:
             self.poll_dt = float(poll_dt)
-        self.rd = RailDriver()
+        # Select proper DLL to avoid WinError 193 (bitness mismatch)
+        dll_path = _locate_raildriver_dll()
+        self.rd = RailDriver(dll_location=dll_path) if dll_path else RailDriver()
         # Necesario para intercambiar datos con TS
         try:
             self.rd.set_rail_driver_connected(True)
