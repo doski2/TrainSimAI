@@ -1,0 +1,55 @@
+{
+  "meta": { "provider": "DTG", "product": "DRESDEN", "engine": "DB BR146.2" },
+  "speed": { "sensor": { "name": "SpeedometerKPH", "min": 0.0, "max": 180.0 }, "unit": "kmh", "to_ms": "v/3.6" },
+  "controls": {
+    "throttle": { "name": "Regulator", "min": 0.0, "max": 1.0 },
+    "train_brake": { "name": "VirtualBrake", "min": 0.0, "max": 1.0 },
+    "loco_brake": { "name": "VirtualEngineBrakeControl", "min": -1.0, "max": 1.0 },
+    "dynamic_brake": { "name": "VirtualDynamicBrake", "min": 0.0, "max": 1.0 },
+    "reverser": { "name": "Reverser", "min": -1.0, "max": 1.0 },
+    "sander": { "name": "Sander", "min": 0.0, "max": 1.0 },
+    "headlights": { "name": "Headlights", "min": 0.0, "max": 2.0 },
+    "cab_light": { "name": "CabLight", "min": 0.0, "max": 1.0 },
+    "doors_left": { "name": "DoorsOpenCloseLeft", "min": 0.0, "max": 1.0 },
+    "doors_right": { "name": "DoorsOpenCloseRight", "min": 0.0, "max": 1.0 },
+    "pantograph": { "name": "VirtualPantographControl", "min": 0.0, "max": 1.0 },
+    "afb_enable": { "name": "AFB", "min": 0.0, "max": 1.0 },
+    "afb_speed": { "name": "AFB_Speed", "min": 0.0, "max": 180.0 },
+    "sifa": { "name": "Sifa", "min": 0.0, "max": 1.0 },
+    "sifa_reset": { "name": "SifaReset", "min": 0.0, "max": 1.0 },
+    "sifa_light": { "name": "SifaLight", "min": 0.0, "max": 1.0 },
+    "sifa_alarm": { "name": "SifaAlarm", "min": 0.0, "max": 1.0 }
+  },
+  "indicators": {
+    "brake_pipe_bar": { "name": "BrakePipePressureBAR", "min": 0.0, "max": 12.0 },
+    "train_bc_bar": { "name": "TrainBrakeCylinderPressureBAR", "min": 0.0, "max": 10.0 },
+    "ammeter": { "name": "Ammeter", "min": -1000.0, "max": 1000.0 },
+    "tractive_effort": { "name": "ForceBar", "min": 0.0, "max": 1.0 }
+  },
+  "pzb": {
+    "states": {
+      "PZB_85": { "name": "PZB_85", "min": 0.0, "max": 1.0 },
+      "PZB_70": { "name": "PZB_70", "min": 0.0, "max": 1.0 },
+      "PZB_55": { "name": "PZB_55", "min": 0.0, "max": 1.0 },
+      "PZB_1000Hz": { "name": "PZB_1000Hz", "min": 0.0, "max": 1.0 },
+      "PZB_500Hz": { "name": "PZB_500Hz", "min": 0.0, "max": 1.0 },
+      "PZB_B40": { "name": "PZB_B40", "min": 0.0, "max": 1.0 },
+      "PZB_Warning": { "name": "PZB_Warning", "min": 0.0, "max": 1.0 },
+      "PZB_Emergency": { "name": "PZB_Emergency", "min": 0.0, "max": 1.0 },
+      "PZB_Restriction": { "name": "PZB_Restriction", "min": 0.0, "max": 100.0 },
+      "PZB_RestrictiveMode": { "name": "PZB_RestrictiveMode", "min": -1.0, "max": 15.0 }
+    },
+    "controls": {
+      "ctrl_1000hz": { "name": "PZB_1000Hz_Control", "min": -1.0, "max": 1250.0 },
+      "ctrl_500hz": { "name": "PZB_500Hz_Control", "min": -1.0, "max": 250.0 },
+      "ctrl_2000hz": { "name": "PZB_2000Hz_Control", "min": -1.0, "max": 1.0 }
+    }
+  },
+  "notches": {
+    "train_brake": { "control": "VirtualBrake", "values": [0, 0.22, 0.35, 0.48, 0.61, 0.74, 0.87, 1], "names": ["Dummy1","Dummy2","Dummy3","Dummy4","Dummy5","Dummy6","Dummy7","Dummy8"] },
+    "loco_brake":  { "control": "VirtualEngineBrakeControl", "values": [-1.5, -0.0001, 0, 0.0001, 1.5], "names": ["Release","Hold","Apply"] },
+    "headlights":  { "control": "Headlights", "values": [0,1,2], "names": [] },
+    "afb_enable":  { "control": "AFB", "values": [], "names": [] }
+  }
+}
+
