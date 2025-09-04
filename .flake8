@@ -1,4 +1,5 @@
 [flake8]
 max-line-length = 100
 extend-ignore = W391
-
+per-file-ignores =
+    py-raildriver-master/raildriver/__init__.py: F401, F403
