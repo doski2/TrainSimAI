@@ -120,7 +120,8 @@ class RDClient:
         """Fuerza una iteración del listener y devuelve una copia del estado actual."""
         # No arrancamos hilo; usamos una iteración síncrona
         self.listener._main_iteration()  # type: ignore[attr-defined]
-        return dict(self.listener.current_data)
+        cd = getattr(self.listener, "current_data", None)
+        return dict(cd) if cd else {}
 
     # --- Lecturas puntuales ---
     def read_specials(self) -> Dict[str, Any]:
