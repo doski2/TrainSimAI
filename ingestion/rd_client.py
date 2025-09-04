@@ -32,27 +32,27 @@ SPECIAL_KEYS: List[str] = list(Listener.special_fields.keys())  # type: ignore[a
 
 
 def _locate_raildriver_dll() -> str | None:
-    """Try to pick the DLL that matches current Python bitness.
+    """Selecciona la DLL que coincide con la arquitectura de Python.
 
-    - On 64-bit Python prefer 'RailDriver64.dll'
-    - On 32-bit Python prefer 'RailDriver.dll'
-    - Search typical Steam paths; allow override via env RAILWORKS_PLUGINS
+    - En Python de 64 bits, preferir 'RailDriver64.dll'.
+    - En Python de 32 bits, preferir 'RailDriver.dll'.
+    - Busca rutas típicas de Steam; permitir sobreescritura via env RAILWORKS_PLUGINS.
     """
     wants_64 = platform.architecture()[0] == "64bit"
     candidates: list[Path] = []
-    # User override
+    # Sobrescritura del usuario
     env_plugins = os.environ.get("RAILWORKS_PLUGINS")
     if env_plugins:
         base = Path(env_plugins)
         candidates += [base / "RailDriver64.dll", base / "RailDriver.dll"]
-    # Common Steam locations
+    # Rutas comunes de Steam
     common_bases = [
         Path(os.environ.get("PROGRAMFILES(X86)", r"C:\\Program Files (x86)"))
         / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
         Path(os.environ.get("PROGRAMFILES", r"C:\\Program Files"))
         / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
     ]
-    # Try registry SteamPath, if available
+    # Intentar SteamPath del registro, si está disponible
     try:
         import winreg  # type: ignore
 
@@ -64,7 +64,7 @@ def _locate_raildriver_dll() -> str | None:
         pass
     for base in common_bases:
         candidates += [base / "RailDriver64.dll", base / "RailDriver.dll"]
-    # Choose best match
+    # Elegir la mejor coincidencia
     existing = [p for p in candidates if p.exists()]
     if not existing:
         return None
@@ -72,7 +72,7 @@ def _locate_raildriver_dll() -> str | None:
         for p in existing:
             if p.name.lower() == "raildriver64.dll":
                 return str(p)
-    # Fallback to 32-bit or first found
+    # Alternativa: 32 bits o la primera encontrada
     return str(existing[0])
 
 
@@ -89,7 +89,7 @@ class RDClient:
             self.poll_dt = 1.0 / float(poll_hz)
         else:
             self.poll_dt = float(poll_dt)
-        # Select proper DLL to avoid WinError 193 (bitness mismatch)
+        # Seleccionar la DLL adecuada para evitar WinError 193 (arquitecturas distintas)
         dll_path = _locate_raildriver_dll()
         self.rd = RailDriver(dll_location=dll_path) if dll_path else RailDriver()
         # Necesario para intercambiar datos con TS

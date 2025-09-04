@@ -47,9 +47,9 @@ class Listener(object):
         self.subscribed_fields = []
 
     def __getattr__(self, item):
-        # Ensure bindings is initialized for type checkers and safety
+        # Asegura que "bindings" esté inicializado (útil para analizadores de tipos y seguridad)
         if self.bindings is None:
-            import collections as _collections  # local import to avoid top-level changes
+            import collections as _collections  # import local para evitar cambios a nivel superior
             self.bindings = _collections.defaultdict(list)
         return self.bindings[item].append
 
