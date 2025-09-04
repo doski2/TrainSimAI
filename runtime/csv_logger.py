@@ -17,7 +17,6 @@ class CsvLogger:
     def write_row(self, row: Dict[str, Any]) -> None:
         if self.fieldnames is None:
             self.fieldnames = sorted(row.keys())
-            newfile = not os.path.exists(self.path)
             with open(self.path, "w", newline="", encoding="utf-8") as f:
                 w = csv.DictWriter(f, fieldnames=self.fieldnames, delimiter=self.delimiter)
                 w.writeheader()
@@ -37,4 +36,3 @@ class CsvLogger:
             with open(self.path, "a", newline="", encoding="utf-8") as f:
                 w = csv.DictWriter(f, fieldnames=self.fieldnames, delimiter=self.delimiter)
                 w.writerow({k: row.get(k, "") for k in self.fieldnames})
-
