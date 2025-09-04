@@ -4,6 +4,8 @@ import os
 import sys
 import time
 from typing import Any, Dict, Iterable, List
+import platform
+from pathlib import Path
 
 
 def _ensure_raildriver_on_path() -> None:
@@ -27,10 +29,6 @@ from raildriver.events import Listener  # type: ignore  # noqa: E402
 
 # Claves especiales disponibles en Listener (no se suscriben; se evalúan siempre)
 SPECIAL_KEYS: List[str] = list(Listener.special_fields.keys())  # type: ignore[attr-defined]
-
-
-import platform
-from pathlib import Path
 
 
 def _locate_raildriver_dll() -> str | None:
