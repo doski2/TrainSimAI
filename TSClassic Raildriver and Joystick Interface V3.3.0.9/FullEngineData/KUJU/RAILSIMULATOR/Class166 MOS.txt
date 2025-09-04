@@ -1,0 +1,39 @@
+Engine Bin File = assets\Kuju\RailSimulator\RailVehicles\Diesel\Class166\SouthEast\MOS\class166_mos.bin
+Engine Name = Class166 MOS
+Engine Script to edit = Assets\Kuju\RailSimulator\RailVehicles\Diesel\Class166\Default\MOS\Class166EngineScript.lua
+
+CONTROL NAME "(Active)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TractiveEffort)",                       MIN VALUE "(-1000)",     MAX VALUE "(1000)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(RPM)",                                  MIN VALUE "(0)",         MAX VALUE "(2400)",      DEFAULT VALUE "(600)"
+
+CONTROL NAME "(HandBrake)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EngineStop)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EngineStart)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(Regulator)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Idle)",                                 Notch Value "(0.5)"
+  Notch Name "(A)",                                    Notch Value "(0.586)"
+  Notch Name "(B)",                                    Notch Value "(0.643)"
+  Notch Name "(A+B)",                                  Notch Value "(0.729)"
+  Notch Name "(C)",                                    Notch Value "(0.771)"
+  Notch Name "(A+C)",                                  Notch Value "(0.857)"
+  Notch Name "(B+C)",                                  Notch Value "(0.915)"
+  Notch Name "(A+B+C)",                                Notch Value "(1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(Direct)",                               Notch Value "(0.1)"
+  Notch Name "(Emergency)",                            Notch Value "(1)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(Startup)",                              MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(DoorsOpenCloseLeft)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseRight)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+

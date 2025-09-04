@@ -1,0 +1,65 @@
+<?xml version="1.0" standalone="yes"?>
+<Raildriver_Interface>
+  <ButtonMap>
+    <MapName>Default_ButtonMapper.xml</MapName>
+  </ButtonMap>
+  <InputMapperFileName>
+    <Name>Default_Expert.txt</Name>
+  </InputMapperFileName>
+  <EditedFiles>
+    <EngineBinFile>assets\DTG\Class375Pack01\RailVehicles\Electric\Class375\SE-DarkBlue\Class375_TOSL-3car.bin</EngineBinFile>
+    <EngineName>Class 375 3 (MP) TOSL SE-DarkBlue (3 Car)</EngineName>
+    <ScriptName>Assets\DTG\Class375Pack01\RailVehicles\Electric\Class375\CommonScripts\Class375_CoachScript.out</ScriptName>
+  </EditedFiles>
+  <TrainControls>
+    <ControlGroup>Reverser</ControlGroup>
+    <ControlName>Reverser</ControlName>
+    <AssignedTo>Reverser</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>-1, 1</RangeValues>
+    <NotchValues>-1, 0, 1</NotchValues>
+    <NotchNames />
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Sander</ControlGroup>
+    <ControlName>Sander</ControlName>
+    <AssignedTo>Sander</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Throttle</ControlGroup>
+    <ControlName>Regulator</ControlName>
+    <AssignedTo>Throttle</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.5, 0.586, 0.643, 0.729, 0.771, 0.857, 0.915, 1</NotchValues>
+    <NotchNames>Idle, A, B, A+B, C, A+C, B+C, A+B+C</NotchNames>
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>TrainBrake</ControlGroup>
+    <ControlName>TrainBrakeControl</ControlName>
+    <AssignedTo>TrainBrake</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.05, 0.75, 1</NotchValues>
+    <NotchNames>Release, GraduatedSelfLapLimitedHolding, Emergency</NotchNames>
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <OverlayData>
+    <AddLineNumbers>0</AddLineNumbers>
+    <SideMargin>0</SideMargin>
+    <FontSize>3</FontSize>
+    <FontColour>2</FontColour>
+    <DrawFontBorder>True</DrawFontBorder>
+  </OverlayData>
+</Raildriver_Interface>

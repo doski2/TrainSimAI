@@ -1,0 +1,140 @@
+Engine Bin File = assets\DTG\FrankfurtKoblenz\RailVehicles\Diesel\BR294\Default\Engine\br294.bin
+Engine Name = BR294 Engine
+Engine Script to edit = Assets\DTG\FrankfurtKoblenz\RailVehicles\Diesel\BR294\Default\Engine\BR294_EngineScript.out
+
+CONTROL NAME "(TractiveEffort)",                       MIN VALUE "(-1000)",     MAX VALUE "(1000)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(RPMDelta)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CompressorState)",                      MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(RPM)",                                  MIN VALUE "(0)",         MAX VALUE "(2000)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Horn)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Regulator)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Reverser)",                             MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(3)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(SimpleChangeDirection)",                MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(SimpleThrottle)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.25)"
+
+CONTROL NAME "(EngineBrakeControl)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(Direct)",                               Notch Value "(0.1)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.1)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(GraduatedSelfLap)",                     Notch Value "(0.1)"
+  Notch Name "(FullService)",                          Notch Value "(0.85)"
+  Notch Name "(Emergency)",                            Notch Value "(1)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(Startup)",                              MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(EngineStart)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(EngineStop)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Wipers)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Sander)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Headlights)",                           MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(3)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(HandBrake)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(EmergencyBrake)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AirBrakePipePressureBAR)",              MIN VALUE "(0)",         MAX VALUE "(10)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(LocoBrakeCylinderPressureBAR)",         MIN VALUE "(0)",         MAX VALUE "(10)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(MainReservoirPressureBAR)",             MIN VALUE "(0)",         MAX VALUE "(12)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SpeedometerKPH)",                       MIN VALUE "(0)",         MAX VALUE "(90)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB)",                                  MIN VALUE "(0)",         MAX VALUE "(4)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(5)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(CMD_Override)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CMD_Free)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CMD_Acknowledge)",                      MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB_1000Hz_Control)",                   MIN VALUE "(-1)",        MAX VALUE "(1250)",      DEFAULT VALUE "(-1)"
+
+CONTROL NAME "(PZB_500Hz_Control)",                    MIN VALUE "(-1)",        MAX VALUE "(250)",       DEFAULT VALUE "(-1)"
+
+CONTROL NAME "(PZB_2000Hz_Control)",                   MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(-1)"
+
+CONTROL NAME "(PZB_DistantPassed)",                    MIN VALUE "(-1)",        MAX VALUE "(4)",         DEFAULT VALUE "(-1)"
+
+CONTROL NAME "(PZB_RestrictiveMode)",                  MIN VALUE "(-1)",        MAX VALUE "(15)",        DEFAULT VALUE "(-1)"
+
+CONTROL NAME "(PZB_85)",                               MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB_70)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB_55)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB_B40)",                              MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB_500Hz)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB_1000Hz)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB_Restriction)",                      MIN VALUE "(0)",         MAX VALUE "(85)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CMS_S)",                                MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CMD_G)",                                MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB_Warning)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PZB_Emergency)",                        MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Sifa)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SifaReset)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SifaLight)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSWarnCount)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSReset)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SifaAlarm)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DummyAmmeter)",                         MIN VALUE "(-200)",      MAX VALUE "(200)",       DEFAULT VALUE "(100)"
+
+CONTROL NAME "(DummyVoltmeter)",                       MIN VALUE "(0)",         MAX VALUE "(150)",       DEFAULT VALUE "(115)"
+
+CONTROL NAME "(DummyOilPressure)",                     MIN VALUE "(0)",         MAX VALUE "(10)",        DEFAULT VALUE "(5)"
+
+CONTROL NAME "(DummyCoolantTemperature)",              MIN VALUE "(0)",         MAX VALUE "(150)",       DEFAULT VALUE "(80)"
+
+CONTROL NAME "(DummyOilTemperature)",                  MIN VALUE "(0)",         MAX VALUE "(150)",       DEFAULT VALUE "(85)"
+
+CONTROL NAME "(DummyEnginePressure)",                  MIN VALUE "(0)",         MAX VALUE "(12)",        DEFAULT VALUE "(6.5)"
+
+CONTROL NAME "(DummyTransmissionPressure)",            MIN VALUE "(0)",         MAX VALUE "(12)",        DEFAULT VALUE "(6.5)"
+
+CONTROL NAME "(ThrottleAndBrake)",                     MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.25)"
+
+CONTROL NAME "(DoorsOpenClose)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CabLight)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+

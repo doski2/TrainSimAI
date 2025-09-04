@@ -1,0 +1,37 @@
+FRENCH:
+
+Maps leviers et boutons Raildriver pour la TU-47 Tchèque fournie avec la ligne "Uzkorozchodka".
+
+Instructions:
+
+Arrêter le callback si nécessaire.
+Dézipper l'archive dans le répertoire d'installation de TS2017 Raildriver interface, en écrasant les fichiers existants.
+Démarrer le callback puis un scénario TU-47. Pour démarrer la machine:
+
+- Actionnez le levier "Range" (n'importe quel sens)
+- Allumez les lumières à fond
+- Appuyez sur "P" (bouton vert pantographe)
+- Montez le réverseur doucement d'un seul cran (pas à fond)
+- Tirez vers le bas le levier "E-STOP" pour démarrer le moteur
+- Poussez le réverseur complètement en avant, mettez les freins à 0
+- Actionner le levier "Throttle" pour avancer
+
+ENGLISH:
+
+TU 47 Raildriver interface buttons and levers maps.
+The loco is supplied with the "Uzkorozchodka" Czech track.
+
+Instructions:
+
+Stop callback if needed.
+Unzip archive  in your TS2017 Raildriver interface installation directory, overwriting existing files.
+Start callback and then any scenario using the TU-47. To start the loco:
+
+- Move the "Range" lever (any direction)
+- Switch on full lights
+- Press the "P" pantograph button to turn master key on
+- Gently push the reverser up 1 notch (not full)
+- Pull the E-STOP lever to start the engine
+- Push the reverser full forward, set train brake to 0
+- Use throttle to start driving
+

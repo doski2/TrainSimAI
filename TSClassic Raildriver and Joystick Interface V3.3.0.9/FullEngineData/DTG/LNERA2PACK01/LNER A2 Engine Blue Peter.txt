@@ -1,0 +1,130 @@
+Engine Bin File = assets\DTG\LNERA2Pack01\RailVehicles\Steam\LNERA2\Engine\LNERA2_Engine.bin
+Engine Name = LNER A2 Engine Blue Peter
+Engine Script to edit = Assets\DTG\LNERA2Pack01\RailVehicles\Steam\LNERA2\Engine\EngineScript_advanced.out
+
+CONTROL NAME "(Startup)",                              MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(-1)"
+
+CONTROL NAME "(VirtualVacuumBrakePipePressureINCHES)", MIN VALUE "(0)",         MAX VALUE "(30)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(VacuumBrakePipePressureINCHES)",        MIN VALUE "(0)",         MAX VALUE "(30)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Vacuum Chamber Side)",                  MIN VALUE "(0)",         MAX VALUE "(30)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SpeedometerMPH)",                       MIN VALUE "(0)",         MAX VALUE "(100)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SteamChestGaugePSI)",                   MIN VALUE "(0)",         MAX VALUE "(300)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(WaterGauge)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(BoilerPressureGaugePSI)",               MIN VALUE "(0)",         MAX VALUE "(375)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SteamHeatingPressureGaugePSI)",         MIN VALUE "(0)",         MAX VALUE "(150)",       DEFAULT VALUE "(72.5)"
+
+CONTROL NAME "(SimpleThrottle)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.25)"
+
+CONTROL NAME "(SimpleChangeDirection)",                MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Reverser)",                             MIN VALUE "(-0.75)",     MAX VALUE "(0.75)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Regulator)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(VirtualThrottle)",                      MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EmergencyBrake)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EngineBrakeControl)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(Direct)",                               Notch Value "(0.05)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(Running)",                              Notch Value "(0.15)"
+  Notch Name "(Apply)",                                Notch Value "(0.25)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(VirtualEngineBrakeControl)",            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(HandBrake)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(Apply)",                                Notch Value "(0.1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Blower)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.1)"
+
+CONTROL NAME "(Damper)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(Stoking)",                              MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CylinderCock)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Horn)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(0)",                                    Notch Value "(0)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Sander)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Off)",                                  Notch Value "(0)"
+  Notch Name "(On)",                                   Notch Value "(1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Headlights)",                           MIN VALUE "(0)",         MAX VALUE "(11)",        DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(12)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(DoorsOpenClose)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(LiveInjectorSteamOnOff)",               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ExhaustInjectorSteamOnOff)",            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(LiveInjectorWater)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(VirtualLiveInjectorWater)",             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(ExhaustInjectorWater)",                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(VirtualExhaustInjectorWater)",          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(FireboxDoor)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(0)",                                    Notch Value "(0)"
+  Notch Name "(1)",                                    Notch Value "(1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(AWS)",                                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(AWSReset)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSWarnCount)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSClearCount)",                        MIN VALUE "(0)",         MAX VALUE "(2e+009)",    DEFAULT VALUE "(0)"
+
+CONTROL NAME "(WindowLeft)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(Bell)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(CabLight)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DialLight)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ArmRest)",                              MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(SteamFlow)",                            MIN VALUE "(-100000)",   MAX VALUE "(100000)",    DEFAULT VALUE "(0)"
+
+CONTROL NAME "(WheelSlip)",                            MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SmallCompressorOnOff)",                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(VacuumReservoirReleaseValve)",          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SafetyValve1)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SafetyValve2)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TestControl)",                          MIN VALUE "(-1000)",     MAX VALUE "(1000)",      DEFAULT VALUE "(0)"
+

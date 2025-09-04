@@ -1,0 +1,175 @@
+<?xml version="1.0" standalone="yes"?>
+<Raildriver_Interface>
+  <ButtonMap>
+    <MapName>Default_ButtonMapper.xml</MapName>
+  </ButtonMap>
+  <InputMapperFileName>
+    <Name>Class390_Expert.txt</Name>
+  </InputMapperFileName>
+  <EditedFiles>
+    <EngineBinFile>assets\DTG\WCML-South\RailVehicles\Electric\Class390\Default\DMSO\Class390DMSO_ND.bin</EngineBinFile>
+    <EngineName>Class 390 A DMSO Avanti ND</EngineName>
+    <ScriptName>Assets\DTG\WCML-South\RailVehicles\Electric\Class390\CommonScripts\390EngineScript.out</ScriptName>
+  </EditedFiles>
+  <TrainControls>
+    <ControlGroup>Bell</ControlGroup>
+    <ControlName>Bell</ControlName>
+    <AssignedTo>Bell</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>CruiseControl</ControlGroup>
+    <ControlName>SpeedSet</ControlName>
+    <AssignedTo>CruiseControl</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>CylinderCock</ControlGroup>
+    <ControlName>CylinderCock</ControlName>
+    <AssignedTo>CylinderCock</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>HandBrake</ControlGroup>
+    <ControlName>HandBrake</ControlName>
+    <AssignedTo>HandBrake</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Lights</ControlGroup>
+    <ControlName>Headlights</ControlName>
+    <AssignedTo>Lights</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 7</RangeValues>
+    <NotchValues>0, 1, 2, 3, 4, 5, 6, 7</NotchValues>
+    <NotchNames />
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Lights</ControlGroup>
+    <ControlName>TailLight</ControlName>
+    <AssignedTo>Lights</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Reverser</ControlGroup>
+    <ControlName>Reverser</ControlName>
+    <AssignedTo>Reverser</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>-1, 1</RangeValues>
+    <NotchValues>-1, 0, 1</NotchValues>
+    <NotchNames />
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Reverser</ControlGroup>
+    <ControlName>UserVirtualReverser</ControlName>
+    <AssignedTo>Reverser</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>-1, 2</RangeValues>
+    <NotchValues>-1, 0, 1, 2</NotchValues>
+    <NotchNames>Reverse, Neutral, Forward, Off</NotchNames>
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Sander</ControlGroup>
+    <ControlName>Sander</ControlName>
+    <AssignedTo>Sander</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Throttle</ControlGroup>
+    <ControlName>Regulator</ControlName>
+    <AssignedTo>Throttle</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.25, 0.5, 0.75, 1</NotchValues>
+    <NotchNames />
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>ThrottleAndBrake</ControlGroup>
+    <ControlName>ThrottleAndBrake</ControlName>
+    <AssignedTo>ThrottleAndBrake</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>-1, 1</RangeValues>
+    <NotchValues>-1, -0.76, -0.625, -0.5, -0.4, -0.295, -0.17, 0, 0.175, 0.4, 0.675, 1</NotchValues>
+    <NotchNames>Emergency, Brake 6, Brake 5, Brake 4, Brake 3, Brake 2, Brake 1, Off, Notch 1, Notch 2, Notch 3, Notch 4</NotchNames>
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>TrainBrake</ControlGroup>
+    <ControlName>TrainBrakeControl</ControlName>
+    <AssignedTo>TrainBrake</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.001, 1</NotchValues>
+    <NotchNames>Release, GraduatedSelfLap</NotchNames>
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Wiper</ControlGroup>
+    <ControlName>Wipers</ControlName>
+    <AssignedTo>Wiper</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Wiper</ControlGroup>
+    <ControlName>WiperSwitch</ControlName>
+    <AssignedTo>Wiper</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 3</RangeValues>
+    <NotchValues>0, 1, 2, 3</NotchValues>
+    <NotchNames>Park, Intermitant, Slow, Fast</NotchNames>
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <OverlayData>
+    <AddLineNumbers>0</AddLineNumbers>
+    <SideMargin>0</SideMargin>
+    <FontSize>3</FontSize>
+    <FontColour>2</FontColour>
+    <DrawFontBorder>True</DrawFontBorder>
+  </OverlayData>
+</Raildriver_Interface>

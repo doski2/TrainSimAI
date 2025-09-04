@@ -1,0 +1,263 @@
+<?xml version="1.0" standalone="yes"?>
+<Raildriver_Interface>
+  <ButtonMap>
+    <MapName>Default_ButtonMapper.xml</MapName>
+  </ButtonMap>
+  <InputMapperFileName>
+    <Name>A2_Expert.txt</Name>
+  </InputMapperFileName>
+  <EditedFiles>
+    <EngineBinFile>assets\DTG\LNERA2Pack01\RailVehicles\Steam\LNERA2\Engine\LNERA2_Engine.bin</EngineBinFile>
+    <EngineName>LNER A2 Engine Blue Peter</EngineName>
+    <ScriptName>Assets\DTG\LNERA2Pack01\RailVehicles\Steam\LNERA2\Engine\EngineScript_advanced.out</ScriptName>
+  </EditedFiles>
+  <TrainControls>
+    <ControlGroup>Bell</ControlGroup>
+    <ControlName>Bell</ControlName>
+    <AssignedTo>Bell</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0</NotchValues>
+    <NotchNames />
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Blower</ControlGroup>
+    <ControlName>Blower</ControlName>
+    <AssignedTo>Blower</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>CylinderCock</ControlGroup>
+    <ControlName>CylinderCock</ControlName>
+    <AssignedTo>CylinderCock</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Damper</ControlGroup>
+    <ControlName>Damper</ControlName>
+    <AssignedTo>Damper</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>ExhaustInjectorSteam</ControlGroup>
+    <ControlName>ExhaustInjectorSteamOnOff</ControlName>
+    <AssignedTo>ExhaustInjectorSteam</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>ExhaustInjectorWater</ControlGroup>
+    <ControlName>ExhaustInjectorWater</ControlName>
+    <AssignedTo>ExhaustInjectorWater</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>ExhaustInjectorWater</ControlGroup>
+    <ControlName>VirtualExhaustInjectorWater</ControlName>
+    <AssignedTo>ExhaustInjectorWater</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>FireboxDoor</ControlGroup>
+    <ControlName>FireboxDoor</ControlName>
+    <AssignedTo>FireboxDoor</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 1</NotchValues>
+    <NotchNames>0, 1</NotchNames>
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>HandBrake</ControlGroup>
+    <ControlName>HandBrake</ControlName>
+    <AssignedTo>HandBrake</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.1, 1</NotchValues>
+    <NotchNames>Release, Apply</NotchNames>
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Lights</ControlGroup>
+    <ControlName>Headlights</ControlName>
+    <AssignedTo>Lights</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 11</RangeValues>
+    <NotchValues>0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11</NotchValues>
+    <NotchNames />
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>LiveInjectorSteam</ControlGroup>
+    <ControlName>LiveInjectorSteamOnOff</ControlName>
+    <AssignedTo>LiveInjectorSteam</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>LiveInjectorWater</ControlGroup>
+    <ControlName>LiveInjectorWater</ControlName>
+    <AssignedTo>LiveInjectorWater</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>LiveInjectorWater</ControlGroup>
+    <ControlName>VirtualLiveInjectorWater</ControlName>
+    <AssignedTo>LiveInjectorWater</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>LocoBrake</ControlGroup>
+    <ControlName>EngineBrakeControl</ControlName>
+    <AssignedTo>LocoBrake</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.05, 1</NotchValues>
+    <NotchNames>Release, Direct</NotchNames>
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>LocoBrake</ControlGroup>
+    <ControlName>VirtualEngineBrakeControl</ControlName>
+    <AssignedTo>LocoBrake</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Reverser</ControlGroup>
+    <ControlName>Reverser</ControlName>
+    <AssignedTo>Reverser</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>-0.75, 0.75</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Sander</ControlGroup>
+    <ControlName>Sander</ControlName>
+    <AssignedTo>Sander</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 1</NotchValues>
+    <NotchNames>Off, On</NotchNames>
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>SmallEjector</ControlGroup>
+    <ControlName>SmallCompressorOnOff</ControlName>
+    <AssignedTo>SmallEjector</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Stoking</ControlGroup>
+    <ControlName>Stoking</ControlName>
+    <AssignedTo>Stoking</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Throttle</ControlGroup>
+    <ControlName>Regulator</ControlName>
+    <AssignedTo>Throttle</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Throttle</ControlGroup>
+    <ControlName>VirtualThrottle</ControlName>
+    <AssignedTo>Throttle</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>TrainBrake</ControlGroup>
+    <ControlName>TrainBrakeControl</ControlName>
+    <AssignedTo>TrainBrake</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.15, 0.25, 1</NotchValues>
+    <NotchNames>Release, Running, Apply</NotchNames>
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <OverlayData>
+    <AddLineNumbers>0</AddLineNumbers>
+    <SideMargin>0</SideMargin>
+    <FontSize>3</FontSize>
+    <FontColour>2</FontColour>
+    <DrawFontBorder>True</DrawFontBorder>
+  </OverlayData>
+</Raildriver_Interface>

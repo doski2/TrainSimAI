@@ -1,0 +1,164 @@
+<?xml version="1.0" standalone="yes"?>
+<Raildriver_Interface>
+  <ButtonMap>
+    <MapName>Default_ButtonMapper.xml</MapName>
+  </ButtonMap>
+  <InputMapperFileName>
+    <Name>SD70M_Expert.txt</Name>
+  </InputMapperFileName>
+  <EditedFiles>
+    <EngineBinFile>assets\RSC\ShermanHill\RailVehicles\Diesel\SD70M\Default\Engine\SH_SD70M.bin</EngineBinFile>
+    <EngineName>SH SD70M UP</EngineName>
+    <ScriptName>Assets\RSC\ShermanHill\RailVehicles\Diesel\SD70M\Default\CommonScripts\SD70M EngineScript.out</ScriptName>
+  </EditedFiles>
+  <TrainControls>
+    <ControlGroup>Bell</ControlGroup>
+    <ControlName>Bell</ControlName>
+    <AssignedTo>Bell</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>DynamicBrake</ControlGroup>
+    <ControlName>DynamicBrake</ControlName>
+    <AssignedTo>DynamicBrake</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>HandBrake</ControlGroup>
+    <ControlName>HandBrake</ControlName>
+    <AssignedTo>HandBrake</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 1</NotchValues>
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Lights</ControlGroup>
+    <ControlName>Headlights</ControlName>
+    <AssignedTo>Lights</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 2</RangeValues>
+    <NotchValues>0, 1, 2</NotchValues>
+    <NotchNames />
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>LocoBrake</ControlGroup>
+    <ControlName>EngineBrakeControl</ControlName>
+    <AssignedTo>LocoBrake</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.1, 1</NotchValues>
+    <NotchNames>Release, Direct</NotchNames>
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>LocoBrake</ControlGroup>
+    <ControlName>VirtualEngineBrakeControl</ControlName>
+    <AssignedTo>LocoBrake</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Reverser</ControlGroup>
+    <ControlName>Reverser</ControlName>
+    <AssignedTo>Reverser</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>-1, 1</RangeValues>
+    <NotchValues>-1, 0, 1</NotchValues>
+    <NotchNames />
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Sander</ControlGroup>
+    <ControlName>Sander</ControlName>
+    <AssignedTo>Sander</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Throttle</ControlGroup>
+    <ControlName>Regulator</ControlName>
+    <AssignedTo>Throttle</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.0625, 0.125, 0.1875, 0.25, 0.3125, 0.375, 0.4375, 0.5, 0.5625, 0.625, 0.6875, 0.75, 0.8125, 0.875, 0.9375, 1</NotchValues>
+    <NotchNames />
+    <UseNotches>Yes</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>ThrottleAndBrake</ControlGroup>
+    <ControlName>ThrottleAndBrake</ControlName>
+    <AssignedTo>ThrottleAndBrake</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>-1, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>TrainBrake</ControlGroup>
+    <ControlName>TrainBrakeControl</ControlName>
+    <AssignedTo>TrainBrake</AssignedTo>
+    <Enabled>No</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.17, 0.237, 0.615, 0.874, 0.99, 1</NotchValues>
+    <NotchNames>Release, HoldLapped, Apply, Suppression, NeutralHandleOff, Emergency</NotchNames>
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>TrainBrake</ControlGroup>
+    <ControlName>VirtualBrake</ControlName>
+    <AssignedTo>TrainBrake</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues>0, 0.17, 0.237, 0.615, 0.874, 0.99, 1</NotchValues>
+    <NotchNames>Release, MinimalReduction, Apply, Suppression, NeutralHandleOff, Emergency</NotchNames>
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <TrainControls>
+    <ControlGroup>Wiper</ControlGroup>
+    <ControlName>Wipers</ControlName>
+    <AssignedTo>Wiper</AssignedTo>
+    <Enabled>Yes</Enabled>
+    <Direction>Normal</Direction>
+    <RangeValues>0, 1</RangeValues>
+    <NotchValues />
+    <NotchNames />
+    <UseNotches>No</UseNotches>
+  </TrainControls>
+  <OverlayData>
+    <AddLineNumbers>0</AddLineNumbers>
+    <SideMargin>0</SideMargin>
+    <FontSize>3</FontSize>
+    <FontColour>2</FontColour>
+    <DrawFontBorder>True</DrawFontBorder>
+  </OverlayData>
+</Raildriver_Interface>

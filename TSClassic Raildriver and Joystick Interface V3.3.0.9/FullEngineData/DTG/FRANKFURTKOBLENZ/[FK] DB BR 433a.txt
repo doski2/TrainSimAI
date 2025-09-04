@@ -1,0 +1,16 @@
+Engine Bin File = assets\DTG\FrankfurtKoblenz\RailVehicles\Electric\BR433\433a.bin
+Engine Name = [FK] DB BR 433a
+Engine Script to edit = Assets\DTG\FrankfurtKoblenz\RailVehicles\Electric\BR423\Scripts\BR433_Engine_Script.out
+
+CONTROL NAME "(PantographControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(DoorsLeft)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsRight)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseLeft)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseRight)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Ammeter)",                              MIN VALUE "(-600)",      MAX VALUE "(600)",       DEFAULT VALUE "(0)"
+

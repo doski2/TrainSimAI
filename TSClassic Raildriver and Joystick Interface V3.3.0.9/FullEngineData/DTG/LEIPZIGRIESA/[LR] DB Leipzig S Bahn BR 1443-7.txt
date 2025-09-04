@@ -1,0 +1,23 @@
+Engine Bin File = assets\DTG\LeipzigRiesa\RailVehicles\Electric\Talent2\Engine\443-7.bin
+Engine Name = [LR] DB Leipzig S Bahn BR 1443-7
+Engine Script to edit = Assets\DTG\LeipzigRiesa\RailVehicles\Electric\Talent2\CommonScripts\BR442_CoachScript.out
+
+CONTROL NAME "(Destination)",                          MIN VALUE "(0)",         MAX VALUE "(48)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(GraduatedSelfLap)",                     Notch Value "(0.1)"
+  Notch Name "(FullService)",                          Notch Value "(0.9)"
+  Notch Name "(Emergency)",                            Notch Value "(1)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(DynamicBrake)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseLeft)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseRight)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ExteriorSound)",                        MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(HandBrake)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+

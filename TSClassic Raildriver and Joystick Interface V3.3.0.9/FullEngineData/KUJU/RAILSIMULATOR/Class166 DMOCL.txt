@@ -1,0 +1,94 @@
+Engine Bin File = assets\Kuju\RailSimulator\RailVehicles\Diesel\Class166\SouthEast\DMOCL\class166_dmocl.bin
+Engine Name = Class166 DMOCL
+Engine Script to edit = Assets\Kuju\RailSimulator\RailVehicles\Diesel\Class166\Default\MOS\Class166EngineScript.lua
+
+CONTROL NAME "(Active)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TractiveEffort)",                       MIN VALUE "(-1000)",     MAX VALUE "(1000)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(RPM)",                                  MIN VALUE "(0)",         MAX VALUE "(2400)",      DEFAULT VALUE "(600)"
+
+CONTROL NAME "(MainReservoirPressureBAR)",             MIN VALUE "(0)",         MAX VALUE "(10)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TrainBrakeCylinderPressureBAR)",        MIN VALUE "(0)",         MAX VALUE "(7)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(HandBrake)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Headlights)",                           MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(3)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(EngineStop)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EngineStart)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(SpeedometerMPH)",                       MIN VALUE "(0)",         MAX VALUE "(100)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Regulator)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Idle)",                                 Notch Value "(0.5)"
+  Notch Name "(A)",                                    Notch Value "(0.586)"
+  Notch Name "(B)",                                    Notch Value "(0.643)"
+  Notch Name "(A+B)",                                  Notch Value "(0.729)"
+  Notch Name "(C)",                                    Notch Value "(0.771)"
+  Notch Name "(A+C)",                                  Notch Value "(0.857)"
+  Notch Name "(B+C)",                                  Notch Value "(0.915)"
+  Notch Name "(A+B+C)",                                Notch Value "(1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Reverser)",                             MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(3)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(SimpleChangeDirection)",                MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(SimpleThrottle)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.25)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(Direct)",                               Notch Value "(0.1)"
+  Notch Name "(Emergency)",                            Notch Value "(1)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(Wipers)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWS)",                                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(AWSReset)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSClearCount)",                        MIN VALUE "(0)",         MAX VALUE "(2e+009)",    DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSWarnCount)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EmergencyBrake)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Horn)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Startup)",                              MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(Sander)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseLeft)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseRight)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ThrottleAndBrake)",                     MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.25)"
+  Notch Name "(Dummy1)",                               Notch Value "(0)"
+  Notch Name "(Dummy2)",                               Notch Value "(0.08)"
+  Notch Name "(Dummy3)",                               Notch Value "(0.18)"
+  Notch Name "(Dummy4)",                               Notch Value "(0.25)"
+  Notch Name "(Dummy5)",                               Notch Value "(0.35)"
+  Notch Name "(Dummy6)",                               Notch Value "(0.45)"
+  Notch Name "(Dummy7)",                               Notch Value "(0.55)"
+  Notch Name "(Dummy8)",                               Notch Value "(0.65)"
+  Notch Name "(Dummy9)",                               Notch Value "(0.75)"
+  Notch Name "(Dummy10)",                              Notch Value "(0.85)"
+  Notch Name "(Dummy11)",                              Notch Value "(0.9)"
+  Notch Name "(Dummy12)",                              Notch Value "(1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(DRAButton)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+

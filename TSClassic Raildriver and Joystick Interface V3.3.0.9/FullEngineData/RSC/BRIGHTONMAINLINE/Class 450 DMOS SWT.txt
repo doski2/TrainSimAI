@@ -1,0 +1,112 @@
+Engine Bin File = assets\RSC\BrightonMainLine\RailVehicles\Electric\Class450\Default\Engine\Class450 DMOS.bin
+Engine Name = Class 450 DMOS SWT
+Engine Script to edit = Assets\RSC\BrightonMainLine\RailVehicles\Electric\Class450\CommonScripts\450EngineScript.lua
+
+CONTROL NAME "(Active)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SimulationJustSetup)",                  MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CoachID)",                              MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(RPM)",                                  MIN VALUE "(0)",         MAX VALUE "(900)",       DEFAULT VALUE "(300)"
+
+CONTROL NAME "(Current)",                              MIN VALUE "(0)",         MAX VALUE "(1500)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Ammeter)",                              MIN VALUE "(-1000)",     MAX VALUE "(1000)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(RegenerativeSound)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(MotorSound)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SpeedometerMPH)",                       MIN VALUE "(0)",         MAX VALUE "(140)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TrainBrakeCylinderPressurePSI)",        MIN VALUE "(0)",         MAX VALUE "(70)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(MainReservoirPressurePSI)",             MIN VALUE "(0)",         MAX VALUE "(140)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(InputDisabler)",                        MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Regulator)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ThrottleAndBrake)",                     MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(-0.75)"
+  Notch Name "(a)",                                    Notch Value "(-1)"
+  Notch Name "(b)",                                    Notch Value "(-0.81)"
+  Notch Name "(c)",                                    Notch Value "(-0.765)"
+  Notch Name "(d)",                                    Notch Value "(-0.72)"
+  Notch Name "(e)",                                    Notch Value "(-0.675)"
+  Notch Name "(f)",                                    Notch Value "(-0.63)"
+  Notch Name "(g)",                                    Notch Value "(-0.585)"
+  Notch Name "(h)",                                    Notch Value "(-0.54)"
+  Notch Name "(i)",                                    Notch Value "(-0.495)"
+  Notch Name "(j)",                                    Notch Value "(-0.45)"
+  Notch Name "(k)",                                    Notch Value "(-0.405)"
+  Notch Name "(l)",                                    Notch Value "(-0.36)"
+  Notch Name "(m)",                                    Notch Value "(-0.315)"
+  Notch Name "(n)",                                    Notch Value "(-0.27)"
+  Notch Name "(o)",                                    Notch Value "(-0.225)"
+  Notch Name "(p)",                                    Notch Value "(-0.18)"
+  Notch Name "(q)",                                    Notch Value "(-0.135)"
+  Notch Name "(r)",                                    Notch Value "(-0.09)"
+  Notch Name "(s)",                                    Notch Value "(-0.045)"
+  Notch Name "(t)",                                    Notch Value "(0)"
+  Notch Name "(1)",                                    Notch Value "(0.2)"
+  Notch Name "(2)",                                    Notch Value "(0.4)"
+  Notch Name "(3)",                                    Notch Value "(0.6)"
+  Notch Name "(4)",                                    Notch Value "(0.8)"
+  Notch Name "(5)",                                    Notch Value "(1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Reverser)",                             MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(3)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(Direct)",                               Notch Value "(0.05)"
+  Notch Name "(Emergency)",                            Notch Value "(1)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(SignalBell)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Bell)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Headlights)",                           MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(1)"
+  Notch Name "(Number of Notches)",                    Notch Value "(3)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Horn)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Wipers)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EmergencyBrake)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Startup)",                              MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSReset)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWS)",                                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(AWSClearCount)",                        MIN VALUE "(0)",         MAX VALUE "(2e+009)",    DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSWarnCount)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Sander)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PantographControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(SimpleChangeDirection)",                MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(SimpleThrottle)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseRight)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseLeft)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsInterlockRight)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsInterlockLeft)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+

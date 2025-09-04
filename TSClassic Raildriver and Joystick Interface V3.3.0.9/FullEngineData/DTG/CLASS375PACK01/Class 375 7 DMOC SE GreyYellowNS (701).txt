@@ -1,0 +1,162 @@
+Engine Bin File = assets\DTG\Class375Pack01\RailVehicles\Electric\Class375\SE-GreyNS\Named\Class375_DMOC-375701.bin
+Engine Name = Class 375 7 DMOC SE GreyYellowNS (701)
+Engine Script to edit = Assets\DTG\Class375Pack01\RailVehicles\Electric\Class375\CommonScripts\Class375_EngineScript.out
+
+CONTROL NAME "(Acceleration)",                         MIN VALUE "(-100)",      MAX VALUE "(100)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Active)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TractiveEffort)",                       MIN VALUE "(-300)",      MAX VALUE "(300)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Ammeter)",                              MIN VALUE "(-500)",      MAX VALUE "(500)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CompressorState)",                      MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PantographControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Shoes)",                                MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(Pantograph)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Current)",                              MIN VALUE "(-500)",      MAX VALUE "(2000)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(MainReservoirPressureBAR)",             MIN VALUE "(0)",         MAX VALUE "(10)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TrainBrakeCylinderPressureBAR)",        MIN VALUE "(0)",         MAX VALUE "(7)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(HandBrake)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Headlights)",                           MIN VALUE "(0)",         MAX VALUE "(4)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(5)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(HeadlightSwitch)",                      MIN VALUE "(0)",         MAX VALUE "(4)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(5)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(SpeedometerMPH)",                       MIN VALUE "(0)",         MAX VALUE "(120)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Regulator)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Reverser)",                             MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Forward)",                              Notch Value "(1)"
+  Notch Name "(Neutral)",                              Notch Value "(0)"
+  Notch Name "(Reverse)",                              Notch Value "(-1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(DynamicBrake)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SimpleChangeDirection)",                MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(SimpleThrottle)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.25)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(Direct)",                               Notch Value "(0.1)"
+  Notch Name "(Emergency)",                            Notch Value "(1)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(Wipers)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(WipersFront)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(WiperSwitch)",                          MIN VALUE "(0)",         MAX VALUE "(3)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(4)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(AWS)",                                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSReset)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSClearCount)",                        MIN VALUE "(0)",         MAX VALUE "(2e+009)",    DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSWarnCount)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSTesting)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSReady)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(Sunflower)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EmergencyBrake)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Horn)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Bell)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Startup)",                              MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(MasterKey)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseLeft)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseRight)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ThrottleAndBrake)",                     MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(-0.5)"
+  Notch Name "(Emergency)",                            Notch Value "(-1)"
+  Notch Name "(FullService)",                          Notch Value "(-0.75)"
+  Notch Name "(Step 2)",                               Notch Value "(-0.5)"
+  Notch Name "(Step 1)",                               Notch Value "(-0.25)"
+  Notch Name "(Off)",                                  Notch Value "(0)"
+  Notch Name "(1)",                                    Notch Value "(0.25)"
+  Notch Name "(2)",                                    Notch Value "(0.5)"
+  Notch Name "(3)",                                    Notch Value "(0.75)"
+  Notch Name "(4)",                                    Notch Value "(1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(BrakeHold)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DRAButton)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Sander)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Wheelslip)",                            MIN VALUE "(0)",         MAX VALUE "(3)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Buzzer)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CabLight)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CarSlider)",                            MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(3)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(PanUp)",                                MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PanDown)",                              MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ShoesUp)",                              MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ShoesDown)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TargetSpeed)",                          MIN VALUE "(0)",         MAX VALUE "(100)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SpeedSetUp)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SpeedSetDown)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SetTargetSpeed)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(WindowLeft)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(WindowRight)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SideBlind)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(MainBlind)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(LineLight)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DSDAlarm)",                             MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DSDReset)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DSD)",                                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Destination)",                          MIN VALUE "(0)",         MAX VALUE "(52)",        DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(53)"
+  Use Notches,                                         "(Yes)"
+

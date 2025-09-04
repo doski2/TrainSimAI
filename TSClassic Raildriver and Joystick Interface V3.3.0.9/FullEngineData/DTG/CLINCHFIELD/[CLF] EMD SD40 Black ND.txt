@@ -1,0 +1,151 @@
+Engine Bin File = assets\DTG\Clinchfield\RailVehicles\Diesel\SD40\Default\Engine\C_SD40_Black_nd.bin
+Engine Name = [CLF] EMD SD40 Black ND
+Engine Script to edit = Assets\DTG\Clinchfield\RailVehicles\Diesel\SD40\Default\Engine\SD40EngineScript.out
+
+CONTROL NAME "(Active)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TractiveEffort)",                       MIN VALUE "(-1000)",     MAX VALUE "(1000)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(RPM)",                                  MIN VALUE "(0)",         MAX VALUE "(900)",       DEFAULT VALUE "(315)"
+
+CONTROL NAME "(RPMDelta)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CompressorState)",                      MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Wheelslip)",                            MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Headlights)",                           MIN VALUE "(0)",         MAX VALUE "(2)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(3)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(DitchLights)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Ammeter)",                              MIN VALUE "(-800)",      MAX VALUE "(1500)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EngineStop)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EngineStart)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AirBrakePipePressurePSI)",              MIN VALUE "(0)",         MAX VALUE "(160)",       DEFAULT VALUE "(90)"
+
+CONTROL NAME "(LocoBrakeCylinderPressurePSI)",         MIN VALUE "(0)",         MAX VALUE "(160)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Horn)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Regulator)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(9)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Reverser)",                             MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(3)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(SimpleChangeDirection)",                MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(SimpleThrottle)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.25)"
+
+CONTROL NAME "(EngineBrakeControl)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(Direct)",                               Notch Value "(0.1)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.17)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(HoldLapped)",                           Notch Value "(0.17)"
+  Notch Name "(Apply)",                                Notch Value "(0.237)"
+  Notch Name "(Suppression)",                          Notch Value "(0.615)"
+  Notch Name "(NeutralHandleOff)",                     Notch Value "(0.874)"
+  Notch Name "(Emergency)",                            Notch Value "(0.99)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(DynamicBrake)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SpeedometerMPH)",                       MIN VALUE "(0)",         MAX VALUE "(90)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Wipers)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWS)",                                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(AWSReset)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSClearCount)",                        MIN VALUE "(0)",         MAX VALUE "(2e+009)",    DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AWSWarnCount)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EmergencyBrake)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Startup)",                              MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(HandBrake)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(2)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Sander)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Bell)",                                 MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CabLight)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(InstrumentLights)",                     MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(StepLights)",                           MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(NumberLights)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(UN_units)",                             MIN VALUE "(0)",         MAX VALUE "(9)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(UN_tens)",                              MIN VALUE "(0)",         MAX VALUE "(9)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(UN_hundreds)",                          MIN VALUE "(0)",         MAX VALUE "(9)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(UN_thousands)",                         MIN VALUE "(0)",         MAX VALUE "(9)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(VirtualEngineBrakeControl)",            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.2)"
+
+CONTROL NAME "(VirtualBrake)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0.237)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(MinimalReduction)",                     Notch Value "(0.17)"
+  Notch Name "(Apply)",                                Notch Value "(0.237)"
+  Notch Name "(Suppression)",                          Notch Value "(0.615)"
+  Notch Name "(NeutralHandleOff)",                     Notch Value "(0.874)"
+  Notch Name "(Emergency)",                            Notch Value "(0.99)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(EqReservoirPressurePSIAdvanced)",       MIN VALUE "(0)",         MAX VALUE "(160)",       DEFAULT VALUE "(90)"
+
+CONTROL NAME "(LocoBrakeCylinderPressurePSIAdvanced)", MIN VALUE "(0)",         MAX VALUE "(160)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(MainReservoirPressurePSIDisplayed)",    MIN VALUE "(0)",         MAX VALUE "(160)",       DEFAULT VALUE "(140)"
+
+CONTROL NAME "(DrivingMode)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(BrakeDifficulty)",                      MIN VALUE "(1)",         MAX VALUE "(4)",         DEFAULT VALUE "(2)"
+  Notch Name "(Number of Notches)",                    Notch Value "(4)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(DisableBrakeNotches)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(EngineBrakeSound)",                     MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AirBrakePipePressurePSIDisplayed)",     MIN VALUE "(0)",         MAX VALUE "(160)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TrainBrakeSound)",                      MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(VirtualThrottle)",                      MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(9)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(TrainBrakeCylinderPressurePSI)",        MIN VALUE "(0)",         MAX VALUE "(160)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PCSstate)",                             MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AuxReservoirPressure)",                 MIN VALUE "(0)",         MAX VALUE "(90)",        DEFAULT VALUE "(90)"
+
+CONTROL NAME "(BrakePipePressureTailEnd)",             MIN VALUE "(0)",         MAX VALUE "(90)",        DEFAULT VALUE "(90)"
+
+CONTROL NAME "(LocoBrakeCylinderPressurePSIDisplayed)",MIN VALUE "(0)",         MAX VALUE "(160)",       DEFAULT VALUE "(0)"
+

@@ -1,0 +1,19 @@
+version: 0.0.{build}
+
+environment:
+  matrix:
+    - PYTHON: "C:\\Python27"
+    - PYTHON: "C:\\Python33"
+    - PYTHON: "C:\\Python34"
+    - PYTHON: "C:\\Python35"
+
+install:
+  - SET PYTHONUSERBASE=venv
+  - SET PATH=venv\\Python35\\Scripts;venv\\Scripts;%PYTHON%;%PYTHON%\\Scripts;%PATH%
+  - pip install --user -U pip setuptools
+  - pip install --user -r test_requirements.txt
+
+build: off
+
+test_script:
+    - "pytest"

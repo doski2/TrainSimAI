@@ -1,0 +1,1704 @@
+<?xml version="1.0" standalone="yes"?>
+<Raildriver_Interface>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ActivateCabCamera</Control>
+    <Key>KEY_1</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ActivateCarriageCamera</Control>
+    <Key>KEY_5</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ActivateCouplingCamera</Control>
+    <Key>KEY_6</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ActivateFollowCamera</Control>
+    <Key>KEY_2</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ActivateFreeCam</Control>
+    <Key>KEY_8</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ActivateHeadOutCamera</Control>
+    <Key>KEY_2</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ActivateRearCamera</Control>
+    <Key>KEY_3</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ActivateTrackSideCamera</Control>
+    <Key>KEY_4</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ActivateYardCamera</Control>
+    <Key>KEY_7</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>AFB</Control>
+    <Key>KEY_Y</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>AFB</Control>
+    <Key>KEY_C</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>AWSReset</Control>
+    <Key>KEY_Q</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>AWSReset</Control>
+    <Key>KEY_PAGEDOWN</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>BatteryIsolationSwitch</Control>
+    <Key>KEY_S</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Bell</Control>
+    <Key>KEY_B</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Bell</Control>
+    <Key>KEY_B</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>BIS_V</Control>
+    <Key>KEY_B</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>BlindDown</Control>
+    <Key>KEY_F12</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2>KEY_LEFTCONTROL</Extended_Key_2>
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>BlindUp</Control>
+    <Key>KEY_F12</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Blower</Control>
+    <Key>KEY_N</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Blower</Control>
+    <Key>KEY_N</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>BrakeHold</Control>
+    <Key>KEY_E</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>BrakeHold</Control>
+    <Key>KEY_D</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>BrakeOverride</Control>
+    <Key>KEY_BACKSPACE</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>BufferRetract</Control>
+    <Key>KEY_R</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Buzzer</Control>
+    <Key>KEY_C</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Buzzer</Control>
+    <Key>KEY_N</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>CabLight</Control>
+    <Key>KEY_G</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>CabLight</Control>
+    <Key>KEY_L</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>CabLightControl</Control>
+    <Key>KEY_C</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ClipboardLight</Control>
+    <Key>KEY_U</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ClipboardLight</Control>
+    <Key>KEY_U</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Cmd_40</Control>
+    <Key>KEY_DELETE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Cmd_Free</Control>
+    <Key>KEY_END</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>CouplerHatchOpen</Control>
+    <Key>KEY_B</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>CruiseControl</Control>
+    <Key>KEY_K</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>CTRL</Control>
+    <Key>KEY_O</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>CycleDoors</Control>
+    <Key>KEY_M</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>CylinderCock</Control>
+    <Key>KEY_C</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Damper</Control>
+    <Key>KEY_M</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Damper</Control>
+    <Key>KEY_M</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DC</Control>
+    <Key>KEY_I</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DestinationBlind</Control>
+    <Key>KEY_F12</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DestinationBlind</Control>
+    <Key>KEY_F12</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2>KEY_LEFTCONTROL</Extended_Key_2>
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DialogAssignment</Control>
+    <Key>KEY_F1</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DRA</Control>
+    <Key>KEY_F</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DRA</Control>
+    <Key>KEY_D</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DRAButton</Control>
+    <Key>KEY_Y</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DRAButton</Control>
+    <Key>KEY_K</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DriverGuide</Control>
+    <Key>KEY_F3</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DriverSignal</Control>
+    <Key>KEY_C</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DSDEnabled</Control>
+    <Key>KEY_R</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DSDPedal</Control>
+    <Key>KEY_NUMPAD_ENTER</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>DSDReset</Control>
+    <Key>KEY_Q</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Emergencia</Control>
+    <Key>KEY_BACKSPACE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Emergency Brake Plunger</Control>
+    <Key>KEY_BACKSPACE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>EmergencyBrake</Control>
+    <Key>KEY_BACKSPACE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>EmergencyStop</Control>
+    <Key>KEY_BACKSPACE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>EmergencyValve</Control>
+    <Key>KEY_BACKSPACE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>EngineStart</Control>
+    <Key>KEY_Z</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>EngineStop</Control>
+    <Key>KEY_Z</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ExhaustInjectorSteamOnOff</Control>
+    <Key>KEY_I</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ExhaustInjectorWater</Control>
+    <Key>KEY_K</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ExhaustInjectorWater</Control>
+    <Key>KEY_K</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>FaultsEnabled</Control>
+    <Key>KEY_F</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>FireboxDoor</Control>
+    <Key>KEY_F</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>FireboxDoor</Control>
+    <Key>KEY_F</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Flash</Control>
+    <Key>KEY_J</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>FrameRate</Control>
+    <Key>KEY_Z</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>GearLeverUp</Control>
+    <Key>KEY_E</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>GearLeverDown</Control>
+    <Key>KEY_E</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>GlarePanel</Control>
+    <Key>KEY_U</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>HandBrake</Control>
+    <Key>KEY_SLASH</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>HandBrake</Control>
+    <Key>KEY_O</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>HandBrakeOff</Control>
+    <Key>KEY_SLASH</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>HandBrakeOn</Control>
+    <Key>KEY_SLASH</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>hard</Control>
+    <Key>KEY_F9</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Headlights</Control>
+    <Key>KEY_H</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Headlights</Control>
+    <Key>KEY_H</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>HillStart</Control>
+    <Key>KEY_A</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Horn</Control>
+    <Key>KEY_SPACE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>HornActual</Control>
+    <Key>KEY_SPACE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>HornActual</Control>
+    <Key>KEY_SPACE</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>InstrumentLights</Control>
+    <Key>KEY_I</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>InstrumentLightSwitch</Control>
+    <Key>KEY_I</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>InstrumentLightSwitch</Control>
+    <Key>KEY_I</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>InstrumentsLight</Control>
+    <Key>KEY_F</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Key</Control>
+    <Key>KEY_W</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LightSwitch</Control>
+    <Key>KEY_L</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LightSwitch</Control>
+    <Key>KEY_L</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LiveInjectorSteamOnOff</Control>
+    <Key>KEY_O</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LiveInjectorWater</Control>
+    <Key>KEY_L</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LiveInjectorWater</Control>
+    <Key>KEY_L</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LoadCargo</Control>
+    <Key>KEY_T</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LZBActive</Control>
+    <Key>KEY_ADD</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2>KEY_LEFTCONTROL</Extended_Key_2>
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LZBEnable</Control>
+    <Key>KEY_ADD</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ManualCouple</Control>
+    <Key>KEY_C</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2>KEY_LEFTCONTROL</Extended_Key_2>
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>MarkerLight02</Control>
+    <Key>KEY_J</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>MarkerLight03</Control>
+    <Key>KEY_K</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>MarkerLight04</Control>
+    <Key>KEY_L</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>MarkerLightSwitch</Control>
+    <Key>KEY_J</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>MasterKey</Control>
+    <Key>KEY_Z</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Nose</Control>
+    <Key>KEY_N</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PA01</Control>
+    <Key>KEY_F7</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PanDown</Control>
+    <Key>KEY_P</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PanDownShoesUp</Control>
+    <Key>KEY_P</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Panel</Control>
+    <Key>KEY_J</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PantographControl</Control>
+    <Key>KEY_P</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PanUp</Control>
+    <Key>KEY_F</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PanUp</Control>
+    <Key>KEY_P</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PanUpShoesDown</Control>
+    <Key>KEY_P</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PassAtDangerAhead</Control>
+    <Key>KEY_TAB</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PassAtDangerBehind</Control>
+    <Key>KEY_TAB</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Pause</Control>
+    <Key>KEY_ESCAPE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Plough</Control>
+    <Key>KEY_P</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PromptSave</Control>
+    <Key>KEY_F2</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PZBEnable</Control>
+    <Key>KEY_NUMPAD_ENTER</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Quit</Control>
+    <Key>KEY_Q</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ReverserIn</Control>
+    <Key>KEY_W</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ReverserLock</Control>
+    <Key>KEY_E</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>RheoEnabled</Control>
+    <Key>KEY_APOSTROPHE</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>RHTTSpray</Control>
+    <Key>KEY_M</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Sander</Control>
+    <Key>KEY_X</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SanderLever</Control>
+    <Key>KEY_X</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SelPanto</Control>
+    <Key>KEY_F8</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SelPanto</Control>
+    <Key>KEY_F7</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ShiftLights</Control>
+    <Key>KEY_N</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ShiftLights</Control>
+    <Key>KEY_M</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ShoesDown</Control>
+    <Key>KEY_P</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ShoesUp</Control>
+    <Key>KEY_P</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Signal</Control>
+    <Key>KEY_C</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SignalBuzzer</Control>
+    <Key>KEY_B</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SlowSpeed</Control>
+    <Key>KEY_S</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SmallCompressorOnOff</Control>
+    <Key>KEY_J</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Smokebox</Control>
+    <Key>KEY_E</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SpeedControlSwitch</Control>
+    <Key>KEY_A</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SpeedDisplayToggle</Control>
+    <Key>KEY_MACRO</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SpeedSet</Control>
+    <Key>KEY_C</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SpeedSet</Control>
+    <Key>KEY_Y</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>StartShutdown</Control>
+    <Key>KEY_Z</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Startup</Control>
+    <Key>KEY_Z</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>StepsLight</Control>
+    <Key>KEY_K</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Stoking</Control>
+    <Key>KEY_R</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Stoking</Control>
+    <Key>KEY_R</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>StrobeLights</Control>
+    <Key>KEY_H</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>swDriverWiper</Control>
+    <Key>KEY_V</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>swGuardWiper</Control>
+    <Key>KEY_V</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SwitchJunctionAhead</Control>
+    <Key>KEY_G</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SwitchJunctionBehind</Control>
+    <Key>KEY_G</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SwitchToNextFrontCab</Control>
+    <Key>KEY_EQUALS</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SwitchToNextRearCab</Control>
+    <Key>KEY_MINUS</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>TaillightSwitch</Control>
+    <Key>KEY_K</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>TakeScreenShot</Control>
+    <Key>KEY_S</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Toggle2DMap</Control>
+    <Key>KEY_9</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ToggleDriverInterface</Control>
+    <Key>KEY_F4</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ToggleHUD</Control>
+    <Key>KEY_F5</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ToggleIDO</Control>
+    <Key>KEY_F8</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ToggleLabels</Control>
+    <Key>KEY_F6</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>ToggleRVNumber</Control>
+    <Key>KEY_F7</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>TrainLength</Control>
+    <Key>KEY_O</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>TrainLength</Control>
+    <Key>KEY_L</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>UnloadCargo</Control>
+    <Key>KEY_T</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>VigilEnable</Control>
+    <Key>KEY_NUMPAD_ENTER</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>VigilEnable</Control>
+    <Key>KEY_E</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>VigilReset</Control>
+    <Key>KEY_NUMPAD_ENTER</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>VisualAids</Control>
+    <Key>KEY_NUMPAD_ENTER</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>WarningSystemReset</Control>
+    <Key>KEY_Q</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>WaterScoopRaiseLower</Control>
+    <Key>KEY_Y</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Whistle_2</Control>
+    <Key>KEY_SPACE</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Wipers</Control>
+    <Key>KEY_V</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Wipers</Control>
+    <Key>KEY_V</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Zoom</Control>
+    <Key>KEY_UP</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Zoom</Control>
+    <Key>KEY_DOWN</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Hat</Control>
+    <Key>KEY_UP</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Hat</Control>
+    <Key>KEY_RIGHT</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Hat</Control>
+    <Key>KEY_DOWN</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Hat</Control>
+    <Key>KEY_LEFT</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SIFA Toggle</Control>
+    <Key>KEY_NUMPAD_ENTER</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>SIFA Acknowledge</Control>
+    <Key>KEY_NUMPAD_ENTER</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LZB Toggle</Control>
+    <Key>KEY_NUMPAD_ADD</Key>
+    <Extended_Key_1>KEY_LEFTSHIFT</Extended_Key_1>
+    <Extended_Key_2>KEY_LEFTCONTROL</Extended_Key_2>
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>LZB Auto Barake Intervention</Control>
+    <Key>KEY_NUMPAD_ADD</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PZB Toggle</Control>
+    <Key>KEY_NUMPAD_ENTER</Key>
+    <Extended_Key_1>KEY_LEFTCONTROL</Extended_Key_1>
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PZB Wachsam / Acknowledge</Control>
+    <Key>KEY_PAGEDOWN</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PZB Frei / Release</Control>
+    <Key>KEY_END</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>PZB Befehl40 / Override</Control>
+    <Key>KEY_DELETE</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+   <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Raildriver Toggle Speed</Control>
+    <Key>MACRO_TOGGLE_SPEED</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Raildriver Display Gears</Control>
+    <Key>MACRO_DISPLAY_GEARS</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Raildriver Display AFB</Control>
+    <Key>MACRO_DISPLAY_AFB</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+  <InputMapper>
+    <ControllerGuid />
+    <ControllerName />
+    <Button />
+    <Control>Raildriver Display Cruise Control</Control>
+    <Key>MACRO_DISPLAY_CRUISECONTROL</Key>
+    <Extended_Key_1 />
+    <Extended_Key_2 />
+  </InputMapper>
+</Raildriver_Interface>

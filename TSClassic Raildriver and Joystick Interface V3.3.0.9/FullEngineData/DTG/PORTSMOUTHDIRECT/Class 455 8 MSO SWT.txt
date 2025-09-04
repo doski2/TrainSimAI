@@ -1,0 +1,30 @@
+Engine Bin File = assets\DTG\PortsmouthDirect\RailVehicles\Class455_8\Default\455_MSO.bin
+Engine Name = Class 455 8 MSO SWT
+Engine Script to edit = Assets\DTG\PortsmouthDirect\RailVehicles\Class455_8\Default\455_MSO_EngineScript.out
+
+CONTROL NAME "(TrainBrakeCylinderPressureBAR)",        MIN VALUE "(0)",         MAX VALUE "(5)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Current)",                              MIN VALUE "(0)",         MAX VALUE "(2000)",      DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PantographControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Regulator)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Number of Notches)",                    Notch Value "(5)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(HoldLapped)",                           Notch Value "(0.1)"
+  Notch Name "(GraduatedSelfLap)",                     Notch Value "(0.2)"
+  Notch Name "(Suppression)",                          Notch Value "(0.9)"
+  Notch Name "(Emergency)",                            Notch Value "(0.95)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(DoorsOpenCloseLeft)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseRight)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ExteriorSounds)",                       MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(HandBrake)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+

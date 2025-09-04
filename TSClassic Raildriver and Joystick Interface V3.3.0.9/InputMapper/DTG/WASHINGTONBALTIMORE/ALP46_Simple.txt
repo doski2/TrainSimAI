@@ -1,0 +1,25 @@
+CONTROL                       MAIN KEY            EXTRA KEYS          FUNCTION                      STATE
+Headlights,                   KEY_H,              NOSHIFT,            IncreaseControlStart,         ButtonDown
+Headlights,                   KEY_H,              NOSHIFT,            IncreaseControlStop,          ButtonUp
+Headlights,                   KEY_H,              SHIFT,              DecreaseControlStart,         ButtonDown
+Headlights,                   KEY_H,              SHIFT,              DecreaseControlStop,          ButtonUp
+VirtualWipers,                KEY_V,              NOSHIFT,            ToggleControl,                ButtonDown
+EmergencyBrake,               KEY_BACKSPACE,      NOSHIFT,            IncreaseControlStart,         ButtonDown
+HandBrake,                    KEY_SLASH,          NOSHIFT,            ToggleControl,                ButtonDown
+VirtualSander,                KEY_X,              NOSHIFT,            IncreaseControlStart,         ButtonDown
+VirtualSander,                KEY_X,              NOSHIFT,            DecreaseControlStart,         ButtonUp
+Startup,                      KEY_Z,              NOSHIFT,            ToggleControl,                ButtonDown
+SimpleChangeDirection,        KEY_S,              NOSHIFT,            ToggleControl,                ButtonDown
+SimpleThrottle,               KEY_A,              NOSHIFT,            IncreaseControlStart,         ButtonDown
+SimpleThrottle,               KEY_A,              NOSHIFT,            IncreaseControlStop,          ButtonUp
+SimpleThrottle,               KEY_D,              NOSHIFT,            DecreaseControlStart,         ButtonDown
+SimpleThrottle,               KEY_D,              NOSHIFT,            DecreaseControlStop,          ButtonUp
+InstrumentLights,             KEY_I,              NOSHIFT,            ToggleControl,                ButtonDown
+CabLight,                     KEY_L,              NOSHIFT,            ToggleControl,                ButtonDown
+StepLights,                   KEY_K,              NOSHIFT,            ToggleControl,                ButtonUp
+VirtualHorn,                  KEY_SPACE,          NOSHIFT,            IncreaseControlStart,         ButtonDown
+VirtualHorn,                  KEY_SPACE,          NOSHIFT,            DecreaseControlStart,         ButtonUp
+VirtualBell,                  KEY_B,              NOSHIFT,            ToggleControl,                ButtonDown
+DitchLights,                  KEY_J,              NOSHIFT,            ToggleControl,                ButtonDown
+NumberLights,                 KEY_K,              CONTROL,            ToggleControl,                ButtonDown
+,                             MOUSEBUTTON0,       NOSHIFT,            ,                             ButtonDown

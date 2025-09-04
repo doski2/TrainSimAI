@@ -1,0 +1,10 @@
+CONTROL                       MAIN KEY            EXTRA KEYS          FUNCTION                      STATE
+Notbremse,                    KEY_BACKSPACE,      NOSHIFT,            DecreaseControlStart,         ButtonUp
+Notbremse,                    KEY_BACKSPACE,      NOSHIFT,            IncreaseControlStart,         ButtonDown
+Pfeife,                       KEY_SPACE,          NOSHIFT,            DecreaseControlStart,         ButtonUp
+Pfeife,                       KEY_SPACE,          NOSHIFT,            IncreaseControlStart,         ButtonDown
+FahrtrichtungEinfach,         KEY_S,              NOSHIFT,            ToggleControl,                ButtonDown
+ReglerEinfach,                KEY_D,              NOSHIFT,            DecreaseControlStart,         ButtonDown
+ReglerEinfach,                KEY_D,              NOSHIFT,            DecreaseControlStop,          ButtonUp
+ReglerEinfach,                KEY_A,              NOSHIFT,            IncreaseControlStop,          ButtonUp
+ReglerEinfach,                KEY_A,              NOSHIFT,            IncreaseControlStart,         ButtonDown

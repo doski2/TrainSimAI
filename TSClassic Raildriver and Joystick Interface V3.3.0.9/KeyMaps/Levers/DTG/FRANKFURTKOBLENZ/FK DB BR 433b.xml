@@ -1,0 +1,21 @@
+<?xml version="1.0" standalone="yes"?>
+<Raildriver_Interface>
+  <ButtonMap>
+    <MapName>Default_ButtonMapper.xml</MapName>
+  </ButtonMap>
+  <InputMapperFileName>
+    <Name>Default_Expert.txt</Name>
+  </InputMapperFileName>
+  <EditedFiles>
+    <EngineBinFile>assets\DTG\FrankfurtKoblenz\RailVehicles\Electric\BR433\433b.bin</EngineBinFile>
+    <EngineName>[FK] DB BR 433b</EngineName>
+    <ScriptName>Assets\DTG\FrankfurtKoblenz\RailVehicles\Electric\BR423\Scripts\BR433_Engine_Script.out</ScriptName>
+  </EditedFiles>
+  <OverlayData>
+    <AddLineNumbers>0</AddLineNumbers>
+    <SideMargin>0</SideMargin>
+    <FontSize>3</FontSize>
+    <FontColour>2</FontColour>
+    <DrawFontBorder>True</DrawFontBorder>
+  </OverlayData>
+</Raildriver_Interface>

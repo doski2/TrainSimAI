@@ -1,0 +1,66 @@
+Engine Bin File = assets\DTG\BR407Pack01\RailVehicles\Electric\BR407\DB\Blueprints\407_2_SW_3.bin
+Engine Name = BR407 Boardbistro 1.Class (407.2 SW03)
+Engine Script to edit = Assets\DTG\BR407Pack01\RailVehicles\Electric\BR407\DB\Scripts407\407_SW_Script.out
+
+CONTROL NAME "(Sander)",                               MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(CompressorState)",                      MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(LocoBrakeCylinderPressureBAR)",         MIN VALUE "(0)",         MAX VALUE "(10)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TrainBrakeCylinderPressureBAR)",        MIN VALUE "(0)",         MAX VALUE "(10)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Accelerometer)",                        MIN VALUE "(-350)",      MAX VALUE "(350)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(AirBrakePipePressureBAR)",              MIN VALUE "(0)",         MAX VALUE "(12)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(MainReservoirPressureBAR)",             MIN VALUE "(0)",         MAX VALUE "(16)",        DEFAULT VALUE "(0)"
+
+CONTROL NAME "(SpeedometerKPH)",                       MIN VALUE "(0)",         MAX VALUE "(220)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Ammeter)",                              MIN VALUE "(-600)",      MAX VALUE "(600)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(vAmmeter)",                             MIN VALUE "(-600)",      MAX VALUE "(600)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(ZugkraftVorwahlMTD)",                   MIN VALUE "(0)",         MAX VALUE "(300)",       DEFAULT VALUE "(0)"
+
+CONTROL NAME "(HBU)",                                  MIN VALUE "(0)",         MAX VALUE "(8)",         DEFAULT VALUE "(8)"
+
+CONTROL NAME "(FML)",                                  MIN VALUE "(0)",         MAX VALUE "(3)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(FMTemp)",                               MIN VALUE "(0)",         MAX VALUE "(300)",       DEFAULT VALUE "(20)"
+
+CONTROL NAME "(Regulator)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(PantographControl)",                    MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(DynamicBrake)",                         MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(TrainBrakeControl)",                    MIN VALUE "(-0.14)",     MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(MaxQuickRelease)",                      Notch Value "(-0.14)"
+  Notch Name "(Release)",                              Notch Value "(0)"
+  Notch Name "(GraduatedSelfLap)",                     Notch Value "(0.02)"
+  Notch Name "(FullService)",                          Notch Value "(0.87)"
+  Notch Name "(Emergency)",                            Notch Value "(1)"
+  Use Notches,                                         "(No)"
+
+CONTROL NAME "(HandBrake)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(Reverser)",                             MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+  Notch Name "(R)",                                    Notch Value "(-1)"
+  Notch Name "(Aus)",                                  Notch Value "(0)"
+  Notch Name "(V)",                                    Notch Value "(1)"
+  Use Notches,                                         "(Yes)"
+
+CONTROL NAME "(Wheelslip)",                            MIN VALUE "(0)",         MAX VALUE "(3)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(Startup)",                              MIN VALUE "(-1)",        MAX VALUE "(1)",         DEFAULT VALUE "(1)"
+
+CONTROL NAME "(Curvature)",                            MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseRight)",                  MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(DoorsOpenCloseLeft)",                   MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+
+CONTROL NAME "(aiCabVolume)",                          MIN VALUE "(0)",         MAX VALUE "(1)",         DEFAULT VALUE "(0)"
+

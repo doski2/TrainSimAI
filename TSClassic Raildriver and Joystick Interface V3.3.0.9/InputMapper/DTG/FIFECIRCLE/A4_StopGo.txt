@@ -1,0 +1,20 @@
+CONTROL                       MAIN KEY            EXTRA KEYS          FUNCTION                      STATE
+SimpleThrottle,               KEY_A,              NOSHIFT,            IncreaseControlStart,         ButtonDown
+SimpleThrottle,               KEY_A,              NOSHIFT,            IncreaseControlStop,          ButtonUp
+SimpleThrottle,               KEY_D,              NOSHIFT,            DecreaseControlStart,         ButtonDown
+SimpleThrottle,               KEY_D,              NOSHIFT,            DecreaseControlStop,          ButtonUp
+SimpleChangeDirection,        KEY_S,              NOSHIFT,            ToggleControl,                ButtonDown
+Wipers,                       KEY_V,              NOSHIFT,            ToggleControl,                ButtonDown
+Horn,                         KEY_SPACE,          NOSHIFT,            IncreaseControlStart,         ButtonDown
+Horn,                         KEY_SPACE,          NOSHIFT,            DecreaseControlStart,         ButtonUp
+EmergencyBrake,               KEY_BACKSPACE,      NOSHIFT,            IncreaseControlStart,         ButtonDown
+EmergencyBrake,               KEY_BACKSPACE,      NOSHIFT,            DecreaseControlStart,         ButtonUp
+Headlights,                   KEY_H,              NOSHIFT,            IncreaseControlStart,         ButtonDown
+Headlights,                   KEY_H,              NOSHIFT,            IncreaseControlStop,          ButtonUp
+Headlights,                   KEY_H,              SHIFT,              DecreaseControlStart,         ButtonDown
+Headlights,                   KEY_H,              SHIFT,              DecreaseControlStop,          ButtonUp
+ThrottleAndBrake,             KEY_A,              NOSHIFT,            IncreaseControlStart,         ButtonDown
+ThrottleAndBrake,             KEY_A,              NOSHIFT,            IncreaseControlStop,          ButtonUp
+ThrottleAndBrake,             KEY_D,              NOSHIFT,            DecreaseControlStart,         ButtonDown
+ThrottleAndBrake,             KEY_D,              NOSHIFT,            DecreaseControlStop,          ButtonUp
+Bell,                         KEY_B,              NOSHIFT,            ToggleControl,                ButtonDown
