@@ -1,5 +1,6 @@
 -- /lua/tsc_eventbus.lua (ejemplo mínimo)
-local EVENTBUS_PATH = "C:/Users/Public/Documents/tsc_eventbus.jsonl" -- ajusta si lo prefieres dentro de RailWorks
+-- usa ruta ABSOLUTA a tu repo (forward slashes en Lua)
+local EVENTBUS_PATH = "C:/TrainSimAI/data/lua_eventbus.jsonl"
 local last_speed_ms = 0.0
 local stopped = false
 local stop_t0 = nil
@@ -75,4 +76,3 @@ end
 function MarkerPassed(name)
   emit_json({ type = "marker_pass", name = tostring(name) })
 end
-

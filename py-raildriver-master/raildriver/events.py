@@ -1,27 +1,16 @@
+from __future__ import annotations
+
 import collections
 import copy
 import threading
 import time
-
-import six
+from typing import Any, Callable, DefaultDict, Dict, List, Optional
 
 
 class Listener(object):
 
-    raildriver = None
-
-    bindings = None
-    exc = None
-    interval = None
-    running = False
-    thread = None
-    subscribed_fields = None
-
-    current_data = None
-    previous_data = None
-    iteration = 0
-
-    special_fields = {
+    # Campos especiales consultados en cada iteración
+    special_fields: Dict[str, str] = {
         '!Coordinates': 'get_current_coordinates',
         '!FuelLevel': 'get_current_fuel_level',
         '!Gradient': 'get_current_gradient',
@@ -31,33 +20,40 @@ class Listener(object):
         '!Time': 'get_current_time',
     }
 
-    def __init__(self, raildriver, interval=0.5):
+    def __init__(self, raildriver: Any, interval: float = 0.5) -> None:
         """
         Initialize control listener. Requires raildriver.RailDriver instance.
 
         :param raildriver: RailDriver instance
         :param interval: how often to check the state of controls
         """
-        self.interval = interval
-        self.raildriver = raildriver
+        self.interval: float = interval
+        self.raildriver: Any = raildriver
 
-        self.bindings = collections.defaultdict(list)
-        self.current_data = collections.defaultdict(lambda: None)
-        self.previous_data = collections.defaultdict(lambda: None)
-        self.subscribed_fields = []
+        self.bindings: DefaultDict[str, List[Callable[..., None]]] = collections.defaultdict(list)
+        self.current_data: DefaultDict[str, Any] = collections.defaultdict(lambda: None)
+        self.previous_data: DefaultDict[str, Any] = collections.defaultdict(lambda: None)
+        self.subscribed_fields: List[str] = []
+        self.running: bool = False
+        self.thread: Optional[threading.Thread] = None
+        self.exc: Optional[BaseException] = None
+        self.iteration: int = 0
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Callable[..., None]:
         # Asegura que "bindings" esté inicializado (útil para analizadores de tipos y seguridad)
         if self.bindings is None:
             import collections as _collections  # import local para evitar cambios a nivel superior
             self.bindings = _collections.defaultdict(list)
         return self.bindings[item].append
 
-    def _execute_bindings(self, type, *args, **kwargs):
-        for binding in self.bindings[type]:
+    def _execute_bindings(self, event_type: str, *args: Any, **kwargs: Any) -> None:
+        # Guard against optional self.bindings (helps type checkers and safety)
+        if self.bindings is None:
+            return
+        for binding in self.bindings[event_type]:
             binding(*args, **kwargs)
 
-    def _main_iteration(self):
+    def _main_iteration(self) -> None:
         self.iteration += 1
         self.previous_data = copy.copy(self.current_data)
 
@@ -79,7 +75,7 @@ class Listener(object):
                 binding_name = 'on_{}_change'.format(field_name[1:].lower())
                 self._execute_bindings(binding_name, current_value, self.previous_data[field_name])
 
-    def _main_loop(self):
+    def _main_loop(self) -> None:
         try:
             while self.running:
                 self._main_iteration()
@@ -87,22 +83,22 @@ class Listener(object):
         except Exception as exc:
             self.exc = exc
 
-    def start(self):
+    def start(self) -> None:
         """
         Start listening to changes
         """
         self.running = True
-        self.thread = threading.Thread(target=self._main_loop)
+        self.thread = threading.Thread(target=self._main_loop, daemon=True)
         self.thread.start()
 
-    def stop(self):
+    def stop(self) -> None:
         """
         Stop listening to changes. This has to be explicitly called before you terminate your program
         or the listening thread will never die.
         """
         self.running = False
 
-    def subscribe(self, field_names):
+    def subscribe(self, field_names: List[str]) -> None:
         """
         Subscribe to given fields.
 

@@ -1,19 +1,22 @@
-version: 0.0.{build}
+image: Visual Studio 2022
 
 environment:
   matrix:
-    - PYTHON: "C:\\Python27"
-    - PYTHON: "C:\\Python33"
-    - PYTHON: "C:\\Python34"
-    - PYTHON: "C:\\Python35"
-
-install:
-  - SET PYTHONUSERBASE=venv
-  - SET PATH=venv\\Python35\\Scripts;venv\\Scripts;%PYTHON%;%PYTHON%\\Scripts;%PATH%
-  - pip install --user -U pip setuptools
-  - pip install --user -r test_requirements.txt
+    - PY: "3.8"
+    - PY: "3.10"
+    - PY: "3.11"
+    - PY: "3.12"
 
 build: off
 
+cache:
+  - path: '%LOCALAPPDATA%\pip\Cache'
+    key: 'pip-cache-$(PY)'
+
+install:
+  - py -%PY% -m venv venv
+  - venv\Scripts\python -m pip install -U pip setuptools
+  - venv\Scripts\pip install -r test_requirements.txt
+
 test_script:
-    - "pytest"
+  - venv\Scripts\pytest -q

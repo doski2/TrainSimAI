@@ -1,8 +1,17 @@
 import ctypes
 import datetime
 import os
+import sys
+from typing import Any, Optional
 
-from six.moves import winreg
+# On Windows, use the standard library winreg. Avoid six.moves to satisfy type checkers.
+if sys.platform == "win32":
+    try:
+        import winreg  # type: ignore[reportMissingImports]
+    except Exception:  # pragma: no cover - unusual environments
+        winreg = None  # type: ignore[assignment]
+else:
+    winreg = None  # type: ignore[assignment]
 
 
 VALUE_CURRENT = 0
@@ -12,7 +21,8 @@ VALUE_MAX = 2
 
 class RailDriver(object):
 
-    dll = None
+    # ctypes.CDLL handle loaded from raildriver.dll; None until __init__ completes
+    dll: Optional[Any] = None
 
     _restypes = {
         'GetControllerList': ctypes.c_char_p,
@@ -28,6 +38,8 @@ class RailDriver(object):
                             If not passed will try to guess the location by using the Windows Registry.
         """
         if not dll_location:
+            if sys.platform != "win32" or winreg is None:
+                raise EnvironmentError('Automatic discovery of raildriver.dll requires Windows registry (win32).')
             steam_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Software\\Valve\\Steam')
             steam_path = winreg.QueryValueEx(steam_key, 'SteamPath')[0]
             railworks_path = os.path.join(steam_path, 'steamApps', 'common', 'railworks', 'plugins')
@@ -35,8 +47,9 @@ class RailDriver(object):
             if not os.path.isfile(dll_location):
                 raise EnvironmentError('Unable to automatically locate raildriver.dll.')
         self.dll = ctypes.cdll.LoadLibrary(dll_location)
+        # Configure ctypes return types
         for function_name, restype in self._restypes.items():
-            getattr(self.dll, function_name).restype = restype
+            getattr(self._get_dll(), function_name).restype = restype
 
     def __repr__(self):
         return 'raildriver.RailDriver: {}'.format(self.dll)
@@ -46,6 +59,11 @@ class RailDriver(object):
             if n == name:
                 return idx
         raise ValueError('Controller index not found for {}'.format(name))
+
+    def _get_dll(self):
+        if self.dll is None:
+            raise RuntimeError('RailDriver DLL is not loaded. Instantiate RailDriver correctly.')
+        return self.dll
 
     def get_controller_list(self):
         """
@@ -59,7 +77,7 @@ class RailDriver(object):
 
         :return enumerate
         """
-        ret_str = self.dll.GetControllerList().decode()
+        ret_str = self._get_dll().GetControllerList().decode()
         if not ret_str:
             return []
         return enumerate(ret_str.split('::'))
@@ -80,7 +98,7 @@ class RailDriver(object):
             index = self.get_controller_index(index_or_name)
         else:
             index = index_or_name
-        return self.dll.GetControllerValue(index, value_type)
+        return self._get_dll().GetControllerValue(index, value_type)
 
     def get_current_controller_value(self, index_or_name):
         """
@@ -137,8 +155,10 @@ class RailDriver(object):
 
         :return: datetime.time
         """
-        hms = [int(self.get_current_controller_value(i)) for i in range(406, 409)]
-        return datetime.time(*hms)
+        hour = int(self.get_current_controller_value(406))
+        minute = int(self.get_current_controller_value(407))
+        second = int(self.get_current_controller_value(408))
+        return datetime.time(hour=hour, minute=minute, second=second)
 
     def get_loco_name(self):
         """
@@ -146,7 +166,7 @@ class RailDriver(object):
 
         :return list
         """
-        ret_str = self.dll.GetLocoName().decode()
+        ret_str = self._get_dll().GetLocoName().decode()
         if not ret_str:
             return
         return ret_str.split('.:.')
@@ -180,7 +200,7 @@ class RailDriver(object):
             index = self.get_controller_index(index_or_name)
         else:
             index = index_or_name
-        self.dll.SetControllerValue(index, ctypes.c_float(value))
+        self._get_dll().SetControllerValue(index, ctypes.c_float(value))
 
     def set_rail_driver_connected(self, value):
         """
@@ -188,4 +208,4 @@ class RailDriver(object):
 
         :param bool True to start exchanging data, False to stop
         """
-        self.dll.SetRailDriverConnected(True)
+        self._get_dll().SetRailDriverConnected(True)

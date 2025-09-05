@@ -10,15 +10,15 @@ from runtime.csv_logger import CsvLogger
 from runtime.events_bus import normalize
 
 # Archivos de salida
-CSV_PATH = os.environ.get("RUN_CSV_PATH", os.path.join("data", "runs", "run.csv"))
-EVT_PATH = os.environ.get("RUN_EVT_PATH", os.path.join("data", "events", "events.jsonl"))
+CSV_PATH = os.path.join("data", "runs", "run.csv")
+EVT_PATH = os.path.join("data", "events", "events.jsonl")
 
 # Dónde leer los eventos que emite el LUA:
 #  - Si existe la variable de entorno LUA_BUS_PATH → úsala
 #  - En su defecto, usa la ruta por defecto del script LUA
 LUA_BUS = os.environ.get(
     "LUA_BUS_PATH",
-    os.path.join("data", "lua_eventbus.jsonl")
+    r"C:\Users\Public\Documents\tsc_eventbus.jsonl"
 )
 
 

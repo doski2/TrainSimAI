@@ -4,10 +4,14 @@ import unittest
 import time
 import sys
 
-import mock
+try:
+    from unittest import mock  # Python 3 standard library
+except ImportError:  # pragma: no cover
+    import mock  # type: ignore
 import six
 
 import raildriver
+from typing import Any
 
 
 WINREG_MODULE = '_winreg' if sys.version_info < (3, ) else 'winreg'
@@ -15,8 +19,8 @@ WINREG_MODULE = '_winreg' if sys.version_info < (3, ) else 'winreg'
 
 class AbstractRaildriverDllTestCase(unittest.TestCase):
 
-    mock_dll = None
-    raildriver = None
+    mock_dll: Any
+    raildriver: Any
 
     def setUp(self):
         with mock.patch('ctypes.cdll.LoadLibrary') as mock_dll:
@@ -26,7 +30,7 @@ class AbstractRaildriverDllTestCase(unittest.TestCase):
 
 class ListenerTestCase(AbstractRaildriverDllTestCase):
 
-    listener = None
+    listener: Any
 
     def setUp(self):
         super(ListenerTestCase, self).setUp()
@@ -148,8 +152,14 @@ class RailDriverGetControllerValueTestCase(AbstractRaildriverDllTestCase):
         with mock.patch.object(self.mock_dll, 'GetControllerValue', return_value=0.5) as mock_gcv:
             with mock.patch.object(self.mock_dll, 'GetControllerList',
                                    return_value=six.b('Active::Throttle::Brake::Reverser')):
-                self.assertRaises(ValueError, self.raildriver.get_controller_value,
-                                  'Pantograph', raildriver.VALUE_CURRENT)
+                self.assertRaises(
+                    ValueError,
+                    self.raildriver.get_controller_value,
+                    'Pantograph',
+                    raildriver.VALUE_CURRENT,
+                )
+                # Should not call into GetControllerValue when name doesn't exist
+                mock_gcv.assert_not_called()
 
 
 class RailDriverGetCurrentControllerValue(AbstractRaildriverDllTestCase):

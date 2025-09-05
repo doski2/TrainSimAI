@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 import sys
 import time
-from typing import Any, Dict, Iterable, List
+from typing import Any, Dict, Iterable, Iterator, List
 import platform
 from pathlib import Path
+import re
 
 
 def _ensure_raildriver_on_path() -> None:
@@ -13,17 +14,16 @@ def _ensure_raildriver_on_path() -> None:
     Añade el paquete local `py-raildriver-master` al sys.path si existe
     junto al repo, para poder `import raildriver` sin instalación previa.
     """
-    here = os.path.abspath(os.path.dirname(__file__))
-    repo_root = os.path.abspath(os.path.join(here, os.pardir))
-    candidate = os.path.join(repo_root, "py-raildriver-master")
-    if os.path.isdir(candidate) and candidate not in sys.path:
-        sys.path.insert(0, candidate)
+    here = Path(__file__).resolve().parent
+    candidate = here.parent / "py-raildriver-master"
+    if candidate.exists():
+        sys.path.insert(0, str(candidate))
 
 
 _ensure_raildriver_on_path()
 
 # Importa RailDriver y Listener del paquete local
-from raildriver.library import RailDriver  # type: ignore  # noqa: E402
+from raildriver import RailDriver  # noqa: E402
 from raildriver.events import Listener  # type: ignore  # noqa: E402
 
 
@@ -176,7 +176,7 @@ class RDClient:
                     pass
         return res
 
-    def stream(self) -> Iterable[Dict[str, Any]]:
+    def stream(self) -> Iterator[Dict[str, Any]]:
         """Genera dicts con specials + subset de controles comunes."""
         common_ctrls = self._common_controls()
         while True:
@@ -195,14 +195,23 @@ class RDClient:
 
     def _common_controls(self) -> Iterable[str]:
         names = set(self.ctrl_index_by_name.keys())
-        prefer = [
+        # Alias / variantes habituales y útiles
+        preferred = {
             "SpeedometerKPH", "SpeedometerMPH",
             "Regulator", "Throttle",
-            "TrainBrakeControl", "LocoBrakeControl",
+            "TrainBrakeControl", "VirtualBrake", "TrainBrake",
+            "LocoBrakeControl", "VirtualEngineBrakeControl", "EngineBrake",
             "DynamicBrake", "Reverser",
-            # seguridad (si existen)
-            "SIFA", "VigilEnable", "PZB_85", "PZB_70", "PZB_55",
-            "PZB_1000", "PZB_500", "PZB_40",
-            "AFB_Speed", "LZB_V_SOLL", "LZB_V_ZIEL", "LZB_DISTANCE",
-        ]
-        return [n for n in prefer if n in names]
+            # Seguridad y sistemas
+            "Sifa", "SIFA", "SifaReset", "SifaLight", "SifaAlarm", "VigilEnable",
+            "PZB_85", "PZB_70", "PZB_55", "PZB_1000Hz", "PZB_500Hz", "PZB_40", "PZB_B40", "PZB_Warning",
+            "AFB", "AFB_Speed", "LZB_V_SOLL", "LZB_V_ZIEL", "LZB_DISTANCE",
+            # Indicadores útiles
+            "BrakePipePressureBAR", "TrainBrakeCylinderPressureBAR", "Ammeter", "ForceBar", "BrakeBar",
+            # Auxiliares
+            "Sander", "Headlights", "CabLight", "DoorsOpenCloseLeft", "DoorsOpenCloseRight", "VirtualPantographControl",
+        }
+        # Criterios por patrón para capturar familias comunes
+        rx = re.compile(r"^(PZB_|Sifa|AFB|LZB_|BrakePipe|TrainBrake|VirtualBrake|VirtualEngineBrake|Headlights|CabLight|Doors)", re.I)
+        chosen = {n for n in names if (n in preferred or rx.match(n))}
+        return sorted(chosen)
