@@ -76,3 +76,6 @@ end
 function MarkerPassed(name)
   emit_json({ type = "marker_pass", name = tostring(name) })
 end
+
+-- al cargar el script, emite un evento init para crear events.jsonl
+emit_json({ type = "init", note = "tsc_eventbus.lua loaded" })

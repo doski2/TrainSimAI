@@ -25,6 +25,8 @@ LUA_BUS = os.environ.get(
 def run(poll_hz: float = 10.0) -> None:
     os.makedirs(os.path.dirname(CSV_PATH), exist_ok=True)
     os.makedirs(os.path.dirname(EVT_PATH), exist_ok=True)
+    # Asegura que el fichero existe desde el arranque
+    open(EVT_PATH, "a", encoding="utf-8").close()
 
     rd = RDClient(poll_hz=poll_hz)
     csvlog = CsvLogger(CSV_PATH)
@@ -48,4 +50,4 @@ def run(poll_hz: float = 10.0) -> None:
 
 
 if __name__ == "__main__":
-    run(10.0)
+    run(12.0)  # 12 Hz objetivo ≈ 9–10 Hz efectivos
