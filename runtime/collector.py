@@ -32,9 +32,23 @@ def run(poll_hz: float = 10.0) -> None:
     csvlog = CsvLogger(CSV_PATH)
     bus = LuaEventBus(LUA_BUS, create_if_missing=True)
 
+    # Estado para odometría
+    prev_t = None
+    prev_v = None
+    odom_m = 0.0
+
     # Mantener UN solo generador — el ritmo ya lo gobierna RDClient.stream()
     for row in rd.stream():
-        row["t_wall"] = time.time()
+        now = time.time()
+        row["t_wall"] = now
+        # --- Odómetro (regla trapezoidal)
+        v = float(row.get("v_ms") or 0.0)
+        if prev_t is not None:
+            dt = max(0.0, now - prev_t)
+            v_prev = float(prev_v or v)
+            odom_m += 0.5 * (v_prev + v) * dt
+        row["odom_m"] = odom_m
+        prev_t, prev_v = now, v
         csvlog.write_row(row)
 
         # Drenar hasta 10 eventos por tick (para no quedarnos atrás)
@@ -57,6 +71,8 @@ def run(poll_hz: float = 10.0) -> None:
                     e["time"] = h + m/60.0 + s/3600.0
                 except Exception:
                     pass
+            if e.get("odom_m") is None:
+                e["odom_m"] = odom_m
             nrm = normalize(e)
             with open(EVT_PATH, "a", encoding="utf-8") as f:
                 f.write(json.dumps(nrm, ensure_ascii=False) + "\n")

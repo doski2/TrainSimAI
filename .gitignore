@@ -76,3 +76,7 @@ logs/
 
 # Node (if present)
 node_modules/
+
+# Local redirected outputs
+stdout.txt
+stderr.txt

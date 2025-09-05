@@ -7,11 +7,6 @@ Ruta del bus LUA no coincide.
 
 El LUA escribe a C:\Users\Public\Documents\tsc_eventbus.jsonl.
 
-El collector lee data/lua_eventbus.jsonl.
-Resultado: no verás eventos. 
-Mejor unificar por variable de entorno LUA_BUS_PATH y, si no está, usar la ruta del LUA.
-decir que escriba en data o pregunta si es mejor alli o aqui
-
 Nombres de controles no homogéneos.
 En rd_client._common_controls() estás buscando SIFA (mayúsculas) y PZB_1000/PZB_500 (sin Hz), pero los perfiles/controladores reales suelen exponer Sifa (camel) y PZB_1000Hz/PZB_500Hz. 
 También faltan alias comunes como VirtualBrake y VirtualEngineBrakeControl. 
