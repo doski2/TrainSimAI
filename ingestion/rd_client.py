@@ -106,6 +106,8 @@ class RDClient:
 
         # Listener para cambios y snapshots unificados
         self.listener = Listener(self.rd, interval=self.poll_dt)
+        # Cache de la última geo conocida para rellenar huecos momentáneos
+        self._last_geo: Dict[str, Any] = {"lat": None, "lon": None, "heading": None, "gradient": None}
         # Suscribir todos los controles disponibles (las especiales se evalúan siempre)
         try:
             self.listener.subscribe(list(self.ctrl_index_by_name.keys()))
@@ -139,14 +141,46 @@ class RDClient:
         coords = snap.get("!Coordinates")
         if coords and isinstance(coords, (list, tuple)) and len(coords) >= 2:
             out["lat"], out["lon"] = coords[0], coords[1]
+        else:
+            # Fallback directo a RailDriver si el snapshot no trae coordenadas
+            try:
+                c2 = self.rd.get_current_coordinates()
+                if isinstance(c2, (list, tuple)) and len(c2) >= 2:
+                    out["lat"], out["lon"] = c2[0], c2[1]
+            except Exception:
+                pass
         if "!Heading" in snap:
             out["heading"] = snap["!Heading"]
+        elif "heading" not in out:
+            try:
+                h = self.rd.get_current_heading()
+                out["heading"] = h
+            except Exception:
+                pass
         if "!Gradient" in snap:
             out["gradient"] = snap["!Gradient"]
+        elif "gradient" not in out:
+            try:
+                g = self.rd.get_current_gradient()
+                out["gradient"] = g
+            except Exception:
+                pass
         if "!FuelLevel" in snap:
             out["fuel_level"] = snap["!FuelLevel"]
+        elif "fuel_level" not in out:
+            try:
+                f = self.rd.get_current_fuel_level()
+                out["fuel_level"] = f
+            except Exception:
+                pass
         if "!IsInTunnel" in snap:
             out["is_in_tunnel"] = bool(snap["!IsInTunnel"])
+        elif "is_in_tunnel" not in out:
+            try:
+                it = self.rd.get_current_is_in_tunnel()
+                out["is_in_tunnel"] = bool(it)
+            except Exception:
+                pass
         if "!Time" in snap:
             # !Time suele venir como datetime.time o [h,m,s]
             tval = snap["!Time"]
@@ -154,6 +188,12 @@ class RDClient:
                 out["time_ingame_h"], out["time_ingame_m"], out["time_ingame_s"] = tval[:3]
             else:
                 out["time_ingame"] = str(tval)
+        else:
+            try:
+                tobj = self.rd.get_current_time()
+                out["time_ingame"] = str(tobj)
+            except Exception:
+                pass
         return out
 
     def read_controls(self, names: Iterable[str]) -> Dict[str, float]:
@@ -199,6 +239,13 @@ class RDClient:
                 else:
                     v_ms = float(v) / 3.6
                 row["v_ms"], row["v_kmh"] = v_ms, v_ms * 3.6
+            # Cacheo de última geo: si falta, usa la última válida
+            for k in ("lat", "lon", "heading", "gradient"):
+                if row.get(k) is None and self._last_geo.get(k) is not None:
+                    row[k] = self._last_geo[k]
+            for k in ("lat", "lon", "heading", "gradient"):
+                if row.get(k) is not None:
+                    self._last_geo[k] = row[k]
             # Alias prácticos para uniformar columnas del CSV
             if "Throttle" not in row and "Regulator" in row:
                 row["Throttle"] = row["Regulator"]
