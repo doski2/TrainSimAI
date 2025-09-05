@@ -5,15 +5,15 @@ from collections import Counter, deque
 CSV_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.join("data","runs","run.csv")
 EVT_PATH = sys.argv[2] if len(sys.argv) > 2 else os.path.join("data","events","events.jsonl")
 
-REQUIRED_SET = {
+MAIN_FIELDS = {
     "provider","product","engine","v_ms","v_kmh","t_wall",
     "VirtualBrake","TrainBrakeControl","VirtualEngineBrakeControl","Reverser",
     "BrakePipePressureBAR","TrainBrakeCylinderPressureBAR",
     "lat","lon","heading","gradient"
 }
-ALIAS_GROUPS = [
-    ("Regulator","Throttle"),
-    ("SpeedometerKPH","SpeedometerMPH")
+REQUIRED_ANY = [
+    {"SpeedometerKPH","SpeedometerMPH"},
+    {"Throttle","Regulator"},
 ]
 
 def read_csv(path):
@@ -29,13 +29,13 @@ def analyze_csv(fields, rows):
     print(f"[CSV] Filas: {len(rows)} | Columnas: {len(fields) if fields else 0}")
     if not rows:
         return
-    missing = [k for k in REQUIRED_SET if k not in (fields or [])]
-    # comprueba grupos alias: basta con que exista uno de cada grupo
-    for a, b in ALIAS_GROUPS:
-        if not ((a in (fields or [])) or (b in (fields or []))):
-            missing.append(f"{a}|{b}")
+    missing = [k for k in MAIN_FIELDS if k not in (fields or [])]
     if missing:
-        print(f"[CSV] Falta(n) columna(s) clave: {', '.join(sorted(set(missing)))}")
+        print(f"[CSV] Falta(n) columna(s) clave: {', '.join(sorted(missing))}")
+    # grupos “uno‑de” (basta con que exista 1 de cada grupo)
+    for group in REQUIRED_ANY:
+        if not any(g in (fields or []) for g in group):
+            print(f"[CSV] Falta al menos una de: {sorted(group)}")
     engines = Counter((r.get("engine") or "").strip() for r in rows if r.get("engine"))
     if engines:
         top_engine, cnt = engines.most_common(1)[0]

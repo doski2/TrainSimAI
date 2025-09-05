@@ -30,7 +30,7 @@ def run(poll_hz: float = 10.0) -> None:
 
     rd = RDClient(poll_hz=poll_hz)
     csvlog = CsvLogger(CSV_PATH)
-    bus = LuaEventBus(LUA_BUS)
+    bus = LuaEventBus(LUA_BUS, create_if_missing=True)
 
     # Mantener UN solo generador — el ritmo ya lo gobierna RDClient.stream()
     for row in rd.stream():

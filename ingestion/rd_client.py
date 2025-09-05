@@ -199,6 +199,9 @@ class RDClient:
                 else:
                     v_ms = float(v) / 3.6
                 row["v_ms"], row["v_kmh"] = v_ms, v_ms * 3.6
+            # Alias prácticos para uniformar columnas del CSV
+            if "Throttle" not in row and "Regulator" in row:
+                row["Throttle"] = row["Regulator"]
             yield row
             time.sleep(self.poll_dt)
 
