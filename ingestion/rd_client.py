@@ -182,6 +182,15 @@ class RDClient:
         while True:
             row: Dict[str, Any] = self.read_specials()
             row.update(self.read_controls(common_ctrls))
+            # Aliases and unified speedometer
+            if "Throttle" not in row and "Regulator" in row:
+                row["Throttle"] = row["Regulator"]
+            if "SpeedometerKPH" in row:
+                row["Speedometer"] = row["SpeedometerKPH"]
+                row["speed_unit"] = "kmh"
+            elif "SpeedometerMPH" in row:
+                row["Speedometer"] = row["SpeedometerMPH"]
+                row["speed_unit"] = "mph"
             # Derivar métricas útiles
             v = row.get("SpeedometerKPH") or row.get("SpeedometerMPH")
             if v is not None:
