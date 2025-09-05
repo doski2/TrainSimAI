@@ -43,7 +43,21 @@ def run(poll_hz: float = 10.0) -> None:
             evt = bus.poll()
             if not evt:
                 break
-            nrm = normalize(evt)
+            # Enriquecer evento con telemetría del tick si faltan campos
+            e = dict(evt)
+            if e.get("lat") in (None, "") and row.get("lat") is not None:
+                e["lat"] = float(row["lat"])  # type: ignore[arg-type]
+            if e.get("lon") in (None, "") and row.get("lon") is not None:
+                e["lon"] = float(row["lon"])  # type: ignore[arg-type]
+            if e.get("time") is None:
+                try:
+                    h = float(row.get("time_ingame_h") or 0)
+                    m = float(row.get("time_ingame_m") or 0)
+                    s = float(row.get("time_ingame_s") or 0)
+                    e["time"] = h + m/60.0 + s/3600.0
+                except Exception:
+                    pass
+            nrm = normalize(e)
             with open(EVT_PATH, "a", encoding="utf-8") as f:
                 f.write(json.dumps(nrm, ensure_ascii=False) + "\n")
             drained += 1
