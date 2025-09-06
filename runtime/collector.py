@@ -23,7 +23,7 @@ LUA_BUS = os.environ.get(
 )
 
 
-def run(poll_hz: float = 10.0) -> None:
+def run(poll_hz: float = 10.0, stop_time: float | None = None) -> None:
     os.makedirs(os.path.dirname(CSV_PATH), exist_ok=True)
     os.makedirs(os.path.dirname(EVT_PATH), exist_ok=True)
     # Asegura que el fichero existe desde el arranque
@@ -51,6 +51,9 @@ def run(poll_hz: float = 10.0) -> None:
 
     # Mantener UN solo generador — el ritmo ya lo gobierna RDClient.stream()
     for row in rd.stream():
+        # Auto-stop por tiempo si se indico
+        if stop_time and time.time() >= stop_time:
+            break
         now = time.time()
         row["t_wall"] = now
         # --- Odómetro (regla trapezoidal)
@@ -116,8 +119,16 @@ def run(poll_hz: float = 10.0) -> None:
                 f.write(json.dumps(nrm, ensure_ascii=False) + "\n")
             drained += 1
 
-
 if __name__ == "__main__":
+    import argparse, time as _t
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--hz", type=float, default=12.0, help="Frecuencia objetivo (Hz)")
+    ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0=infinito)")
+    args = ap.parse_args()
+    end_t = (_t.time() + args.duration) if args.duration > 0 else None
+    run(args.hz, stop_time=end_t)
+
+if __name__ == "__main__DISABLED_OLD":
     import argparse
     ap = argparse.ArgumentParser()
     ap.add_argument("--hz", type=float, default=12.0, help="Frecuencia objetivo")
@@ -129,5 +140,5 @@ if __name__ == "__main__":
         run(args.hz)
     except KeyboardInterrupt:
         pass
-if __name__ == "__main__":
+if __name__ == "__main__DISABLED":
     run(12.0)  # 12 Hz objetivo ≈ 9–10 Hz efectivos
