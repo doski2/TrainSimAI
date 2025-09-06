@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [ main, master ]
 
+env:
+  TSC_FAKE_RD: '1'   # usa backend simulado
+  RUN_RD_TESTS: '0'  # no ejecuta tests live de RailDriver real
+
 jobs:
   lint-and-test:
     runs-on: ubuntu-latest
@@ -31,7 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
           if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-          pip install ruff flake8 mypy pytest pytest-cov
+          pip install ruff flake8 mypy pytest
 
       - name: Ruff
         run: ruff check .
@@ -42,15 +46,5 @@ jobs:
       - name: Mypy (best-effort)
         run: mypy ingestion runtime tools --ignore-missing-imports
 
-      - name: Pytest (with coverage)
-        env:
-          TSC_FAKE_RD: "1"
-        run: |
-          pytest -q --cov=. --cov-report=xml
-
-      - name: Upload coverage artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-xml
-          path: coverage.xml
+      - name: Pytest
+        run: pytest -q
