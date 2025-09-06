@@ -46,8 +46,9 @@
     }
   },
   "notches": {
-    "train_brake": { "control": "VirtualBrake", "values": [0,0.22,0.35,0.48,0.61,0.74,0.87,1], "names": [] },
-    "loco_brake":  { "control": "VirtualEngineBrakeControl", "values": [-1.5,-0.0001,0,0.0001,1.5], "names": ["Release","Hold","Apply"] },
-    "headlights":  { "control": "Headlights", "values": [0,1,2], "names": [] }
+    "train_brake": { "control": "VirtualBrake", "values": [0, 0.22, 0.35, 0.48, 0.61, 0.74, 0.87, 1], "names": ["Dummy1","Dummy2","Dummy3","Dummy4","Dummy5","Dummy6","Dummy7","Dummy8"] },
+    "loco_brake":  { "control": "VirtualEngineBrakeControl", "values": [-1.5, -0.0001, 0, 0.0001, 1.5], "names": ["Release","Hold","Apply"] },
+    "headlights":  { "control": "Headlights", "values": [0,1,2], "names": [] },
+    "afb_enable":  { "control": "AFB", "values": [], "names": [] }
   }
 }
