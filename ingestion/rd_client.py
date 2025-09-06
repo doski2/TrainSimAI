@@ -140,21 +140,35 @@ class RDClient:
         # Coordenadas/tiempo/rumbo/pendiente…
         coords = snap.get("!Coordinates")
         if coords and isinstance(coords, (list, tuple)) and len(coords) >= 2:
-            out["lat"], out["lon"] = coords[0], coords[1]
+            out["lat"], out["lon"] = float(coords[0]), float(coords[1])
         else:
             # Fallback directo a RailDriver si el snapshot no trae coordenadas
             try:
                 c2 = self.rd.get_current_coordinates()
                 if isinstance(c2, (list, tuple)) and len(c2) >= 2:
-                    out["lat"], out["lon"] = c2[0], c2[1]
+                    out["lat"], out["lon"] = float(c2[0]), float(c2[1])
             except Exception:
                 pass
+        # Heading en la DLL a veces llega en radianes (~0..6.28). Añade grados también.
         if "!Heading" in snap:
-            out["heading"] = snap["!Heading"]
+            try:
+                hdg = float(snap["!Heading"])
+            except Exception:
+                hdg = snap["!Heading"]
+            out["heading"] = hdg
         elif "heading" not in out:
             try:
-                h = self.rd.get_current_heading()
+                h = float(self.rd.get_current_heading())
                 out["heading"] = h
+            except Exception:
+                pass
+        if "heading" in out and out["heading"] is not None:
+            try:
+                _hdg = float(out["heading"])
+                if -7.0 <= _hdg <= 7.0:  # parece radianes
+                    out["heading_deg"] = (_hdg * 180.0 / 3.141592653589793) % 360.0
+                else:
+                    out["heading_deg"] = _hdg % 360.0
             except Exception:
                 pass
         if "!Gradient" in snap:

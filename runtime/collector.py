@@ -37,6 +37,9 @@ def run(poll_hz: float = 10.0) -> None:
     prev_v = None
     odom_m = 0.0
 
+    # Señal del último evento escrito para de-dup
+    last_sig = None  # (type, marker_or_station, time)
+
     # Mantener UN solo generador — el ritmo ya lo gobierna RDClient.stream()
     for row in rd.stream():
         now = time.time()
@@ -59,6 +62,7 @@ def run(poll_hz: float = 10.0) -> None:
                 break
             # Enriquecer evento con telemetría del tick si faltan campos
             e = dict(evt)
+            e["source"] = "collector"
             if e.get("lat") in (None, "") and row.get("lat") is not None:
                 e["lat"] = float(row["lat"])  # type: ignore[arg-type]
             if e.get("lon") in (None, "") and row.get("lon") is not None:
@@ -73,6 +77,14 @@ def run(poll_hz: float = 10.0) -> None:
                     pass
             if e.get("odom_m") is None:
                 e["odom_m"] = odom_m
+
+            # De-dup básico: mismo tipo+identificador+tiempo ⇒ no reescribir
+            ident = e.get("marker") or e.get("station") or e.get("payload")
+            sig = (e.get("type"), ident, e.get("time"))
+            if sig == last_sig:
+                drained += 1
+                continue
+            last_sig = sig
             nrm = normalize(e)
             with open(EVT_PATH, "a", encoding="utf-8") as f:
                 f.write(json.dumps(nrm, ensure_ascii=False) + "\n")

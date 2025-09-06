@@ -1,5 +1,6 @@
 haz test de todo 
-sube el zip a gpt5 y que revise si esta bien todo despues de corregirt todo y preguntas si esta bien y probar
+sube el zip a gpt5 y que revise si esta bien todo despues de corregirt todo 
+y preguntas si esta bien y probar-he subido el enlace github aver que lee
 siempre: resumen del dia fecha y hora de lo que se ha echo en .md
 pendiente: corregor los fallos
 
