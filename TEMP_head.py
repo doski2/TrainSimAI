@@ -214,14 +214,6 @@ class RDClient:
         snap = self._snapshot()
         res: Dict[str, float] = {}
         for n in names:
-            # Lectura directa preferente por índice
-            idx = self.ctrl_index_by_name.get(n)
-            if idx is not None:
-                try:
-                    res[n] = float(self.rd.get_current_controller_value(idx))
-                    continue
-                except Exception:
-                    pass
             if n in snap and snap[n] is not None:
                 try:
                     res[n] = float(snap[n])
@@ -246,63 +238,3 @@ class RDClient:
             row.update(self.read_controls(common_ctrls))
             # Aliases and unified speedometer
             if "Throttle" not in row and "Regulator" in row:
-                row["Throttle"] = row["Regulator"]
-            if "SpeedometerKPH" in row:
-                row["Speedometer"] = row["SpeedometerKPH"]
-                row["speed_unit"] = "kmh"
-            elif "SpeedometerMPH" in row:
-                row["Speedometer"] = row["SpeedometerMPH"]
-                row["speed_unit"] = "mph"
-            # Derivar métricas útiles
-            v = row.get("SpeedometerKPH") or row.get("SpeedometerMPH")
-            if v is not None:
-                if "SpeedometerMPH" in row and "SpeedometerKPH" not in row:
-                    v_ms = float(v) * 0.44704
-                else:
-                    v_ms = float(v) / 3.6
-                row["v_ms"], row["v_kmh"] = v_ms, v_ms * 3.6
-            # Cacheo de última geo: si falta, usa la última válida
-            for k in ("lat", "lon", "heading", "gradient"):
-                if row.get(k) is None and self._last_geo.get(k) is not None:
-                    row[k] = self._last_geo[k]
-            for k in ("lat", "lon", "heading", "gradient"):
-                if row.get(k) is not None:
-                    self._last_geo[k] = row[k]
-            # Alias prácticos para uniformar columnas del CSV
-            if "Throttle" not in row and "Regulator" in row:
-                row["Throttle"] = row["Regulator"]
-            yield row
-            time.sleep(self.poll_dt)
-
-    def _common_controls(self) -> List[str]:
-        names = set(self.ctrl_index_by_name.keys())
-        # Alias / variantes habituales y útiles
-        preferred = {
-            "SpeedometerKPH", "SpeedometerMPH",
-            "Regulator", "Throttle",
-            "TrainBrakeControl", "VirtualBrake", "TrainBrake",
-            "LocoBrakeControl", "VirtualEngineBrakeControl", "EngineBrake",
-            "DynamicBrake", "Reverser",
-            # Seguridad y sistemas
-            "Sifa", "SIFA", "SifaReset", "SifaLight", "SifaAlarm", "VigilEnable",
-            "PZB_85", "PZB_70", "PZB_55", "PZB_1000Hz", "PZB_500Hz", "PZB_40", "PZB_B40", "PZB_Warning",
-            "AFB", "AFB_Speed", "LZB_V_SOLL", "LZB_V_ZIEL", "LZB_DISTANCE",
-            # Indicadores útiles
-            "BrakePipePressureBAR", "TrainBrakeCylinderPressureBAR", "Ammeter", "ForceBar", "BrakeBar",
-            # Auxiliares
-            "Sander", "Headlights", "CabLight", "DoorsOpenCloseLeft", "DoorsOpenCloseRight", "VirtualPantographControl",
-        }
-        # Criterios por patrón para capturar familias comunes
-        rx = re.compile(r"^(PZB_|Sifa|AFB|LZB_|BrakePipe|TrainBrake|VirtualBrake|VirtualEngineBrake|Headlights|CabLight|Doors)", re.I)
-        chosen = {n for n in names if (n in preferred or rx.match(n))}
-        return sorted(chosen)
-
-    # -------- Superset de campos para “primar” el CSV ----------------------
-    def schema(self) -> List[str]:
-        base = [
-            "provider", "product", "engine",
-            "lat", "lon", "heading", "heading_deg", "gradient", "fuel_level", "is_in_tunnel",
-            "time_ingame_h", "time_ingame_m", "time_ingame_s", "time_ingame",
-            "v_ms", "v_kmh", "odom_m", "t_wall",
-        ]
-        return sorted(set(base + self._common_controls()))

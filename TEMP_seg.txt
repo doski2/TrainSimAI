@@ -1,0 +1,19 @@
+    def read_controls(self, names: Iterable[str]) -> Dict[str, float]:
+        snap = self._snapshot()
+        res: Dict[str, float] = {}
+        for n in names:
+            if n in snap and snap[n] is not None:
+                try:
+                    res[n] = float(snap[n])
+                    continue
+                except Exception:
+                    pass
+            # fallback lectura directa (índice es más eficiente)
+            idx = self.ctrl_index_by_name.get(n)
+            if idx is not None:
+                try:
+                    res[n] = float(self.rd.get_current_controller_value(idx))
+                except Exception:
+                    # si falla, ignoramos ese control en esta pasada
+                    pass
+        return res

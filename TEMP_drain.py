@@ -3,13 +3,6 @@ from __future__ import annotations
 import argparse, os, json, time, csv
 from pathlib import Path
 from typing import Iterable, Dict, Any, Optional
-import sys
-
-# Asegura que el repo raíz está en sys.path para poder importar paquetes hermanos
-repo_root = Path(__file__).resolve().parents[1]
-if str(repo_root) not in sys.path:
-    sys.path.insert(0, str(repo_root))
-
 from runtime.events_bus import normalize
 
 def load_offset(state_path: Path, bus_path: Path, from_start: bool) -> int:
@@ -119,3 +112,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

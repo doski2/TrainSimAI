@@ -1,93 +1,3 @@
-from __future__ import annotations
-
-import os
-import sys
-import time
-from typing import Any, Dict, Iterable, Iterator, List
-import platform
-from pathlib import Path
-import re
-
-
-def _ensure_raildriver_on_path() -> None:
-    """
-    Añade el paquete local `py-raildriver-master` al sys.path si existe
-    junto al repo, para poder `import raildriver` sin instalación previa.
-    """
-    here = Path(__file__).resolve().parent
-    candidate = here.parent / "py-raildriver-master"
-    if candidate.exists():
-        sys.path.insert(0, str(candidate))
-
-
-_ensure_raildriver_on_path()
-
-# Importa RailDriver y Listener del paquete local
-from raildriver import RailDriver  # noqa: E402
-from raildriver.events import Listener  # type: ignore  # noqa: E402
-
-
-# Claves especiales disponibles en Listener (no se suscriben; se evalúan siempre)
-SPECIAL_KEYS: List[str] = list(Listener.special_fields.keys())  # type: ignore[attr-defined]
-
-
-def _locate_raildriver_dll() -> str | None:
-    """Selecciona la DLL que coincide con la arquitectura de Python.
-
-    - En Python de 64 bits, preferir 'RailDriver64.dll'.
-    - En Python de 32 bits, preferir 'RailDriver.dll'.
-    - Busca rutas típicas de Steam; permitir sobreescritura via env RAILWORKS_PLUGINS.
-    """
-    wants_64 = platform.architecture()[0] == "64bit"
-    candidates: list[Path] = []
-    # Sobrescritura del usuario
-    env_plugins = os.environ.get("RAILWORKS_PLUGINS")
-    if env_plugins:
-        base = Path(env_plugins)
-        candidates += [base / "RailDriver64.dll", base / "RailDriver.dll"]
-    # Rutas comunes de Steam
-    common_bases = [
-        Path(os.environ.get("PROGRAMFILES(X86)", r"C:\\Program Files (x86)"))
-        / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
-        Path(os.environ.get("PROGRAMFILES", r"C:\\Program Files"))
-        / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
-    ]
-    # Intentar SteamPath del registro, si está disponible
-    try:
-        import winreg  # type: ignore
-
-        key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"Software\Valve\Steam")
-        steam_path, _ = winreg.QueryValueEx(key, "SteamPath")
-        reg_base = Path(steam_path) / "steamapps" / "common" / "RailWorks" / "plugins"
-        common_bases.insert(0, reg_base)
-    except Exception:
-        pass
-    for base in common_bases:
-        candidates += [base / "RailDriver64.dll", base / "RailDriver.dll"]
-    # Elegir la mejor coincidencia
-    existing = [p for p in candidates if p.exists()]
-    if not existing:
-        return None
-    if wants_64:
-        for p in existing:
-            if p.name.lower() == "raildriver64.dll":
-                return str(p)
-    # Alternativa: 32 bits o la primera encontrada
-    return str(existing[0])
-
-
-class RDClient:
-    """
-    Wrapper de py-raildriver con utilidades de lectura puntual y streaming.
-
-    - Usa `Listener` para obtener snapshot consistente de controles + especiales.
-    - Expone utilidades para obtener un subconjunto habitual de controles.
-    """
-
-    def __init__(self, poll_dt: float = 0.2, poll_hz: float | None = None) -> None:
-        if poll_hz and poll_hz > 0:
-            self.poll_dt = 1.0 / float(poll_hz)
-        else:
             self.poll_dt = float(poll_dt)
         # Seleccionar la DLL adecuada para evitar WinError 193 (arquitecturas distintas)
         dll_path = _locate_raildriver_dll()
@@ -214,14 +124,6 @@ class RDClient:
         snap = self._snapshot()
         res: Dict[str, float] = {}
         for n in names:
-            # Lectura directa preferente por índice
-            idx = self.ctrl_index_by_name.get(n)
-            if idx is not None:
-                try:
-                    res[n] = float(self.rd.get_current_controller_value(idx))
-                    continue
-                except Exception:
-                    pass
             if n in snap and snap[n] is not None:
                 try:
                     res[n] = float(snap[n])
@@ -274,7 +176,7 @@ class RDClient:
             yield row
             time.sleep(self.poll_dt)
 
-    def _common_controls(self) -> List[str]:
+    def _common_controls(self) -> Iterable[str]:
         names = set(self.ctrl_index_by_name.keys())
         # Alias / variantes habituales y útiles
         preferred = {
@@ -296,13 +198,3 @@ class RDClient:
         rx = re.compile(r"^(PZB_|Sifa|AFB|LZB_|BrakePipe|TrainBrake|VirtualBrake|VirtualEngineBrake|Headlights|CabLight|Doors)", re.I)
         chosen = {n for n in names if (n in preferred or rx.match(n))}
         return sorted(chosen)
-
-    # -------- Superset de campos para “primar” el CSV ----------------------
-    def schema(self) -> List[str]:
-        base = [
-            "provider", "product", "engine",
-            "lat", "lon", "heading", "heading_deg", "gradient", "fuel_level", "is_in_tunnel",
-            "time_ingame_h", "time_ingame_m", "time_ingame_s", "time_ingame",
-            "v_ms", "v_kmh", "odom_m", "t_wall",
-        ]
-        return sorted(set(base + self._common_controls()))

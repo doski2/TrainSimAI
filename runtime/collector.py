@@ -38,6 +38,8 @@ def run(poll_hz: float = 10.0) -> None:
     rd = RDClient(poll_hz=poll_hz)
     csvlog = CsvLogger(CSV_PATH)
     bus = LuaEventBus(LUA_BUS, create_if_missing=True)
+    # Primar cabecera con superset de campos (specials + controles + derivados)
+    csvlog.init_with_fields(rd.schema())
 
     # Estado para odometría
     prev_t = None

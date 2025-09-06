@@ -11,11 +11,21 @@ class CsvLogger:
         self.path = path
         self.delimiter = delimiter
         self.fieldnames = None
+        # Mantenemos un handle para reducir errores de sharing en Windows
         self._file = None  # persistent handle to mitigate Windows share violations
         self._writer = None
         dirpath = os.path.dirname(path)
         if dirpath:
             os.makedirs(dirpath, exist_ok=True)
+
+    def init_with_fields(self, fields):
+        """Fija la cabecera con un superset conocido antes de la primera fila."""
+        # Normaliza, deduplica y ordena
+        fields = sorted(list(dict.fromkeys(fields)))
+        self.fieldnames = fields
+        # Abre nuevo archivo con cabecera fija
+        self._open_new()
+        self._writer.writeheader()
 
     def write_row(self, row: Dict[str, Any]) -> None:
         if self.fieldnames is None:
