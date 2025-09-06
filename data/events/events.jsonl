@@ -1,1 +1,59 @@
 {"t_ingame": 1, "lat": 51.10596466064453, "lon": 13.635838508605957, "type": "marker_pass", "marker": "manual2"}
+{"t_ingame": 1, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "marker_pass", "marker": "manual2"}
+{"t_ingame": 1, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "marker_pass", "marker": "manual2"}
+{"t_ingame": 1, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 2, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "custom", "payload": {"type": "limit_reached", "limit_kmh": 80, "time": 2, "lat": 51.1135139465332, "lon": 13.609774589538574, "odom_m": 0.0, "dist_m_travelled": 0.0}}
+{"t_ingame": 2, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "speed_limit_change", "limit_prev_kmh": 100, "limit_next_kmh": 90, "dist_est_m": null}
+{"t_ingame": 3, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "custom", "payload": {"type": "limit_reached", "limit_kmh": 90, "time": 3, "lat": 51.1135139465332, "lon": 13.609774589538574, "odom_m": 0.0, "dist_m_travelled": 0.0}}
+{"t_ingame": 3, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "speed_limit_change", "limit_prev_kmh": 90, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "marker_pass", "marker": "manual2"}
+{"t_ingame": 1, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 2, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "custom", "payload": {"type": "limit_reached", "limit_kmh": 80, "time": 2, "lat": 51.1135139465332, "lon": 13.609774589538574, "odom_m": 0.0, "dist_m_travelled": 0.0}}
+{"t_ingame": 2, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "speed_limit_change", "limit_prev_kmh": 100, "limit_next_kmh": 90, "dist_est_m": null}
+{"t_ingame": 3, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "custom", "payload": {"type": "limit_reached", "limit_kmh": 90, "time": 3, "lat": 51.1135139465332, "lon": 13.609774589538574, "odom_m": 0.0, "dist_m_travelled": 0.0}}
+{"t_ingame": 3, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "speed_limit_change", "limit_prev_kmh": 90, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "custom", "payload": {"type": "limit_reached", "limit_kmh": 80, "time": 1, "lat": 51.1135139465332, "lon": 13.609774589538574, "odom_m": 0.0, "dist_m_travelled": 0.0}}
+{"t_ingame": 1, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1.05, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "custom", "payload": {"type": "limit_reached", "limit_kmh": 80, "time": 1.05, "lat": 51.1135139465332, "lon": 13.609774589538574, "odom_m": 0.0, "dist_m_travelled": 0.0}}
+{"t_ingame": 1.05, "lat": 51.1135139465332, "lon": 13.609774589538574, "type": "speed_limit_change", "limit_prev_kmh": 80, "limit_next_kmh": 60, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.113513946537566, "lon": 13.609774589535103, "type": "marker_pass", "marker": "manual2"}
+{"t_ingame": 1, "lat": 51.113513946537566, "lon": 13.609774589535103, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 2, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.001007260453276031, "odom_m": 0.001007260453276031}
+{"t_ingame": 2, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "speed_limit_change", "limit_prev_kmh": 100, "limit_next_kmh": 90, "dist_est_m": null}
+{"t_ingame": 3, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "limit_reached", "limit_kmh": 90, "dist_m_travelled": 0.001007260453276031, "odom_m": 0.001007260453276031}
+{"t_ingame": 3, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "speed_limit_change", "limit_prev_kmh": 90, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.001007260453276031, "odom_m": 0.001007260453276031}
+{"t_ingame": 1, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1.05, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.001007260453276031, "odom_m": 0.001007260453276031}
+{"t_ingame": 1.05, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "speed_limit_change", "limit_prev_kmh": 80, "limit_next_kmh": 60, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "limit_reached", "limit_kmh": 60, "dist_m_travelled": 0.001007260453276031, "odom_m": 0.001007260453276031}
+{"t_ingame": 1, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1.05, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.001007260453276031, "odom_m": 0.001007260453276031}
+{"t_ingame": 1.05, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "speed_limit_change", "limit_prev_kmh": 80, "limit_next_kmh": 60, "dist_est_m": null}
+{"t_ingame": 4, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "limit_reached", "limit_kmh": 60, "dist_m_travelled": 0.001007260453276031, "odom_m": 0.001007260453276031}
+{"t_ingame": 4, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "speed_limit_change", "limit_prev_kmh": 100, "limit_next_kmh": 90, "dist_est_m": null}
+{"t_ingame": 5, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "limit_reached", "limit_kmh": 90, "dist_m_travelled": 0.001007260453276031, "odom_m": 0.001007260453276031}
+{"t_ingame": 5, "lat": 51.11351396246405, "lon": 13.609774576857006, "type": "speed_limit_change", "limit_prev_kmh": 90, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.11351394653516, "lon": 13.609774589537022, "type": "marker_pass", "marker": "manual2"}
+{"t_ingame": 1, "lat": 51.11351394653516, "lon": 13.609774589537022, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 2, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.0009381590547540614, "odom_m": 0.0009381590547540614}
+{"t_ingame": 2, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 100, "limit_next_kmh": 90, "dist_est_m": null}
+{"t_ingame": 3, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 90, "dist_m_travelled": 0.0, "odom_m": 0.0009381590547540614}
+{"t_ingame": 3, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 90, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.0, "odom_m": 0.0009381590547540614}
+{"t_ingame": 1, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1.05, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.0, "odom_m": 0.0009381590547540614}
+{"t_ingame": 1.05, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 80, "limit_next_kmh": 60, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 60, "dist_m_travelled": 0.0, "odom_m": 0.0009381590547540614}
+{"t_ingame": 1, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1.05, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.0, "odom_m": 0.0009381590547540614}
+{"t_ingame": 1.05, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 80, "limit_next_kmh": 60, "dist_est_m": null}
+{"t_ingame": 4, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 60, "dist_m_travelled": 0.0, "odom_m": 0.0009381590547540614}
+{"t_ingame": 4, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 100, "limit_next_kmh": 90, "dist_est_m": null}
+{"t_ingame": 5, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 90, "dist_m_travelled": 0.0, "odom_m": 0.0009381590547540614}
+{"t_ingame": 5, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 90, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.0, "odom_m": 0.0009381590547540614}
+{"t_ingame": 1, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 120, "limit_next_kmh": 80, "dist_est_m": null}
+{"t_ingame": 1.05, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "limit_reached", "limit_kmh": 80, "dist_m_travelled": 0.0, "odom_m": 0.0009381590547540614}
+{"t_ingame": 1.05, "lat": 51.113513961442884, "lon": 13.609774577669894, "type": "speed_limit_change", "limit_prev_kmh": 80, "limit_next_kmh": 60, "dist_est_m": null}

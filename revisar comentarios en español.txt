@@ -1,24 +1,14 @@
 haz test de todo 
-sube el zip a gpt5 y que revise si esta bien todo despues de corregirt todo 
+que revise si esta bien todo despues de corregirt todo 
 y preguntas si esta bien y probar-he subido el enlace github aver que lee
 siempre: resumen del dia fecha y hora de lo que se ha echo en .md
-pendiente: corregor los fallos
+corregor los fallos
 
-Nota sobre 32/64-bit (por si después aparece otro error)
-
-Si tras instalar te sale algo tipo OSError: [WinError 193] %1 no es una aplicación Win32 válida, es por mezcla de arquitecturas:
-
-TSC/RailDriver.dll suele ser 32-bit. Usa Python 32-bit o el wrapper que cargue la DLL adecuada.
-
-Comprueba tu Python: python -c "import struct; print(8*struct.calcsize('P'))" → 32 o 64.
-comenta lo de 32 o 6bit
-
-Ruta del bus LUA no coincide.
-
-El LUA escribe a C:\Users\Public\Documents\tsc_eventbus.jsonl.
-
-Nombres de controles no homogéneos.
+1.Nombres de controles no homogéneos.
 En rd_client._common_controls() estás buscando SIFA (mayúsculas) y PZB_1000/PZB_500 (sin Hz), pero los perfiles/controladores reales suelen exponer Sifa (camel) y PZB_1000Hz/PZB_500Hz. 
 También faltan alias comunes como VirtualBrake y VirtualEngineBrakeControl. 
 Consecuencia: no se loguean esos campos aunque existan
 decir que por ahora las seguridaded las guarde no las vamos a usar actualmente
+
+2.recordar curva de frenado cuando llege
+

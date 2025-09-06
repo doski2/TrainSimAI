@@ -63,7 +63,7 @@ class FakeRailDriver:
         }
         self._values: Dict[str, float] = {
             "SpeedometerKPH": 0.0,
-            "Regulator": 0.0,
+            "Regulator": 0.3,  # arranca con un poco de tracción
             "VirtualBrake": 0.0,
             "VirtualEngineBrakeControl": 0.0,
             "Reverser": 1.0,
@@ -241,4 +241,3 @@ class FakeListener:
             except Exception:
                 # si falla, deja el valor previo o None
                 self.current_data[field_name] = self.current_data.get(field_name)
-
