@@ -96,7 +96,9 @@ class RDClient:
     - Expone utilidades para obtener un subconjunto habitual de controles.
     """
 
-    def __init__(self, poll_dt: float = 0.2, poll_hz: float | None = None) -> None:
+    def __init__(self, poll_dt: float = 0.2, poll_hz: float | None = None, dll_location: str | None = None) -> None:
+        # Permite sobrescribir por env: TSC_RD_DLL_DIR
+        self.dll_location = os.getenv("TSC_RD_DLL_DIR") or dll_location
         if poll_hz and poll_hz > 0:
             self.poll_dt = 1.0 / float(poll_hz)
         else:
@@ -106,8 +108,25 @@ class RDClient:
             # Alias RailDriver apunta al FakeRailDriver cuando USE_FAKE=True
             self.rd = RailDriver()
         else:
+            # Registrar directorio de DLL si viene por self.dll_location
+            if self.dll_location:
+                try:
+                    if hasattr(os, "add_dll_directory"):
+                        os.add_dll_directory(self.dll_location)  # type: ignore[attr-defined]
+                except Exception:
+                    pass
             dll_path = _locate_raildriver_dll()
-            self.rd = RailDriver(dll_location=dll_path) if dll_path else RailDriver()
+            # Intentar registrar el directorio de la DLL en el buscador de Windows (Py 3.8+)
+            if dll_path:
+                try:
+                    dll_dir = os.path.dirname(dll_path)
+                    if dll_dir and hasattr(os, "add_dll_directory"):
+                        os.add_dll_directory(dll_dir)  # type: ignore[attr-defined]
+                except Exception:
+                    # Si falla, continuamos sin registrar ruta explícita
+                    pass
+            # Instanciar sin kwargs para compatibilidad con forks que no aceptan dll_location
+            self.rd = RailDriver()
         # Necesario para intercambiar datos con TS
         try:
             self.rd.set_rail_driver_connected(True)
@@ -322,4 +341,3 @@ class RDClient:
             "v_ms", "v_kmh", "odom_m", "t_wall",
         ]
         return sorted(set(base + self._common_controls()))
-

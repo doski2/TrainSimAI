@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import List, cast
 from runtime.csv_logger import CsvLogger
 import csv
 
@@ -40,9 +41,8 @@ def test_csv_header_and_extension(tmp_path: Path):
     # leer y verificar
     with p.open(newline="", encoding="utf-8") as f:
         r = csv.DictReader(f, delimiter=";")
-        cols = r.fieldnames
+        cols = cast(List[str], r.fieldnames or [])
         rows = list(r)
     assert set(fields).issubset(set(cols))
     assert rows[-1]["Regulator"] == "0.25"
     assert rows[-1]["VirtualBrake"] == "0.0"
-
