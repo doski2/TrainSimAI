@@ -78,5 +78,10 @@ logs/
 node_modules/
 
 # Local redirected outputs
-stdout.txt
-stderr.txt
+.tmp_run/
+data/runs/
+data/events/*.jsonl
+plot_speed_vs_odom.png
+events_timeline.csv
+TEMP_*.py
+TEMP_*.txt
