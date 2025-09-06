@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Dict, Any
+ 
 
 
 # Convierte eventos crudos (LUA o heurísticas) a un modelo estable

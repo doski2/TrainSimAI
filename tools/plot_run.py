@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-"""
+r"""
 plot_run.py — Gráfico rápido (MVP)
 Lee:
 - data/runs/run.csv           (CSV ; con v_kmh, odom_m, time_ingame_{h,m,s})
@@ -8,9 +8,12 @@ Lee:
 Dibuja v_kmh vs odom_m con líneas en speed_limit_change / limit_reached / marker_pass.
 Uso:
   python tools/plot_run.py
-  python tools/plot_run.py --run data\runs\run.csv --events data\events\events.jsonl --out plot_speed_vs_odom.png
+  python tools/plot_run.py --run data/runs/run.csv --events data/events/events.jsonl --out plot_speed_vs_odom.png
 """
-import argparse, csv, json, os
+import argparse
+import csv
+import json
+import os
 from typing import List, Dict, Any
 
 import matplotlib
@@ -128,7 +131,8 @@ def plot_speed_vs_odom(run: Dict[str, List[float]], evtable: List[Dict[str, Any]
         elif t == "marker_pass":
             plt.axvline(x, linestyle="-.", alpha=0.5)
             plt.text(x, ymax*0.60, f"M:{r.get('marker','')}", rotation=90, va="top", ha="right", fontsize=7)
-    plt.xlabel("odom_m"); plt.ylabel("v_kmh")
+    plt.xlabel("odom_m")
+    plt.ylabel("v_kmh")
     plt.title("Velocidad vs Odómetro (con eventos)")
     plt.legend()
     plt.tight_layout()
@@ -166,4 +170,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

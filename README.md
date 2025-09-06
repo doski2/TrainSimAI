@@ -57,6 +57,9 @@ python -m runtime.collector --bus-from-start --duration 5
 python -m runtime.collector --bus-from-start
 ```
 
+Reprocesar histórico del bus (si escribiste antes de arrancar):
+python -m runtime.collector --bus-from-start
+
 ### Validar
 ```powershell
 python tools/validate_run.py

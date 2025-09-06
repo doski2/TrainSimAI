@@ -1,7 +1,8 @@
 import json
 import csv
 from pathlib import Path
-import importlib.util, sys
+import importlib.util
+import sys
 
 
 def _import_drain(repo: Path):

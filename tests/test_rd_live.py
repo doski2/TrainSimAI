@@ -1,4 +1,5 @@
-import os, pytest
+import os
+import pytest
 
 RUN_LIVE = os.environ.get("RUN_RD_TESTS") == "1"
 

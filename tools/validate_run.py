@@ -1,5 +1,8 @@
 from __future__ import annotations
-import csv, json, os, sys
+import csv
+import json
+import os
+import sys
 from collections import Counter, deque
 
 CSV_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.join("data","runs","run.csv")

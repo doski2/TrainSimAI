@@ -48,6 +48,9 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
     prev_v = None
     odom_m = 0.0
 
+    # Seguimiento de último anuncio de límite (snapshot crudo)
+    pending_limit = None  # dict con {"limit_next_kmh","odom_m","time","lat","lon"}
+
     # Señal del último evento escrito para de-dup
     last_sig = None  # (type, marker_or_station, time)
 
@@ -76,10 +79,6 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
 
         # Drenar hasta 10 eventos por tick (para no quedarnos atrás)
         drained = 0
-        # ---- seguimiento de limites para distancia aproximada
-        # guardamos el ultimo anuncio de limite con odometro del momento
-        if not hasattr(run, "_pending_limit"):
-            run._pending_limit = None  # type: ignore[attr-defined]
         while drained < 10:
             evt = bus.poll()
             if not evt:
@@ -99,14 +98,6 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
                     e["time"] = h + m/60.0 + s/3600.0
                 except Exception:
                     pass
-                # override: guarda snapshot crudo con odometro incluido
-                run._pending_limit = {
-                    "limit_next_kmh": nrm["limit_next_kmh"],
-                    "odom_m": odom_m,
-                    "time": e.get("time"),
-                    "lat": e.get("lat"),
-                    "lon": e.get("lon"),
-                }  # type: ignore[attr-defined]
             if e.get("odom_m") is None:
                 e["odom_m"] = odom_m
 
@@ -129,15 +120,14 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
                 drained += 1
                 continue
             # --- logica de alcance de limite (estimado)
+            # Normaliza SIEMPRE el evento actual antes de ramificar
+            nrm = normalize(e)
             # Si llega un speed_limit_change nuevo y habia uno pendiente,
             # consideramos que acabamos de "alcanzar" la placa del pendiente.
-            if e.get("type") == "speed_limit_change":
-                prev = getattr(run, "_pending_limit")  # type: ignore[attr-defined]
+            if nrm.get("type") == "speed_limit_change":
+                prev = pending_limit
                 if prev:
-                    try:
-                        dist_travelled = float(e.get("odom_m", 0.0)) - float(prev.get("odom_m", 0.0))
-                    except Exception:
-                        dist_travelled = None  # type: ignore[assignment]
+                    dist = float(odom_m) - float(prev["odom_m"])  # distancia por odometro
                     reach = {
                         "type": "limit_reached",
                         "limit_kmh": prev["limit_next_kmh"],
@@ -145,7 +135,7 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
                         "lat": e.get("lat"),
                         "lon": e.get("lon"),
                         "odom_m": odom_m,
-                        "dist_m_travelled": float(odom_m) - float(prev["odom_m"]),
+                        "dist_m_travelled": dist,
                     }
                     # Distancia geodésica (Haversine) si hay coordenadas
                     try:
@@ -160,34 +150,28 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
                             reach["dist_geo_m"] = 2*R*math.asin(math.sqrt(a))
                     except Exception:
                         pass
-                    # Anti-ruido: ignora "alcanzado" si casi no avanzaste
-                    try:
-                        _d = float(reach.get("dist_m_travelled", 0.0))
-                    except Exception:
-                        _d = 0.0
-                    if _d < 5.0:
-                        # opcional: no escribir nada si <5 m; salta al siguiente evento
-                        pass
-                    else:
+                    # Anti-ruido: ignora si avance < 5 m
+                    if dist >= 5.0:
                         rn = normalize(reach)
                         with open(EVT_PATH, "a", encoding="utf-8") as f:
                             f.write(json.dumps(rn, ensure_ascii=False) + "\n")
-                # ahora normalizamos y escribimos el nuevo "anuncio"
-                nrm = normalize(e)
-                # y guardamos este como pendiente, incluyendo odómetro actual
-                run._pending_limit = dict(nrm)  # type: ignore[attr-defined]
-                try:
-                    run._pending_limit["odom_m"] = float(odom_m)  # type: ignore[index]
-                except Exception:
-                    pass
+                pending_limit = {
+                    "limit_next_kmh": nrm["limit_next_kmh"],
+                    "odom_m": odom_m,
+                    "time": e.get("time"),
+                    "lat": e.get("lat"),
+                    "lon": e.get("lon"),
+                }
             else:
-                nrm = normalize(e)
+                # nrm ya calculado arriba
+                pass
             with open(EVT_PATH, "a", encoding="utf-8") as f:
                 f.write(json.dumps(nrm, ensure_ascii=False) + "\n")
             drained += 1
 
 if __name__ == "__main__":
-    import argparse, time as _t
+    import argparse
+    import time as _t
     ap = argparse.ArgumentParser()
     ap.add_argument("--hz", type=float, default=12.0, help="Frecuencia objetivo (Hz)")
     ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0=infinito)")

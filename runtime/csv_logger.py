@@ -44,20 +44,22 @@ class CsvLogger:
         # A partir de la segunda escritura
         missing = [k for k in row.keys() if k not in self.fieldnames]
         if missing:
-            # Ampliar cabecera: reescribir archivo con nueva cabecera
+            # Ampliar cabecera: reescribir archivo con nueva cabecera y remapear filas antiguas
             self.fieldnames.extend(sorted(missing))
             self._close()
-            try:
-                with open(self.path, "r", encoding="utf-8") as f:
-                    lines = f.read().splitlines()
-            except FileNotFoundError:
-                lines = []
-            with open(self.path, "w", newline="", encoding="utf-8") as f:
-                # Escribimos solo la nueva cabecera, luego copiamos las filas antiguas tal cual
-                w = csv.DictWriter(f, fieldnames=self.fieldnames, delimiter=self.delimiter)
+            existing_rows = []
+            if os.path.exists(self.path):
+                try:
+                    with open(self.path, newline="", encoding="utf-8", errors="ignore") as f_in:
+                        r = csv.DictReader(f_in, delimiter=self.delimiter)
+                        existing_rows = list(r)
+                except Exception:
+                    existing_rows = []
+            with open(self.path, "w", newline="", encoding="utf-8") as f_out:
+                w = csv.DictWriter(f_out, fieldnames=self.fieldnames, delimiter=self.delimiter)
                 w.writeheader()
-                for line in lines[1:]:
-                    f.write(line + "\n")
+                for rr in existing_rows:
+                    w.writerow({k: rr.get(k, "") for k in self.fieldnames})
             # Reabrir en modo append persistente
             self._open_append()
 
