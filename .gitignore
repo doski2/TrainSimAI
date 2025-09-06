@@ -85,3 +85,11 @@ plot_speed_vs_odom.png
 events_timeline.csv
 TEMP_*.py
 TEMP_*.txt
+
+# Vendor (binarios pesados no versionados)
+vendor/**
+!vendor/README.md
+!vendor/.gitkeep
+
+# Ignorar carpeta original pesada si aún existe en el workspace
+TSClassic Raildriver and Joystick Interface V3.3.0.9/
