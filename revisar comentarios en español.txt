@@ -4,6 +4,15 @@ y preguntas si esta bien y probar-he subido el enlace github aver que lee
 siempre: resumen del dia fecha y hora de lo que se ha echo en .md
 pendiente: corregor los fallos
 
+Nota sobre 32/64-bit (por si después aparece otro error)
+
+Si tras instalar te sale algo tipo OSError: [WinError 193] %1 no es una aplicación Win32 válida, es por mezcla de arquitecturas:
+
+TSC/RailDriver.dll suele ser 32-bit. Usa Python 32-bit o el wrapper que cargue la DLL adecuada.
+
+Comprueba tu Python: python -c "import struct; print(8*struct.calcsize('P'))" → 32 o 64.
+comenta lo de 32 o 6bit
+
 Ruta del bus LUA no coincide.
 
 El LUA escribe a C:\Users\Public\Documents\tsc_eventbus.jsonl.
