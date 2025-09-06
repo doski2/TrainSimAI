@@ -93,3 +93,21 @@ vendor/**
 
 # Ignorar carpeta original pesada si aún existe en el workspace
 TSClassic Raildriver and Joystick Interface V3.3.0.9/
+# artefactos locales y de ejecución
+.tmp_run/
+__pycache__/
+*.pyc
+
+# datos generados por el collector y herramientas
+data/runs/
+data/events/*.jsonl
+plot_speed_vs_odom.png
+events_timeline.csv
+
+# temporales y pruebas manuales
+TEMP_*.py
+TEMP_*.txt
+
+# IDEs
+.vscode/
+.idea/
