@@ -37,7 +37,22 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
         pass
 
     rd = RDClient(poll_hz=poll_hz)
-    csvlog = CsvLogger(CSV_PATH)
+    csvlog = CsvLogger(
+        CSV_PATH,
+        base_order=[
+            "t_wall",
+            "time_ingame_h",
+            "time_ingame_m",
+            "time_ingame_s",
+            "lat",
+            "lon",
+            "heading",
+            "gradient",
+            "v_ms",
+            "v_kmh",
+            "odom_m",
+        ],
+    )
     # si bus_from_start=True => NO tail; leer desde el principio
     bus = LuaEventBus(LUA_BUS, create_if_missing=True, from_end=(not bus_from_start))
     # Primar cabecera con superset de campos (specials + controles + derivados)
