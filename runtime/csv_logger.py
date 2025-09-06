@@ -26,6 +26,9 @@ class CsvLogger:
         # Abre nuevo archivo con cabecera fija
         self._open_new()
         self._writer.writeheader()
+        # Asegura que el encabezado quede en disco
+        if self._file:
+            self._file.flush()
 
     def write_row(self, row: Dict[str, Any]) -> None:
         if self.fieldnames is None:
@@ -34,6 +37,8 @@ class CsvLogger:
             self._open_new()
             self._writer.writeheader()
             self._writer.writerow({k: row.get(k, "") for k in self.fieldnames})
+            if self._file:
+                self._file.flush()
             return
 
         # A partir de la segunda escritura
@@ -59,6 +64,8 @@ class CsvLogger:
         if self._writer is None:
             self._open_append()
         self._writer.writerow({k: row.get(k, "") for k in self.fieldnames})
+        if self._file:
+            self._file.flush()
 
     # --- Internals ---
     def _open_new(self) -> None:

@@ -1,72 +1,81 @@
-# TrainSimAI — Colector de telemetría y eventos para TS Classic
+## TrainSimAI
+Telemetría y eventos para Train Simulator Classic usando py-raildriver (controles/cabina) y LUA (límites, paradas, marcadores).
 
-Herramientas para registrar telemetría (py‑raildriver) y eventos (bridge LUA) en TS Classic: CSV continuo y JSONL de eventos (límites, paradas, marcadores).
+Genera:
+- `data/runs/*.csv` (~9–10 Hz): velocidad, frenos, SIFA/PZB/LZB/AFB, lat/lon/heading/gradient, hora in‑game, `odom_m`.
+- `data/events/events.jsonl`: eventos normalizados (`marker_pass`, `speed_limit_change`, `stop_begin/stop_end`, ...).
 
-**Estado rápido**
-- Python 3.10+ en Windows.
-- Escribe `data/runs/run.csv` y `data/events/events.jsonl`.
-- Eventos desde LUA via `data/lua_eventbus.jsonl`.
+### Requisitos
+- Windows + Python 3.11+
+- Train Simulator Classic instalado
+- Drivers RailDriver / DLL accesible
 
-**Instalación**
-- Requisitos: Python 3.10+ (recomendado 3.11).
-- Instala dependencias:
-  - `pip install -r requirements.txt`
-  - Opcional entorno virtual: `python -m venv .venv && .venv\Scripts\activate`
-
-**Lanzar el colector**
-- Modo módulo: `python -m runtime.collector`
-- O directo: `python runtime/collector.py`
-- Archivos de salida:
-  - `data/runs/run.csv`: telemetría a ~10–12 Hz.
-  - `data/events/events.jsonl`: eventos normalizados.
-
-**Variables de entorno (opcionales)**
-- `LUA_BUS_PATH`: ruta al bus JSONL que escribe el script LUA. Por defecto `data/lua_eventbus.jsonl`.
-- `RUN_CSV_PATH`: ruta de salida del CSV (por defecto `data/runs/run.csv`).
-- `RUN_EVT_PATH`: ruta de salida de eventos (por defecto `data/events/events.jsonl`).
-- `RUN_HB_PATH`: fichero heartbeat para exclusión mutua (por defecto `data/events/.collector_heartbeat`).
-
-**Integración LUA (próximos límites y marcadores/andén)**
-- Copia o referencia `lua/tsc_eventbus.lua` como Script de Escenario en TS Classic.
-  - IMPORTANTE: `EVENTBUS_PATH` en el LUA debe ser la MISMA ruta que usa el colector (`LUA_BUS_PATH`).
-  - Ejemplo recomendado (Windows, barras /): `C:/TrainSimAI/data/lua_eventbus.jsonl`.
-  - Puedes dejar el colector con el valor por defecto (`data/lua_eventbus.jsonl`) o forzar la misma ruta con:
-    - PowerShell: ``$env:LUA_BUS_PATH = "C:/TrainSimAI/data/lua_eventbus.jsonl"``
-    - CMD: ``set LUA_BUS_PATH=C:/TrainSimAI/data/lua_eventbus.jsonl``
-- Para marcar andenes con nombre, usa un marcador con el script `lua/platform_marker.lua` y ajusta `STATION_NAME`.
-- El colector fusiona telemetría y eventos del bus LUA y solo escribe eventos enriquecidos (con lat/lon cuando apliquen).
-
-**Rutas del bus LUA (importante)**
-- No mezcles rutas distintas (p. ej., `C:/Users/Public/Documents/...` vs `data/lua_eventbus.jsonl`).
-- Deben coincidir: lo que escribe el LUA (`EVENTBUS_PATH`) = lo que lee el colector (`LUA_BUS_PATH`).
-- Usa rutas absolutas en el LUA con barras `/` para evitar problemas de escape.
-
-**Validación rápida**
-- Ejecuta: `python tools/validate_run.py`
-- Ejemplo de salida esperada:
-```
-[CSV] Filas: 6000+ | Columnas: 60+
-[CSV] Loco más frecuente: DB BR146.0 (... filas)
-[CSV] Tasa de muestreo ~ 9–12 Hz en últimas N filas
-[EVT] Total eventos: ... | Por tipo: {'speed_limit_change': X, 'marker_pass': Y, ...}
+### Instalación
+```powershell
+pip install -r requirements.txt
 ```
 
-**Solución de problemas**
-- Duplicados en `events.jsonl`: asegúrate de NO ejecutar `tools/drain_lua_bus.py` cuando esté activo el colector. El colector crea `data/events/.collector_heartbeat`; el drain moderno se autoinhibe si detecta heartbeat.
-- Sin coordenadas en eventos de marcador: el colector filtra eventos sin lat/lon; verifica que el CSV tenga `!Coordinates` y que el LUA emita el evento mientras el colector está activo.
+### Configurar el bus LUA
+1) Abre `lua/tsc_eventbus.lua` y fija ruta absoluta del repo:
+```lua
+-- usa / en vez de \
+local EVENTBUS_PATH = "C:/RUTA/A/Tu/Repo/data/lua_eventbus.jsonl"
+```
+2) En PowerShell (raíz del repo) exporta la misma ruta para el collector:
+```powershell
+$env:LUA_BUS_PATH = (Join-Path $PWD 'data\lua_eventbus.jsonl')
+```
+3) Crea las carpetas/archivos:
+```powershell
+New-Item -ItemType Directory -Force -Path .\data,.\data\events | Out-Null
+New-Item -ItemType File -Force -Path .\data\lua_eventbus.jsonl,.\data\events\events.jsonl | Out-Null
+```
 
-**Rotación de runs (offline fácil)**
-- Antes de iniciar una sesión nueva, rota el CSV anterior:
-  - Python: `python tools/rotate_runs.py` (usa `RUN_CSV_PATH` si lo tienes personalizado)
-  - Encadenado: `python tools/rotate_runs.py && python -m runtime.collector`
-  - También puedes pasar la ruta: `python tools/rotate_runs.py data/runs/run.csv`
-  - Resultado: `data/runs/run_YYYYMMDD_HHMMSS.csv`
+### Ejecutar el collector
+```powershell
+python -m runtime.collector    # o: python .\runtime\collector.py
+```
+Importante: deja solo este proceso escribiendo `events.jsonl` (no ejecutes `tools/drain_lua_bus.py` en paralelo).
 
-**Licencia y crédito**
-- Licencia: MIT (ver `LICENSE`).
-- Basado en `py-raildriver` para lectura de cabina. Este repositorio no incluye contenido de DTG/TS Classic.
+### Validar
+```powershell
+python tools/validate_run.py
+```
+Salida esperada:
+- Hz ≈ 9–10
+- Loco detectada (p. ej. DB BR146.0)
+- Sin avisos por Throttle/MPH si tienes Regulator/KPH
 
-**About del repositorio (GitHub)**
-- Descripción sugerida: “Telemetría y eventos para Train Simulator Classic (py‑raildriver + LUA), con colector a CSV/JSONL y herramientas de validación.”
-- Topics sugeridos: `train-simulator`, `raildriver`, `lua`, `autopilot`, `telemetry`, `python`.
-- Configúralos en GitHub: Settings → General → “Description” y “Topics”.
+### Rotar runs (opcional)
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\rotate-run.ps1
+```
+
+### Estructura
+```
+/ingestion    # py-raildriver wrapper, bus LUA
+/runtime      # collector, csv logger, normalizador eventos
+/lua          # scripts LUA (eventos de límite, paradas, marcadores)
+/profiles     # mapeos por locomotora (controles y rangos)
+/tools        # utilidades (validador, caps, repair)
+/data         # runs/*.csv y events/*.jsonl
+```
+
+### Solución de problemas
+- No aparece `events.jsonl`: alinea `EVENTBUS_PATH` y `LUA_BUS_PATH`; crea los archivos vacíos; fuerza un evento:
+  ```powershell
+  Add-Content .\data\lua_eventbus.jsonl -Value '{"type":"marker_pass","name":"manual","time":1}'
+  ```
+- Eventos duplicados o sin lat/lon: asegura un solo escritor de eventos (solo el collector).
+- Hz ≤ 5: asegúrate de usar la versión reciente del Lua EventBus (sin sleeps innecesarios cuando falta el archivo).
+- CSV "field larger than field limit": usa `tools/repair_csv.py` y la versión nueva de `runtime/csv_logger.py`.
+- Ver capacidades de la DLL: `python tools/rd_caps.py`.
+
+### Roadmap corto
+- `speed_limit_change` + distancia (LUA)
+- Paradas con nombre (marcadores de andén)
+- Validación de frenado/AFB (gráficas con `odom_m`)
+
+### Licencia
+MIT
+

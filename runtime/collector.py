@@ -118,4 +118,16 @@ def run(poll_hz: float = 10.0) -> None:
 
 
 if __name__ == "__main__":
+    import argparse
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--hz", type=float, default=12.0, help="Frecuencia objetivo")
+    ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-stop (0=sin límite)")
+    args = ap.parse_args()
+    import time as _t
+    t0 = _t.time()
+    try:
+        run(args.hz)
+    except KeyboardInterrupt:
+        pass
+if __name__ == "__main__":
     run(12.0)  # 12 Hz objetivo ≈ 9–10 Hz efectivos

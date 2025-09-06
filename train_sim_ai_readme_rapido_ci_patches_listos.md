@@ -37,7 +37,7 @@ python -m runtime.collector    # o: python .\runtime\collector.py
 ```
 > **Importante**: deja **solo** este proceso escribiendo `events.jsonl` (no ejecutes `tools/drain_lua_bus.py` en paralelo).
 
-### Validar-aqui estamos
+### Validar
 ```powershell
 python tools/validate_run.py
 ```
@@ -46,7 +46,7 @@ Salida esperada:
 - Loco detectada (p. ej. `DB BR146.0`)
 - Sin avisos por `Throttle/MPH` si tienes `Regulator/KPH`
 
-### Rotar runs (opcional)
+### Rotar runs (opcional) aqui
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\rotate_runs.ps1
 ```
