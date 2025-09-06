@@ -20,6 +20,11 @@ def read_csv(path):
     if not os.path.exists(path):
         print(f"[CSV] No existe: {path}")
         return None, []
+    # Aumenta el ldmite de tamadfo de campo para evitar errores con celdas largas
+    try:
+        csv.field_size_limit(10**7)
+    except Exception:
+        pass
     with open(path, newline="", encoding="utf-8") as f:
         r = csv.DictReader(f, delimiter=";")
         rows = list(r)

@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Iterable
 
 import sys
+import time
 
 # Asegura que el repo raíz esté en sys.path
 repo_root = Path(__file__).resolve().parents[1]
@@ -37,6 +38,17 @@ def main() -> None:
     out_path = repo / "data" / "events" / "events.jsonl"
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # No interferir con el colector si está activo (usa heartbeat)
+    hb_path = repo / "data" / "events" / ".collector_heartbeat"
+    try:
+        if hb_path.exists():
+            mt = hb_path.stat().st_mtime
+            if (time.time() - mt) < 10.0:
+                print("[drain] Detectado collector activo (heartbeat reciente). No se escribirá events.jsonl. Aborta.")
+                return
+    except Exception:
+        pass
+
     # Lee última fila del CSV para enriquecer eventos (lat/lon/tiempo)
     last_row = {}
     csv_path = repo / "data" / "runs" / "run.csv"
@@ -66,6 +78,11 @@ def main() -> None:
                     obj["time"] = h + m/60.0 + s/3600.0  # horas decimales
                 except Exception:
                     pass
+            # Evitar escribir eventos de marcador sin coordenadas
+            if obj.get("type") == "marker_pass" and (
+                obj.get("lat") in (None, "") or obj.get("lon") in (None, "")
+            ):
+                continue
             nrm = normalize(obj)
             out.write(json.dumps(nrm, ensure_ascii=False) + "\n")
             n += 1

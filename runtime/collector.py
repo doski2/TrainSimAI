@@ -12,6 +12,7 @@ from runtime.events_bus import normalize
 # Archivos de salida
 CSV_PATH = os.environ.get("RUN_CSV_PATH", os.path.join("data", "runs", "run.csv"))
 EVT_PATH = os.environ.get("RUN_EVT_PATH", os.path.join("data", "events", "events.jsonl"))
+HB_PATH = os.environ.get("RUN_HB_PATH", os.path.join("data", "events", ".collector_heartbeat"))
 
 # Dónde leer los eventos que emite el LUA:
 #  - Si existe la variable de entorno LUA_BUS_PATH → úsala
@@ -27,6 +28,12 @@ def run(poll_hz: float = 10.0) -> None:
     os.makedirs(os.path.dirname(EVT_PATH), exist_ok=True)
     # Asegura que el fichero existe desde el arranque
     open(EVT_PATH, "a", encoding="utf-8").close()
+    # Inicializa heartbeat para que otras utilidades (p.ej., drain) detecten que el colector está activo
+    try:
+        with open(HB_PATH, "w", encoding="utf-8") as hb:
+            hb.write(str(time.time()))
+    except Exception:
+        pass
 
     rd = RDClient(poll_hz=poll_hz)
     csvlog = CsvLogger(CSV_PATH)
@@ -53,6 +60,12 @@ def run(poll_hz: float = 10.0) -> None:
         row["odom_m"] = odom_m
         prev_t, prev_v = now, v
         csvlog.write_row(row)
+        # Refresca heartbeat en cada tick (señal de vida del colector)
+        try:
+            with open(HB_PATH, "w", encoding="utf-8") as hb:
+                hb.write(str(now))
+        except Exception:
+            pass
 
         # Drenar hasta 10 eventos por tick (para no quedarnos atrás)
         drained = 0
@@ -79,12 +92,23 @@ def run(poll_hz: float = 10.0) -> None:
                 e["odom_m"] = odom_m
 
             # De-dup básico: mismo tipo+identificador+tiempo ⇒ no reescribir
-            ident = e.get("marker") or e.get("station") or e.get("payload")
+            ident = (
+                e.get("marker")
+                or e.get("name")
+                or e.get("station")
+                or e.get("payload")
+            )
             sig = (e.get("type"), ident, e.get("time"))
             if sig == last_sig:
                 drained += 1
                 continue
             last_sig = sig
+            # Skip incomplete marker events lacking coordinates
+            if e.get("type") == "marker_pass" and (
+                e.get("lat") in (None, "") or e.get("lon") in (None, "")
+            ):
+                drained += 1
+                continue
             nrm = normalize(e)
             with open(EVT_PATH, "a", encoding="utf-8") as f:
                 f.write(json.dumps(nrm, ensure_ascii=False) + "\n")
