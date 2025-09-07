@@ -138,6 +138,9 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
             # --- logica de alcance de limite (estimado)
             # Normaliza SIEMPRE el evento actual antes de ramificar
             nrm = normalize(e)
+            # Sello de seguridad: si algún evento viene sin t_wall, estampar ahora
+            if nrm.get("t_wall") is None:
+                nrm["t_wall"] = now
             # Si llega un speed_limit_change nuevo y habia uno pendiente,
             # consideramos que acabamos de "alcanzar" la placa del pendiente.
             if nrm.get("type") == "speed_limit_change":
@@ -169,6 +172,9 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
                     # Anti-ruido: ignora si avance < 5 m
                     if dist >= 5.0:
                         rn = normalize(reach)
+                        # Sello de seguridad: si el evento carece de t_wall, estampar ahora
+                        if rn.get("t_wall") is None:
+                            rn["t_wall"] = now
                         with open(EVT_PATH, "a", encoding="utf-8") as f:
                             f.write(json.dumps(rn, ensure_ascii=False) + "\n")
                 pending_limit = {

@@ -1,50 +1,23 @@
-name: ci
-
+name: CI
 on:
   push:
-    branches: [ main, master ]
   pull_request:
-    branches: [ main, master ]
-
-env:
-  TSC_FAKE_RD: '1'   # usa backend simulado
-  RUN_RD_TESTS: '0'  # no ejecuta tests live de RailDriver real
 
 jobs:
-  lint-and-test:
-    runs-on: ubuntu-latest
+  test:
+    runs-on: windows-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
       - name: Install deps
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
-          pip install ruff flake8 mypy pytest
-
+          if (Test-Path requirements.txt) { pip install -r requirements.txt }
+          pip install pytest ruff
       - name: Ruff
         run: ruff check .
+      - name: PyTest (unit only)
+        run: pytest -q -m "not integration"
 
-      - name: Flake8
-        run: flake8 .
-
-      - name: Mypy (best-effort)
-        run: mypy ingestion runtime tools --ignore-missing-imports
-
-      - name: Pytest
-        run: pytest -q

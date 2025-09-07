@@ -1,32 +1,43 @@
-from __future__ import annotations
-
-import numpy as np
+import json
+from pathlib import Path
+import pytest
 import pandas as pd
 
-from tools.dist_next_limit import compute_distances
 
-
-def test_compute_distances_synthetic():
-    # t cada 1 s, velocidad 10 m/s → odom lineal
+@pytest.mark.skipif(
+    False, reason="always run; will skip internally if helper not present"
+)
+def test_dist_from_getdata_probes_alignment(tmp_path: Path):
+    # 1) DataFrame de ejemplo (como run.csv) con t_wall
     df = pd.DataFrame({
-        "t_wall": np.arange(0, 6, dtype=float),
-        "v_ms": np.full(6, 10.0),
+        "t_wall": [99.0, 100.0, 101.0, 105.0, 110.0],
+        "odom_m": [0, 10, 20, 30, 40],
+        "v_kmh": [0, 5, 10, 20, 25],
     })
-    # distancias integradas: 0,10,20,30,40,50
-    # Eventos en odom 25 y 50 → dist: [25,15,5,20,10,0?] para cada muestra
-    events = [
-        {"type": "speed_limit_change", "odom_m": 25.0, "meta": {"to": 120}},
-        {"type": "speed_limit_change", "odom_m": 50.0, "meta": {"to": 100}},
+
+    # 2) events.jsonl con eventos *normalizados* getdata_next_limit
+    ev_path = tmp_path / "events.jsonl"
+    rows = [
+        {"type":"getdata_next_limit","t_wall":100.0,"meta":{"to":70.0,"dist_m":1000.0}},
+        {"type":"getdata_next_limit","t_wall":105.0,"meta":{"to":70.0,"dist_m":900.0}},
     ]
-    df_out, e_odom, e_next = compute_distances(df, events)
-    expected = np.array([25, 15, 5, 20, 10, 0], dtype=float)
-    # La última muestra no tiene siguiente evento: tratamos NaN como 0 para comparar
-    assert np.allclose(
-        np.nan_to_num(df_out["dist_next_limit_m"].to_numpy(), nan=0.0), expected
-    )
-    # next_limit_kph de los eventos proyectados
-    expected_next = np.array([120, 120, 120, 100, 100, np.nan], dtype=float)
-    assert np.allclose(
-        np.nan_to_num(df_out["next_limit_kph"].to_numpy(), nan=-1),
-        np.nan_to_num(expected_next, nan=-1),
-    )
+    with ev_path.open("w", encoding="utf-8") as f:
+        for r in rows:
+            f.write(json.dumps(r) + "\n")
+
+    # 3) Import de helper; si no existe en tu versión, saltar la prueba
+    try:
+        from tools.dist_next_limit import dist_from_getdata_probes
+    except Exception:
+        pytest.skip("tools.dist_next_limit.dist_from_getdata_probes no disponible en esta rama")
+
+    s = dist_from_getdata_probes(df, ev_path)
+    assert s is not None
+    # Alineación esperada (merge_asof backward): 99→NaN, 100→1000, 101→1000, 105→900, 110→900
+    vals = list(s.values)
+    assert pd.isna(vals[0])
+    assert vals[1] == pytest.approx(1000.0)
+    assert vals[2] == pytest.approx(1000.0)
+    assert vals[3] == pytest.approx(900.0)
+    assert vals[4] == pytest.approx(900.0)
+

@@ -1,5 +1,9 @@
 from __future__ import annotations
-import os, time, json, sys, argparse
+import os
+import time
+import json
+import sys
+import argparse
 from pathlib import Path
 
 GETDATA = Path(os.getenv("TSC_GETDATA_FILE",
@@ -34,6 +38,7 @@ def fnum(s: str | None) -> float | None:
 def run(duration: float = 0.0, interval: float = 0.25, verbose: bool = True) -> None:
     last_current_kph: float | None = None
     last_next_kph: float | None = None
+    last_next_dist: float | None = None
     last_probe_ts = 0.0
 
     if verbose:
@@ -94,9 +99,9 @@ def run(duration: float = 0.0, interval: float = 0.25, verbose: bool = True) -> 
             if (nxt_kph > 0.0) and (0.0 < nxt_dist < 9000.0):
                 now = time.time()
                 if (
-                    (last_next_kph is None)
-                    or abs(nxt_kph - last_next_kph) > 1e-3
-                    or (now - last_probe_ts) > 2.0
+                    (last_next_kph is None or abs(nxt_kph - last_next_kph) > 1e-3)
+                    or (last_next_dist is None or abs(nxt_dist - last_next_dist) >= 25)
+                    or (now - last_probe_ts) > 1.0
                 ):
                     emit({
                         "type": "getdata_next_limit",
@@ -106,6 +111,7 @@ def run(duration: float = 0.0, interval: float = 0.25, verbose: bool = True) -> 
                         "source": "getdata_probe",
                     })
                     last_next_kph = nxt_kph
+                    last_next_dist = nxt_dist
                     last_probe_ts = now
 
         time.sleep(interval)
@@ -121,4 +127,3 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("[bridge] interrupción del usuario — saliendo limpio.")
         sys.exit(0)
-

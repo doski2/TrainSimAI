@@ -1,7 +1,5 @@
 from __future__ import annotations
-import os
 import struct
-from pathlib import Path
 import importlib
 
 
@@ -20,4 +18,3 @@ def test_choose_correct_dll(tmp_path, monkeypatch):
     base = mod._resolve_plugins_dir()
     picked = mod._prepare_dll_search_path(base)
     assert picked.name == dll_name
-
