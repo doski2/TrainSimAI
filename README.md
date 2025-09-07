@@ -134,3 +134,10 @@ CI:
 MIT
 
 
+
+### RailDriver (DLL)
+- Python x64 → `RailDriver64.dll` | Python x86 → `RailDriver.dll`.
+- Variables soportadas:
+  - `TSC_RD_DLL_DIR`: carpeta que contiene la DLL.
+  - `RAILWORKS_PLUGINS`: carpeta `...\RailWorks\plugins`.
+- Si aparece WinError 193, revisa la arquitectura de Python y la DLL cargada. El collector imprime la DLL elegida al iniciar (`[rd] usando DLL: ...`).

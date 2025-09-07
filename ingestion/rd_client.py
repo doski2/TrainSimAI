@@ -5,6 +5,7 @@ import sys
 import time
 from typing import Any, Dict, Iterable, Iterator, List
 import platform
+import struct
 from pathlib import Path
 import re
 
@@ -88,6 +89,54 @@ def _locate_raildriver_dll() -> str | None:
     return str(existing[0])
 
 
+# ---- Utilidades alternativas de localización y preparación de DLL ----
+
+def _process_is_64bit() -> bool:
+    return 8 * struct.calcsize("P") == 8
+
+
+def _resolve_plugins_dir() -> Path:
+    """Orden de precedencia para localizar plugins:
+       1) TSC_RD_DLL_DIR  2) RAILWORKS_PLUGINS  3) ruta Steam por defecto.
+    """
+    p = os.getenv("TSC_RD_DLL_DIR")
+    if p:
+        return Path(p)
+    p = os.getenv("RAILWORKS_PLUGINS")
+    if p:
+        return Path(p)
+    return Path(os.environ.get("PROGRAMFILES(X86)", r"C:\\Program Files (x86)")) / "Steam/steamapps/common/RailWorks/plugins"
+
+
+def _pick_dll_name() -> str:
+    return "RailDriver64.dll" if _process_is_64bit() else "RailDriver.dll"
+
+
+def _prepare_dll_search_path(base: Path) -> Path:
+    """Confirma existencia de la DLL correcta y añade su carpeta al loader de Windows."""
+    want = base / _pick_dll_name()
+    if not want.exists():
+        alt = base / ("RailDriver.dll" if _process_is_64bit() else "RailDriver64.dll")
+        if alt.exists():
+            arch = "64" if _process_is_64bit() else "32"
+            raise OSError(
+                f"RailDriver de arquitectura opuesta detectado ({alt.name}) en {alt.parent}. "
+                f"Tu Python es {arch}-bit. Instala la DLL que corresponde o usa Python de la otra arquitectura. "
+                f"También puedes definir TSC_RD_DLL_DIR/RAILWORKS_PLUGINS."
+            )
+        raise FileNotFoundError(
+            f"No se encontró {want.name} en {base}. Define RAILWORKS_PLUGINS o TSC_RD_DLL_DIR."
+        )
+    try:
+        if hasattr(os, "add_dll_directory"):
+            os.add_dll_directory(str(base))  # type: ignore[attr-defined]
+        else:
+            os.environ["PATH"] = str(base) + os.pathsep + os.environ.get("PATH", "")
+    except Exception:
+        pass
+    return want
+
+
 class RDClient:
     """
     Wrapper de py-raildriver con utilidades de lectura puntual y streaming.
@@ -108,25 +157,56 @@ class RDClient:
             # Alias RailDriver apunta al FakeRailDriver cuando USE_FAKE=True
             self.rd = RailDriver()
         else:
-            # Registrar directorio de DLL si viene por self.dll_location
-            if self.dll_location:
+            # Resolver ubicación de DLL adecuada y pasarla explícitamente
+            dll_path = self.dll_location or _locate_raildriver_dll()
+            # Si el usuario pasó un directorio, elige el nombre correcto según arquitectura
+            try:
+                if dll_path and os.path.isdir(dll_path):
+                    base = Path(dll_path)
+                    dll_path = str((_prepare_dll_search_path(base)))
+            except Exception:
+                # Si falla (carpeta sin DLL), dejamos que el fallback actúe más abajo
+                dll_path = None
+            if not dll_path:
+                # Fallback: reglas de entorno + ruta por defecto de Steam
                 try:
-                    if hasattr(os, "add_dll_directory"):
-                        os.add_dll_directory(self.dll_location)  # type: ignore[attr-defined]
+                    candidate = _prepare_dll_search_path(_resolve_plugins_dir())
+                    dll_path = str(candidate)
                 except Exception:
-                    pass
-            dll_path = _locate_raildriver_dll()
-            # Intentar registrar el directorio de la DLL en el buscador de Windows (Py 3.8+)
-            if dll_path:
-                try:
+                    dll_path = None
+            # Diagnóstico: mostrar la DLL elegida (útil para WinError 193)
+            try:
+                if dll_path:
+                    print(f"[rd] usando DLL: {dll_path}", file=sys.stderr)
+            except Exception:
+                pass
+            # Registrar el directorio de la DLL en el buscador de Windows (Py 3.8+)
+            try:
+                if dll_path:
                     dll_dir = os.path.dirname(dll_path)
                     if dll_dir and hasattr(os, "add_dll_directory"):
                         os.add_dll_directory(dll_dir)  # type: ignore[attr-defined]
-                except Exception:
-                    # Si falla, continuamos sin registrar ruta explícita
-                    pass
-            # Instanciar sin kwargs para compatibilidad con forks que no aceptan dll_location
-            self.rd = RailDriver()
+                elif self.dll_location and hasattr(os, "add_dll_directory"):
+                    os.add_dll_directory(self.dll_location)  # type: ignore[attr-defined]
+            except Exception:
+                # Si falla, continuamos sin registrar ruta explícita
+                pass
+            # Instanciar RailDriver indicando ruta si la conocemos; tolerar diferentes firmas
+            try:
+                if dll_path:
+                    try:
+                        self.rd = RailDriver(dll_location=dll_path)  # type: ignore[call-arg]
+                    except TypeError:
+                        # Otros forks aceptan dll_path como nombre de kw
+                        self.rd = RailDriver(dll_path=dll_path)  # type: ignore[call-arg]
+                else:
+                    self.rd = RailDriver()
+            except TypeError:
+                # Fallback posicional
+                if dll_path:
+                    self.rd = RailDriver(dll_path)  # type: ignore[misc]
+                else:
+                    self.rd = RailDriver()
         # Necesario para intercambiar datos con TS
         try:
             self.rd.set_rail_driver_connected(True)

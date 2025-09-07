@@ -1,111 +1,110 @@
--- lua/tsc_eventbus.lua — drop-in
--- ✏️ Cambia esta ruta a la ABSOLUTA de tu repo (usa / en vez de \)
-local EVENTBUS_PATH = "C:/TrainSimAI/data/lua_eventbus.jsonl"
+-- lua/tsc_eventbus.lua  (escenario o locomotora)
+-- Emite JSONL: C:\\TrainSimAI\\data\\lua_eventbus.jsonl
+local EVENTBUS_PATH = "C:/TrainSimAI/data/lua_eventbus.jsonl"  -- AJUSTA si usas otra ruta
 
--- ----------------- util JSON -----------------
+local DEBUG = true  -- mensajes en pantalla
+local last_limit_kph = nil
+local stopped = false
+local still_s = 0.0     -- segundos parado acumulados
+local heartbeat_s = 0.0 -- emite latido cada ~2 s
+
 local function json_escape(s)
   s = string.gsub(s, "\\", "\\\\")
   s = string.gsub(s, '"', '\\"')
-  s = string.gsub(s, "\n", "\\n")
   return s
 end
 
-local function emit_json(tbl)
+local function emit(tbl)
   local parts = {}
-  for k,v in pairs(tbl) do
-    local vv = v
-    if type(v) == "string" then vv = '"'..json_escape(v)..'"'
-    elseif type(v) == "boolean" then vv = v and "true" or "false"
-    else vv = tostring(v) end
-    table.insert(parts, '"'..k..'":'..vv)
+  for k, v in pairs(tbl) do
+    local vs = (type(v) == "string") and ('"' .. json_escape(v) .. '"') or tostring(v)
+    table.insert(parts, '"' .. k .. '":' .. vs)
   end
+  local line = "{" .. table.concat(parts, ",") .. "}"
   local f = io.open(EVENTBUS_PATH, "a")
-  if not f then return end
-  f:write("{".. table.concat(parts, ",") .."}\n")
-  f:close()
+  if f then
+    f:write(line .. "\n")
+    f:close()
+  elseif DEBUG then
+    SysCall("ScenarioManager:ShowMessage", "EventBus", "No puedo abrir el archivo", 4, 0)
+  end
 end
 
--- ----------------- estado -----------------
-local last_limit_kmh = nil
-local stopped = false
-local stop_t0 = nil
-local current_station = nil
-local last_marker_time = nil
-
--- parámetros de parada (ajustables)
-local STOP_V_BEGIN_KMH = 0.5      -- si < a esto durante N s => stop_begin
-local STOP_BEGIN_SECS   = 4.0
-local STOP_V_EXIT_KMH   = 1.0      -- si > a esto => stop_end
-
--- anti-ruido de cambios de límite
-local MIN_LIMIT_DELTA_KMH = 0.5    -- evita ping-pong por redondeos
-
-local function to_kmh(x)
-  if not x then return nil end
-  if x < 20.0 then return x * 3.6 else return x end  -- si parece m/s, convértelo
+local function get_speed_ms()
+  -- m/s; PlayerEngine existe en escenario y loco
+  local ok, v = pcall(SysCall, "PlayerEngine:GetSpeed")
+  if ok and type(v) == "number" then return v end
+  -- Fallback (locomotora): Call("GetSpeed")
+  local ok2, v2 = pcall(Call, "GetSpeed")
+  if ok2 and type(v2) == "number" then return v2 end
+  return 0.0
 end
 
--- emite un init de arranque
-emit_json({ type="init", note="tsc_eventbus.lua loaded" })
-
--- ----------------- bucle de frame -----------------
-function Update(time)
-  -- hora in-game como horas decimales
-  local hours = SysCall("PlayerEngine:GetTime") or 0.0
-  -- velocidad actual
-  local v_ms = SysCall("PlayerEngine:GetSpeed") or 0.0
-  local v_kmh = v_ms * 3.6
-
-  -- 1) evento de cambio de límite
-  local nl = SysCall("PlayerEngine:GetNextSpeedLimit", 0, 0)   -- puede ser m/s o kmh
-  if nl then
-    local next_kmh = to_kmh(nl)
-    if next_kmh then
-      if not last_limit_kmh or math.abs(next_kmh - last_limit_kmh) >= MIN_LIMIT_DELTA_KMH then
-        emit_json({
-          type = "speed_limit_change",
-          prev = last_limit_kmh or -1,
-          next = next_kmh,
-          time = hours
-        })
-        last_limit_kmh = next_kmh
-      end
+local function query_next_limit_kph()
+  -- 1) Escenario: PlayerEngine:GetNextSpeedLimit(dir, distAheadM)
+  local ok, a, b, c = pcall(SysCall, "PlayerEngine:GetNextSpeedLimit", 0, 1000)
+  if ok then
+    -- algunas versiones devuelven solo velocidad, otras (type,speed,dist)
+    if type(a) == "number" and b == nil then
+      return a * 3.6
+    elseif type(b) == "number" then
+      return b * 3.6
     end
   end
+  -- 2) Loco/señal: Call("GetNextSpeedLimit", dir, distAheadM)
+  local ok2, typ, spd, dist = pcall(Call, "GetNextSpeedLimit", 0, 1000)
+  if ok2 and type(spd) == "number" then
+    return spd * 3.6
+  end
+  return nil
+end
 
-  -- 2) detección de parada (heurística)
-  local now = os.time()
-  if v_kmh < STOP_V_BEGIN_KMH then
-    if not stop_t0 then stop_t0 = now end
-    if (not stopped) and (now - stop_t0 >= STOP_BEGIN_SECS) then
+function Initialise()
+  -- activar llamadas periódicas a Update(dt)
+  Call("BeginUpdate")
+  emit({ type = "lua_hello" })
+  if DEBUG then
+    SysCall("ScenarioManager:ShowMessage", "EventBus", "Inicializado", 3, 0)
+  end
+end
+
+function Update(dt)
+  -- tiempo de juego (hora del día en horas)
+  local todH = SysCall("PlayerEngine:GetTime") or 0.0
+
+  -- Heartbeat cada ~2 s para verificar escritura
+  heartbeat_s = heartbeat_s + (dt or 0.0)
+  if heartbeat_s >= 2.0 then
+    heartbeat_s = 0.0
+    emit({ type = "lua_heartbeat", t_game_h = todH })
+  end
+
+  -- Próximo límite
+  local next_kph = query_next_limit_kph()
+  if next_kph and next_kph ~= last_limit_kph then
+    emit({ type = "speed_limit_change", prev = last_limit_kph or -1, next = next_kph, t_game_h = todH })
+    last_limit_kph = next_kph
+  end
+
+  -- Paradas (heurística simple)
+  local v_ms = get_speed_ms()
+  if v_ms < 0.2 then
+    still_s = still_s + (dt or 0.0)
+    if (not stopped) and still_s >= 4.0 then
       stopped = true
-      emit_json({
-        type = "stop_begin",
-        station = current_station or "",
-        time = hours
-      })
+      emit({ type = "stop_begin", t_game_h = todH })
     end
   else
-    stop_t0 = nil
-    if stopped and v_kmh > STOP_V_EXIT_KMH then
+    still_s = 0.0
+    if stopped then
       stopped = false
-      emit_json({
-        type = "stop_end",
-        station = current_station or "",
-        time = hours,
-        duration_s = 0  -- no conocemos la duración exacta en segundos reales aquí
-      })
-      -- mantén la estación hasta que se pase otro marcador
+      emit({ type = "stop_end", t_game_h = todH })
     end
   end
 end
 
--- ----------------- marcadores -----------------
+-- Marcadores del escenario (opcional)
 function MarkerPassed(name)
-  local sname = tostring(name or "")
-  -- marca paso por vía/marcador
-  emit_json({ type="marker_pass", name=sname })
-  -- considera que el último marcador nombra la estación (si es andén)
-  current_station = sname
-  last_marker_time = os.time()
+  emit({ type = "marker_pass", name = tostring(name) })
 end
+

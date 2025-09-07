@@ -12,13 +12,6 @@ decir que por ahora las seguridaded las guarde no las vamos a usar actualmente
 
 2.recordar curva de frenado cuando llege
 
-3.# 1) Linter (Ruff) con códigos
-ruff check . --format=github
+recuerda le el error en flake8 de github-sobre los.venv que lo revise cuando se pueda
 
-# 2) Tipos (Mypy) – best-effort
-mypy ingestion runtime tools --ignore-missing-imports
-
-# 3) Tests (sin hardware)
-$env:TSC_FAKE_RD = "1"; $env:RUN_RD_TESTS = "0"
-pytest -q
 
