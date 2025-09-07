@@ -187,6 +187,7 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
 if __name__ == "__main__":
     import argparse
     import time as _t
+    import sys as _sys
     ap = argparse.ArgumentParser()
     ap.add_argument("--hz", type=float, default=12.0, help="Frecuencia objetivo (Hz)")
     ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0=infinito)")
@@ -194,7 +195,11 @@ if __name__ == "__main__":
                     help="Leer el bus LUA desde el inicio (por defecto, solo nuevas líneas)")
     args = ap.parse_args()
     end_t = (_t.time() + args.duration) if args.duration > 0 else None
-    run(args.hz, stop_time=end_t, bus_from_start=args.bus_from_start)
+    try:
+        run(args.hz, stop_time=end_t, bus_from_start=args.bus_from_start)
+    except KeyboardInterrupt:
+        print("[collector] interrupción del usuario — saliendo limpio.")
+        _sys.exit(0)
 
 if __name__ == "__main__DISABLED_OLD":
     import argparse

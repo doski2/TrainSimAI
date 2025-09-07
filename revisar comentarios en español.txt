@@ -13,5 +13,8 @@ decir que por ahora las seguridaded las guarde no las vamos a usar actualmente
 2.recordar curva de frenado cuando llege
 
 recuerda le el error en flake8 de github-sobre los.venv que lo revise cuando se pueda
+problemas con el priximo limite rebobina y analiza paso a paso
+no hace bien de xml a bien investigar
+algo l rompe y el bin se convierte a 0
 
 
