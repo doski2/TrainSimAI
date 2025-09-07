@@ -113,8 +113,9 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
                     e["time"] = h + m/60.0 + s/3600.0
                 except Exception:
                     pass
-            if e.get("odom_m") is None:
-                e["odom_m"] = odom_m
+            # Sellos siempre presentes para downstream (normalizer/analizadores)
+            e["odom_m"] = odom_m
+            e["t_wall"] = now
 
             # De-dup básico: mismo tipo+identificador+tiempo ⇒ no reescribir
             ident = (

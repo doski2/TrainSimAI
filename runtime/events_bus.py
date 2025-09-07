@@ -44,6 +44,9 @@ def normalize(evt: Dict[str, Any]) -> Dict[str, Any]:
         "lat": e.get("lat"),
         "lon": e.get("lon"),
         "odom_m": e.get("odom_m"),
+        "t_wall": e.get("t_wall"),
+        "meta": {},
+        "raw": e,
     }
 
     if etype == "speed_limit_change":
@@ -55,6 +58,12 @@ def normalize(evt: Dict[str, Any]) -> Dict[str, Any]:
                 "dist_est_m": e.get("dist"),
             }
         )
+        prev_v = e.get("prev") or (e.get("meta") or {}).get("from") or e.get("from")
+        next_v = e.get("next") or (e.get("meta") or {}).get("to") or e.get("to")
+        if prev_v is not None:
+            out["meta"]["from"] = float(prev_v)
+        if next_v is not None:
+            out["meta"]["to"] = float(next_v)
     elif etype == "limit_reached":
         out.update(
             {
@@ -64,6 +73,25 @@ def normalize(evt: Dict[str, Any]) -> Dict[str, Any]:
                 "odom_m": e.get("odom_m"),
             }
         )
+    elif etype == "getdata_next_limit":
+        # Probe desde GetData.txt con próximo límite y distancia
+        out.update(
+            {
+                "type": "getdata_next_limit",
+                "limit_next_kmh": e.get("kph"),
+                "dist_est_m": e.get("dist_m"),
+            }
+        )
+        # Añade meta.to/meta.dist_m para consumidores
+        try:
+            kph = e.get("kph")
+            dist = e.get("dist_m")
+            if kph is not None:
+                out["meta"]["to"] = float(kph)
+            if dist is not None:
+                out["meta"]["dist_m"] = float(dist)
+        except Exception:
+            pass
     elif etype in ("stop_begin", "stop_end"):
         out.update({"station": e.get("station")})
     elif etype == "marker_pass":

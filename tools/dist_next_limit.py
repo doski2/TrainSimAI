@@ -35,6 +35,59 @@ def read_events(path: Path = EVENTS_PATH) -> list[dict]:
     return out
 
 
+# Preferir distancias directas de getdata_next_limit si existen en events.jsonl
+def _load_events_jsonl(path: Path) -> list[dict]:
+    ev: list[dict] = []
+    if not path.exists():
+        return ev
+    with path.open("r", encoding="utf-8", errors="ignore") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                ev.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return ev
+
+def dist_from_getdata_probes(df: pd.DataFrame, ev_path: Path) -> Optional[pd.Series]:
+    """
+    Construye una serie dist_next_limit_m alineada con df a partir de eventos
+    normalizados getdata_next_limit (que traen meta.dist_m).
+    Requiere que df tenga 't_wall' (float) y que events.jsonl haya sido normalizado.
+    """
+    events = _load_events_jsonl(ev_path)
+    rows: list[dict] = []
+    for e in events:
+        if str(e.get("type")) != "getdata_next_limit":
+            continue
+        t = e.get("t_wall")
+        meta = e.get("meta") or {}
+        dist = meta.get("dist_m")
+        if isinstance(t, (int, float)) and isinstance(dist, (int, float)):
+            rows.append({"t_wall": float(t), "dist_m": float(dist)})
+    if not rows:
+        return None
+    probes = (
+        pd.DataFrame(rows)
+        .sort_values("t_wall")
+        .drop_duplicates(subset=["t_wall"], keep="last")
+    )
+    if "t_wall" not in df.columns or df["t_wall"].isna().all():
+        return None
+    # Alinear por tiempo real con merge_asof (sample&hold)
+    s = pd.merge_asof(
+        df[["t_wall"]].sort_values("t_wall"),
+        probes,
+        on="t_wall",
+        direction="backward",
+        allow_exact_matches=True,
+    )["dist_m"]
+    s.index = df.index  # restaurar índice original
+    return s
+
+
 def pick_series(df: pd.DataFrame, *candidates: str) -> Optional[pd.Series]:
     for name in candidates:
         if name in df.columns:
@@ -217,9 +270,20 @@ def main() -> None:
     # Detectar delimitador automáticamente (nuestros CSV suelen ser ';')
     df = pd.read_csv(run_path, sep=None, engine="python")
     events = read_events(ev_path)
+    # 1) Cálculo existente por eventos de límite y odómetro
     df_out, _, _ = compute_distances(df, events)
+    # 2) Si hay probes getdata_next_limit con distancias, preferirlos
+    try:
+        s_probe = dist_from_getdata_probes(df_out, ev_path)
+    except Exception:
+        s_probe = None
+    if s_probe is not None and not s_probe.isna().all():
+        col = "dist_next_limit_m"
+        if col not in df_out.columns:
+            df_out[col] = np.nan
+        df_out[col] = s_probe.combine_first(df_out[col])
     df_out.to_csv(out_path, index=False)
-    print(f"[dist] OK -> {out_path}")
+    print(f"[dist] OK → {out_path}")
 
 
 if __name__ == "__main__":
