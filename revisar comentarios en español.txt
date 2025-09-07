@@ -1,8 +1,9 @@
 haz test de todo 
-que revise si esta bien todo despues de corregirt todo 
-y preguntas si esta bien y probar-he subido el enlace github aver que lee
-siempre: resumen del dia fecha y hora de lo que se ha echo en .md
 corregor los fallos
+que revise el proyecto si esta bien todo despues de corregirt todo 
+he subido el enlace github aver que lee
+actualiza y documenta el progreso pasado presente y futuro
+
 
 1.Nombres de controles no homogéneos.
 En rd_client._common_controls() estás buscando SIFA (mayúsculas) y PZB_1000/PZB_500 (sin Hz), pero los perfiles/controladores reales suelen exponer Sifa (camel) y PZB_1000Hz/PZB_500Hz. 
@@ -13,6 +14,7 @@ decir que por ahora las seguridaded las guarde no las vamos a usar actualmente
 2.recordar curva de frenado cuando llege
 
 recuerda le el error en flake8 de github-sobre los.venv que lo revise cuando se pueda
+falta revisar el proyecto y que diga que toca lo siguente
 
 
 
