@@ -18,7 +18,7 @@ decir que por ahora las seguridaded las guarde no las vamos a usar actualmente
 recuerda le el error en flake8 de github-sobre los.venv que lo revise cuando se pueda
 falta revisar el proyecto 
 .md frenado es el siguente paso
-pase le todos los ,md y dile de organizar o unificar o eliminar
+pase le todos los ,md y dile de organizar o unificar o eliminar hay muchos o que los guarde
 
 
 
