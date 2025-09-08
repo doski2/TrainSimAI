@@ -1,0 +1,11 @@
+{
+  "name": "DB BR146",
+  "braking_v0": {
+    "margin_kph": 3.0,
+    "max_service_decel": 0.7,
+    "reaction_time_s": 0.6,
+    "coast_band_kph": 1.0,
+    "min_target_kph": 5.0
+  },
+  "era_curve_csv": "profiles/BR146_era_curve.csv"
+}
