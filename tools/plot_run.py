@@ -3,13 +3,16 @@
 r"""
 plot_run.py — Gráfico rápido (MVP)
 Lee:
-- data/runs/run.csv           (CSV ; con v_kmh, odom_m, time_ingame_{h,m,s})
+- data/runs/run.csv           (CSV ; con v_kmh/speed_kph, odom_m, time_ingame_{h,m,s})
 - data/events/events.jsonl    (eventos normalizados)
-Dibuja v_kmh vs odom_m con líneas en speed_limit_change / limit_reached / marker_pass.
+Opcionalmente traza señales de control (throttle/brake) y marcas por fase (phase).
+
 Uso:
   python tools/plot_run.py
   python tools/plot_run.py --run data/runs/run.csv --events data/events/events.jsonl --out plot_speed_vs_odom.png
 """
+from __future__ import annotations
+
 import argparse
 import csv
 import json
@@ -21,6 +24,10 @@ matplotlib.use("Agg")  # sin GUI
 import matplotlib.pyplot as plt
 
 
+def _detect_delimiter(sample: str) -> str:
+    return ";" if sample.count(";") >= sample.count(",") else ","
+
+
 def read_run_csv(path: str) -> Dict[str, List[float]]:
     if not os.path.exists(path):
         raise FileNotFoundError(f"No existe CSV: {path}")
@@ -29,10 +36,14 @@ def read_run_csv(path: str) -> Dict[str, List[float]]:
     except Exception:
         pass
     t_ing, v_kmh, odom = [], [], []
+    throttle, brake, phase = [], [], []
     with open(path, "r", encoding="utf-8", errors="ignore", newline="") as f:
-        r = csv.DictReader(f, delimiter=";")
+        sample = f.read(4096)
+        delim = _detect_delimiter(sample)
+        f.seek(0)
+        r = csv.DictReader(f, delimiter=delim)
         for row in r:
-            # tiempo in-game → horas decimales (si existen columnas)
+            # tiempo in-game -> horas decimales (si existen columnas)
             try:
                 H = float(row.get("time_ingame_h") or 0.0)
                 M = float(row.get("time_ingame_m") or 0.0)
@@ -43,7 +54,11 @@ def read_run_csv(path: str) -> Dict[str, List[float]]:
             t_ing.append(tg)
             # velocidad
             try:
-                vk = float(row.get("v_kmh") or (row.get("SpeedometerKPH") or 0.0))
+                vk = float(
+                    row.get("v_kmh")
+                    or (row.get("SpeedometerKPH") or 0.0)
+                    or (row.get("speed_kph") or 0.0)
+                )
             except Exception:
                 vk = None
             v_kmh.append(vk)
@@ -53,7 +68,26 @@ def read_run_csv(path: str) -> Dict[str, List[float]]:
             except Exception:
                 om = None
             odom.append(om)
-    return {"t_ing": t_ing, "v_kmh": v_kmh, "odom": odom}
+            # señales opcionales del controlador
+            try:
+                th = row.get("throttle")
+                throttle.append(float(th) if th not in (None, "") else None)
+            except Exception:
+                throttle.append(None)
+            try:
+                br = row.get("brake")
+                brake.append(float(br) if br not in (None, "") else None)
+            except Exception:
+                brake.append(None)
+            phase.append(row.get("phase"))
+    return {
+        "t_ing": t_ing,
+        "v_kmh": v_kmh,
+        "odom": odom,
+        "throttle": throttle,
+        "brake": brake,
+        "phase": phase,
+    }
 
 
 def read_events(path: str) -> List[Dict[str, Any]]:
@@ -106,16 +140,18 @@ def build_event_table(events: List[Dict[str, Any]], run: Dict[str, List[float]])
 
 
 def plot_speed_vs_odom(run: Dict[str, List[float]], evtable: List[Dict[str, Any]], out_path: str) -> None:
-    xs, ys = [], []
+    xs, ys, idxs = [], [], []
     for i, om in enumerate(run["odom"]):
         if om is None or run["v_kmh"][i] is None:
             continue
         xs.append(om)
         ys.append(run["v_kmh"][i])
+        idxs.append(i)
     if not xs or not ys:
         raise RuntimeError("No hay datos de odómetro/velocidad para graficar.")
-    plt.figure(figsize=(12, 6))
-    plt.plot(xs, ys, label="v_kmh")
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    ax.plot(xs, ys, label="v_kmh")
     ymax = max(ys) if ys else 1.0
     for r in evtable:
         x = r.get("odom_m")
@@ -123,21 +159,52 @@ def plot_speed_vs_odom(run: Dict[str, List[float]], evtable: List[Dict[str, Any]
             continue
         t = r.get("type")
         if t == "speed_limit_change":
-            plt.axvline(x, linestyle="--", alpha=0.7)
-            plt.text(x, ymax*0.95, f"limit→{r.get('limit_next_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
+            ax.axvline(x, linestyle="--", alpha=0.7)
+            ax.text(x, ymax*0.95, f"limit→{r.get('limit_next_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
         elif t == "limit_reached":
-            plt.axvline(x, linestyle=":", alpha=0.7)
-            plt.text(x, ymax*0.80, f"reached {r.get('limit_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
+            ax.axvline(x, linestyle=":", alpha=0.7)
+            ax.text(x, ymax*0.80, f"reached {r.get('limit_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
         elif t == "marker_pass":
-            plt.axvline(x, linestyle="-.", alpha=0.5)
-            plt.text(x, ymax*0.60, f"M:{r.get('marker','')}", rotation=90, va="top", ha="right", fontsize=7)
-    plt.xlabel("odom_m")
-    plt.ylabel("v_kmh")
-    plt.title("Velocidad vs Odómetro (con eventos)")
-    plt.legend()
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=120)
-    plt.close()
+            ax.axvline(x, linestyle="-.", alpha=0.5)
+            ax.text(x, ymax*0.60, f"M:{r.get('marker','')}", rotation=90, va="top", ha="right", fontsize=7)
+
+    # marcas por fase (si run incluye 'phase')
+    try:
+        if any(run.get("phase", [])):
+            for i in idxs:
+                ph = run.get("phase", [None]*len(run["odom"]))[i]
+                if (ph or "").upper() == "BRAKE":
+                    ax.axvline(run["odom"][i], color="red", alpha=0.08)
+    except Exception:
+        pass
+
+    # Eje secundario para throttle/brake
+    has_th = any(v is not None for v in run.get("throttle", []))
+    has_br = any(v is not None for v in run.get("brake", []))
+    if has_th or has_br:
+        ax2 = ax.twinx()
+        ctrl_x, th_y, br_y = [], [], []
+        for i in idxs:
+            ctrl_x.append(run["odom"][i])
+            th_y.append(run.get("throttle", [None]*len(run["odom"]))[i])
+            br_y.append(run.get("brake", [None]*len(run["odom"]))[i])
+        if has_th:
+            ax2.plot(ctrl_x, th_y, label="throttle", color="tab:green", alpha=0.7)
+        if has_br:
+            ax2.plot(ctrl_x, br_y, label="brake", color="tab:red", alpha=0.7)
+        ax2.set_ylabel("ctrl 0..1")
+        lines1, labels1 = ax.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax2.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+    else:
+        ax.legend(loc="upper right")
+
+    ax.set_xlabel("odom_m")
+    ax.set_ylabel("v_kmh")
+    ax.set_title("Velocidad vs Odómetro (con eventos)")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=120)
+    plt.close(fig)
 
 
 def save_events_csv(evtable, out_csv):
@@ -153,8 +220,8 @@ def save_events_csv(evtable, out_csv):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--run", default=os.path.join("data","runs","run.csv"))
-    ap.add_argument("--events", default=os.path.join("data","events","events.jsonl"))
+    ap.add_argument("--run", default=os.path.join("data", "runs", "run.csv"))
+    ap.add_argument("--events", default=os.path.join("data", "events", "events.jsonl"))
     ap.add_argument("--out", default="plot_speed_vs_odom.png")
     ap.add_argument("--events-out-csv", default="events_timeline.csv")
     args = ap.parse_args()
@@ -170,3 +237,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

@@ -5,13 +5,13 @@ Braking v1 (ERA): velocidad objetivo usando curva A(v) (m/s^2) dependiente de la
 Se integra distancia: d = ∫ v / a(v) dv, con búsqueda binaria para hallar v_safe.
 Entrada de curva: CSV con columnas: speed_kph, decel_service_mps2
 """
-from dataclasses import dataclass
-from math import ceil
-from pathlib import Path
-from typing import List, Optional
-import csv
+from dataclasses import dataclass  # noqa: E402
+from math import ceil  # noqa: E402
+from pathlib import Path  # noqa: E402
+from typing import List, Optional  # noqa: E402
+import csv  # noqa: E402
 
-from runtime.braking_v0 import BrakingConfig, kph_to_mps, mps_to_kph, effective_distance, clamp
+from runtime.braking_v0 import BrakingConfig, kph_to_mps, effective_distance, clamp  # noqa: E402
 
 
 def _lin_interp(x: float, xs: List[float], ys: List[float]) -> float:

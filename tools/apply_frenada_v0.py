@@ -1,41 +1,18 @@
 from __future__ import annotations
 
-"""
-apply_frenada_v0.py — Aplicar regla de frenada v0 (simple)
-
-Entrada:
-- --log: CSV base del run (del colector; suele ir con ';')
-- --dist: CSV con columna dist_next_limit_m y next_limit_kph (puede venir de tools/dist_next_limit.py)
-- --events: JSONL de eventos (opcional; no requerido por v0)
-
-Parámetros:
-- --A: deceleración máxima [m/s^2] (p.ej., 0.7)
-- --margin-kph: margen por debajo del límite [km/h]
-- --reaction: tiempo de reacción [s] (reduce distancia efectiva)
-
-Salida:
-- --out: CSV ';' con columnas originales +
-  - ctrl_vmax_kph: velocidad máxima permitida para poder llegar al próximo límite
-  - ctrl_needs_brake: 0/1 si v_kmh > ctrl_vmax_kph
-  - next_limit_kph (si viene del .dist)
-  - dist_next_limit_m (si viene del .dist)
-
-Notas:
-- Auto-detecta separadores de entrada.
-- Es una regla conservadora basada en v^2 = v0^2 + 2 a s con a = -A.
-"""
-
 import argparse
 from dataclasses import replace
 from pathlib import Path
 from typing import Optional
-
 import numpy as np
 import pandas as pd
-
 from runtime.braking_v0 import BrakingConfig, compute_target_speed_kph
 from runtime.braking_era import EraCurve, compute_target_speed_kph_era
 from runtime.profiles import load_braking_profile, load_profile_extras
+
+"""
+Herramienta CLI para aplicar la frenada v0 / ERA a un run/dist CSV.
+"""
 
 
 def _read_csv_auto(path: Path) -> pd.DataFrame:
@@ -184,3 +161,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
