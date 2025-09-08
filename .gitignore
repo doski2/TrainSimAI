@@ -111,3 +111,23 @@ TEMP_*.txt
 # IDEs
 .vscode/
 .idea/
+
+# Datos locales (anclados a la raíz)
+/data/*.csv
+/data/*.parquet
+/data/*.json
+/data/*.jsonl
+/data/events/
+/data/lua_eventbus.jsonl
+
+# Cobertura adicional
+*.coverage
+
+# Logs / temporales adicionales
+*.tmp
+*.bak
+stdout.txt
+stderr.txt
+stderr2.txt
+tmp_head.txt
+tmp_tail.txt
