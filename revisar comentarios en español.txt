@@ -3,6 +3,7 @@ corregor los fallos
 que revise el proyecto si esta bien todo despues de corregirt todo 
 he subido el enlace github aver que lee
 actualiza y documenta el progreso pasado presente y futuro
+ahora revisa el proyecto y su contenidoo en github y dime que podemos eliminar y si esta bien
 
 
 1.Nombres de controles no homogéneos.
@@ -11,11 +12,13 @@ También faltan alias comunes como VirtualBrake y VirtualEngineBrakeControl.
 Consecuencia: no se loguean esos campos aunque existan
 decir que por ahora las seguridaded las guarde no las vamos a usar actualmente
 
+
 2.recordar curva de frenado cuando llege
 
 recuerda le el error en flake8 de github-sobre los.venv que lo revise cuando se pueda
 falta revisar el proyecto 
 .md frenado es el siguente paso
+pase le todos los ,md y dile de organizar o unificar o eliminar
 
 
 

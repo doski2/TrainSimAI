@@ -127,6 +127,8 @@ TEMP_*.txt
 *.tmp
 *.bak
 stdout.txt
+stderr*.txt
+tmp_*.txt
 stderr.txt
 stderr2.txt
 tmp_head.txt
