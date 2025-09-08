@@ -2,5 +2,4 @@
 max-line-length = 100
 extend-ignore = W391
 per-file-ignores =
-    py-raildriver-master/raildriver/__init__.py: F401, F403
-    py-raildriver-master/raildriver/events.py: F401, E501
+    

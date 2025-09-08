@@ -14,7 +14,8 @@ decir que por ahora las seguridaded las guarde no las vamos a usar actualmente
 2.recordar curva de frenado cuando llege
 
 recuerda le el error en flake8 de github-sobre los.venv que lo revise cuando se pueda
-falta revisar el proyecto y que diga que toca lo siguente
+falta revisar el proyecto 
+.md frenado es el siguente paso
 
 
 
