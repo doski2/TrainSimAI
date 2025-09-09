@@ -5,6 +5,7 @@ import csv
 import json
 import time
 from dataclasses import replace
+import os
 from pathlib import Path
 from typing import Optional
 
@@ -36,19 +37,73 @@ def tail_csv_last_row(path: Path) -> Optional[dict]:
     if not path.exists():
         return None
     try:
-        # auto-separador (nuestros CSV suelen ser ';')
+        # Auto-separador + fallback seguro.
         with path.open("r", encoding="utf-8", errors="ignore", newline="") as f:
+            # Leer cabecera (primera línea)
             try:
-                sample = f.read(4096)
+                header_line = f.readline()
             except Exception:
-                sample = ""
+                return None
+            if not header_line:
+                return None
+            # Tomar una muestra para detectar separador
+            try:
+                sample = header_line + f.read(4096)
+            except Exception:
+                sample = header_line
             delim = ";" if sample.count(";") >= sample.count(",") else ","
-            f.seek(0)
-            rd = csv.DictReader(f, delimiter=delim)
-            last = None
-            for row in rd:
-                last = row
-            return last
+            header = [h.strip() for h in header_line.rstrip("\n\r").split(delim)]
+
+            # Leer un trozo final razonable para localizar la última línea completa
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            tail_start = max(0, size - 65536)
+            f.seek(tail_start)
+            tail = f.read()
+            if not tail:
+                return None
+            lines = tail.splitlines()
+            # Si empezamos en mitad de línea, descartamos la primera línea parcial
+            if tail_start > 0 and lines:
+                lines = lines[1:]
+            if not lines:
+                return None
+
+            # Buscar la última línea no vacía
+            last_line = None
+            for cand in reversed(lines):
+                if cand.strip():
+                    last_line = cand
+                    break
+            if last_line is None:
+                return None
+
+            last_vals = last_line.split(delim)
+            # Si el número de columnas no coincide, intentar la línea anterior
+            if len(last_vals) != len(header):
+                found = False
+                for cand in reversed(lines[:-1]):
+                    if not cand.strip():
+                        continue
+                    vals = cand.split(delim)
+                    if len(vals) == len(header):
+                        last_vals = vals
+                        found = True
+                        break
+                if not found:
+                    # Fallback seguro: usar csv.DictReader para manejar comillas/escapes
+                    f.seek(0)
+                    rd = csv.DictReader(f, delimiter=delim)
+                    last_row = None
+                    for row in rd:
+                        last_row = row
+                    return last_row
+
+            # Mapear header -> valores (ignorando extras)
+            row = {}
+            for i, key in enumerate(header):
+                row[key] = last_vals[i] if i < len(last_vals) else ""
+            return row
     except Exception:
         return None
 
@@ -136,11 +191,15 @@ def main() -> None:
     ev_stream = NonBlockingEventStream(events_path, from_end=bool(args.start_events_from_end))
     rl_th = RateLimiter(max_delta_per_s=0.8)
     rl_br = RateLimiter(max_delta_per_s=1.2)
+    # pid eliminado: no se utiliza
 
     # Estado de próxima señal de límite
     next_limit_kph: Optional[float] = None
     anchor_dist_m: Optional[float] = None
     anchor_odom_m: Optional[float] = None
+    # last_phase eliminado: no se utiliza
+    last_limit_kph: Optional[float] = None
+    last_dist_m: Optional[float] = None
 
     # CSV salida
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -164,6 +223,7 @@ def main() -> None:
     period = 1.0 / max(0.5, float(args.hz))
     t0 = time.perf_counter()
     t_next = t0
+    # last_tick eliminado: no se utiliza
 
     while True:
         if args.duration and (time.perf_counter() - t0) >= float(args.duration):
@@ -208,7 +268,19 @@ def main() -> None:
             if anchor_odom_m is None:
                 anchor_odom_m = odom_m
             traveled = max(0.0, odom_m - anchor_odom_m)
-            dist_next_limit_m = max(0.0, anchor_dist_m - traveled)
+            dist_raw = max(0.0, anchor_dist_m - traveled)
+            # clamp monótono: si el límite no cambió, no permitimos subir distancia
+            if (
+                last_limit_kph is not None
+                and next_limit_kph == last_limit_kph
+                and last_dist_m is not None
+                and dist_raw > last_dist_m
+            ):
+                dist_next_limit_m = last_dist_m
+            else:
+                dist_next_limit_m = dist_raw
+            last_dist_m = dist_next_limit_m
+            last_limit_kph = next_limit_kph
 
         # 4) objetivo y PID
         if curve and next_limit_kph is not None:

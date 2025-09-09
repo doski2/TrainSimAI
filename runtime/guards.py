@@ -26,7 +26,7 @@ class RateLimiter:
         return out
 
 
-def overspeed_guard(speed_kph: float, limit_kph: float | None, *, delta_kph: float = 1.5) -> float:
+def overspeed_guard(speed_kph: float, limit_kph: float | None, *, delta_kph: float = 0.8) -> float:
     """Devuelve nivel mínimo de freno [0..1] cuando se excede el límite en delta_kph."""
     if limit_kph is None:
         return 0.0
@@ -34,8 +34,8 @@ def overspeed_guard(speed_kph: float, limit_kph: float | None, *, delta_kph: flo
         return 0.0
     # excesos mayores → más freno (rampa suave)
     exc = speed_kph - (limit_kph + delta_kph)
-    # 0.1 por cada 2 km/h de exceso, cap a 1.0
-    return clamp01(0.1 + 0.05 * exc)
+    # Rampa más agresiva: suelo 0.2 y +0.1 por cada 1 km/h extra
+    return clamp01(0.2 + 0.1 * exc)
 
 
 __all__ = ["RateLimiter", "overspeed_guard", "clamp01"]
