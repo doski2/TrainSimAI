@@ -200,6 +200,7 @@ def main() -> None:
     # last_phase eliminado: no se utiliza
     last_limit_kph: Optional[float] = None
     last_dist_m: Optional[float] = None
+    last_t_wall_written: Optional[float] = None
 
     # CSV salida
     out_path.parent.mkdir(parents=True, exist_ok=True)
@@ -261,6 +262,17 @@ def main() -> None:
             time.sleep(0.05)
             continue
 
+        # Evitar duplicados: si no hay nueva muestra, no escribimos
+        if last_t_wall_written is not None and abs(t_wall - last_t_wall_written) < 1e-6:
+            # espera al siguiente tick, sin escribir
+            t_next += period
+            delay = t_next - time.perf_counter()
+            if delay > 0:
+                time.sleep(delay)
+            else:
+                t_next = time.perf_counter()
+            continue
+
         # 3) calcular dist_next_limit_m por odómetro
         if next_limit_kph is None or anchor_dist_m is None:
             dist_next_limit_m = None
@@ -297,9 +309,16 @@ def main() -> None:
                     cfg,
                 )[0]
             )
-            phase = "BRAKE" if v_tgt < speed_kph - cfg.coast_band_kph else (
-                "COAST" if abs(v_tgt - speed_kph) <= cfg.coast_band_kph else "CRUISE"
+            phase = (
+                "BRAKE"
+                if v_tgt < speed_kph - cfg.coast_band_kph
+                else ("COAST" if abs(v_tgt - speed_kph) <= cfg.coast_band_kph else "CRUISE")
             )
+
+        # Failsafe: si algo devolviera NaN, usar velocidad actual
+        if not (v_tgt == v_tgt):  # NaN check
+            v_tgt = float(speed_kph)
+            phase = "CRUISE"
 
         th, br = SplitPID().update(v_tgt, speed_kph, dt=period)
         # aplicar rate limiters
@@ -326,6 +345,7 @@ def main() -> None:
                     round(br, 3),
                 ]
             )
+        last_t_wall_written = t_wall
 
         # 6) temporización de bucle
         t_next += period

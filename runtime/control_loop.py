@@ -1,15 +1,299 @@
 from __future__ import annotations
 
-from tools.online_control import main as _main
+import argparse
+from dataclasses import replace
+import time
+import csv
+from pathlib import Path
+from typing import Optional
 
-"""
-Compat: wrapper para ejecutar el control online como runtime.control_loop
-Delegamos en tools.online_control.main
-"""
+import numpy as np
+
+from runtime.braking_v0 import BrakingConfig, compute_target_speed_kph
+from runtime.braking_era import EraCurve, compute_target_speed_kph_era
+from runtime.profiles import load_braking_profile, load_profile_extras
+from runtime.guards import RateLimiter, overspeed_guard
+from runtime.csv_logger import CSVLogger
+import math
+
+# Reutilizamos utilidades de tools.online_control
+from tools.online_control import NonBlockingEventStream, SplitPID
+
+
+def tail_csv_last_row(path: Path) -> dict | None:
+    """Lee la última fila completa del CSV usando la cabecera real y detectando el delimitador.
+    Estrategia: detecta delimitador en la PRIMERA línea; luego lee desde el final con ventanas
+    crecientes (64 KiB → 2 MiB) hasta encontrar una fila completa que case con la cabecera.
+    Soporta ',', ';', '\t', '|'.
+    """
+    if not path.exists():
+        return None
+
+    # 1) Leer cabecera REAL (primera línea) y detectar delimitador.
+    try:
+        with path.open("r", encoding="utf-8", newline="") as f:
+            header_line = f.readline()
+    except Exception:
+        return None
+    if not header_line:
+        return None
+
+    def _pick_delim(line: str) -> str:
+        cands = [",", ";", "\t", "|"]
+        counts = [(d, line.count(d)) for d in cands]
+        delim = max(counts, key=lambda t: t[1])[0]
+        return delim if line.count(delim) > 0 else ","
+
+    delim = _pick_delim(header_line)
+    try:
+        header = next(csv.reader([header_line], delimiter=delim))
+    except Exception:
+        return None
+    if not header:
+        return None
+    ncols = len(header)
+
+    # 2) Leer desde el final con ventanas crecientes hasta encontrar una fila válida.
+    max_window = 2 * 1024 * 1024  # 2 MiB
+    window = 64 * 1024            # 64 KiB inicial
+    filesize = path.stat().st_size
+    with path.open("rb") as fb:
+        while True:
+            try:
+                fb.seek(-min(window, filesize), 2)
+            except OSError:
+                fb.seek(0)
+            chunk = fb.read().decode("utf-8", errors="ignore")
+            lines = [ln for ln in chunk.splitlines() if ln.strip()]
+            for cand in reversed(lines):
+                try:
+                    fields = next(csv.reader([cand], delimiter=delim))
+                except Exception:
+                    continue
+                # saltar cabeceras/repeticiones
+                if [c.strip().lower() for c in fields] == [h.strip().lower() for h in header]:
+                    continue
+                if len(fields) == ncols:
+                    return {k: v for k, v in zip(header, fields)}
+            if window >= max_window or window >= filesize:
+                break
+            window = min(window * 2, max_window)
+    return None
+
+
+def _to_float_loose(val: object) -> float:
+    """Convierte strings a float tolerando formato con miles '.' y decimales ','.
+    '', None o 'nan' -> NaN."""
+    if val is None:
+        return float("nan")
+    s = str(val).strip().strip('"').strip("'")
+    if s == "" or s.lower() == "nan":
+        return float("nan")
+    # si tiene coma, asumimos coma decimal; quitamos puntos como miles
+    if "," in s:
+        s = s.replace(".", "").replace(",", ".")
+    else:
+        # si hay >1 puntos, probablemente son miles -> quítalos
+        if s.count(".") > 1:
+            s = s.replace(".", "")
+    try:
+        return float(s)
+    except Exception:
+        return float("nan")
 
 
 def main() -> None:
-    _main()
+    ap = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
+    ap.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
+    ap.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
+    ap.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
+    ap.add_argument("--hz", type=float, default=5.0)
+    ap.add_argument("--profile", type=str, default=None)
+    ap.add_argument("--era-curve", type=str, default=None)
+    ap.add_argument("--start-events-from-end", action="store_true", help="Empezar a leer events.jsonl desde el final")
+    ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0 = infinito)")
+    # Overrides CLI (opcionales)
+    ap.add_argument("--A", type=float, default=None)
+    ap.add_argument("--margin-kph", type=float, default=None)
+    ap.add_argument("--reaction", type=float, default=None)
+    args = ap.parse_args()
+
+    run_path: Path = args.run
+    events_path: Path = args.events
+    out_path: Path = args.out
+
+    # Configuración de frenada
+    cfg = BrakingConfig()
+    extras = {}
+    if args.profile:
+        cfg = load_braking_profile(args.profile, base=cfg)
+        extras = load_profile_extras(args.profile)
+    if args.margin_kph is not None:
+        cfg = replace(cfg, margin_kph=float(args.margin_kph))
+    if args.A is not None:
+        cfg = replace(cfg, max_service_decel=float(args.A))
+    if args.reaction is not None:
+        cfg = replace(cfg, reaction_time_s=float(args.reaction))
+
+    era_curve_path = args.era_curve or extras.get("era_curve_csv")
+    curve = EraCurve.from_csv(era_curve_path) if era_curve_path else None
+
+    # Estado de eventos y rate limiters
+    ev_stream = NonBlockingEventStream(events_path, from_end=bool(args.start_events_from_end))
+    rl_th = RateLimiter(max_delta_per_s=0.8)
+    rl_br = RateLimiter(max_delta_per_s=1.2)
+
+    # Estado de próxima señal de límite
+    next_limit_kph: Optional[float] = None
+    anchor_dist_m: Optional[float] = None
+    anchor_odom_m: Optional[float] = None
+    last_limit_kph: Optional[float] = None
+    last_dist_m: Optional[float] = None
+    last_t_wall_written: Optional[float] = None
+
+    # CSV salida con logger (coma, append seguro)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    writer = CSVLogger(
+        out_path,
+        delimiter=",",
+        base_order=[
+            "t_wall",
+            "odom_m",
+            "speed_kph",
+            "next_limit_kph",
+            "dist_next_limit_m",
+            "target_speed_kph",
+            "phase",
+            "throttle",
+            "brake",
+        ],
+    )
+
+    period = 1.0 / max(0.5, float(args.hz))
+    t0 = time.perf_counter()
+    t_next = t0
+
+    while True:
+        if args.duration and (time.perf_counter() - t0) >= float(args.duration):
+            break
+
+        # 1) absorber eventos disponibles (sin bloquear)
+        for _ in range(100):
+            try:
+                ev = next(ev_stream)
+            except StopIteration:
+                break
+            except Exception:
+                break
+            if isinstance(ev, dict) and ev.get("type") == "getdata_next_limit":
+                kph = ev.get("kph") or ev.get("speed_kph") or ev.get("limit_kph")
+                dist = ev.get("dist_m") or ev.get("dist")
+                if kph is not None and dist is not None:
+                    next_limit_kph = float(kph)
+                    anchor_dist_m = max(0.0, float(dist))
+                    anchor_odom_m = None
+
+        # 2) muestrear última fila de run.csv
+        row = tail_csv_last_row(run_path)
+        if row is None:
+            time.sleep(0.05)
+            continue
+
+        # Conversión robusta (si no es numérico, saltamos el ciclo)
+        t_wall = _to_float_loose(row.get("t_wall", ""))
+        odom_m = _to_float_loose(row.get("odom_m", ""))
+        # compat: speed_kph o v_kmh
+        v = row.get("speed_kph") or row.get("v_kmh") or row.get("SpeedometerKPH")
+        speed_kph = _to_float_loose(v)
+        if any(math.isnan(x) for x in (t_wall, odom_m, speed_kph)):
+            time.sleep(0.05)
+            continue
+
+        # Evitar duplicados: si no hay nueva muestra, no escribimos
+        if last_t_wall_written is not None and abs(t_wall - last_t_wall_written) < 1e-6:
+            t_next += period
+            delay = t_next - time.perf_counter()
+            if delay > 0:
+                time.sleep(delay)
+            else:
+                t_next = time.perf_counter()
+            continue
+
+        # 3) calcular dist_next_limit_m por odómetro
+        if next_limit_kph is None or anchor_dist_m is None:
+            dist_next_limit_m = None
+        else:
+            if anchor_odom_m is None:
+                anchor_odom_m = odom_m
+            traveled = max(0.0, odom_m - anchor_odom_m)
+            dist_raw = max(0.0, anchor_dist_m - traveled)
+            if (
+                last_limit_kph is not None
+                and next_limit_kph == last_limit_kph
+                and last_dist_m is not None
+                and dist_raw > last_dist_m
+            ):
+                dist_next_limit_m = last_dist_m
+            else:
+                dist_next_limit_m = dist_raw
+            last_dist_m = dist_next_limit_m
+            last_limit_kph = next_limit_kph
+
+        # 4) objetivo y PID
+        if curve and next_limit_kph is not None:
+            v_tgt, phase = compute_target_speed_kph_era(
+                speed_kph, next_limit_kph, dist_next_limit_m, curve=curve, cfg=cfg
+            )
+        else:
+            v_tgt = float(
+                compute_target_speed_kph(
+                    np.asarray([speed_kph]),
+                    np.asarray([dist_next_limit_m if dist_next_limit_m is not None else np.nan]),
+                    np.asarray([next_limit_kph]) if next_limit_kph is not None else None,
+                    cfg,
+                )[0]
+            )
+            phase = (
+                "BRAKE"
+                if v_tgt < speed_kph - cfg.coast_band_kph
+                else ("COAST" if abs(v_tgt - speed_kph) <= cfg.coast_band_kph else "CRUISE")
+            )
+
+        # Failsafe: si algo devolviera NaN, usar velocidad actual
+        if not (v_tgt == v_tgt):  # NaN check
+            v_tgt = float(speed_kph)
+            phase = "CRUISE"
+
+        th, br = SplitPID().update(v_tgt, speed_kph, dt=period)
+        # aplicar rate limiters
+        th = rl_th.step(th, period)
+        br = rl_br.step(br, period)
+        # overspeed guard (mínimo de freno)
+        br = max(br, overspeed_guard(speed_kph, next_limit_kph))
+        if br > 0:
+            th = 0.0
+
+        # 5) registrar usando CSVLogger
+        writer.write_row({
+            "t_wall": float(t_wall),
+            "odom_m": float(odom_m),
+            "speed_kph": float(speed_kph),
+            "next_limit_kph": "" if next_limit_kph is None else float(next_limit_kph),
+            "dist_next_limit_m": "" if dist_next_limit_m is None else float(dist_next_limit_m),
+            "target_speed_kph": float(v_tgt),
+            "phase": phase,
+            "throttle": float(round(th, 3)),
+            "brake": float(round(br, 3)),
+        })
+        last_t_wall_written = t_wall
+
+        # 6) temporización de bucle
+        t_next += period
+        delay = t_next - time.perf_counter()
+        if delay > 0:
+            time.sleep(delay)
+        else:
+            t_next = time.perf_counter()
 
 
 if __name__ == "__main__":

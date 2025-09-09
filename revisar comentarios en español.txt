@@ -3,20 +3,12 @@ corregor los fallos
 que revise el proyecto si esta bien todo despues de corregirt todo 
 he subido el enlace github aver que lee
 actualiza y documenta el progreso pasado presente y futuro
-ahora revisa el proyecto y su contenidoo en github y dime que podemos eliminar y si esta bien
 
+scripts\tsc_sim.bat — Simulado (sin juego, rápido
+scripts\tsc_real.bat — Con juego real (GetData bridge)
 
 1.Nombres de controles no homogéneos.
 En rd_client._common_controls() estás buscando SIFA (mayúsculas) y PZB_1000/PZB_500 (sin Hz), pero los perfiles/controladores reales suelen exponer Sifa (camel) y PZB_1000Hz/PZB_500Hz. 
 También faltan alias comunes como VirtualBrake y VirtualEngineBrakeControl. 
 Consecuencia: no se loguean esos campos aunque existan
 decir que por ahora las seguridaded las guarde no las vamos a usar actualmente
-
-
-recuerda le el error en github al subir
-preguntar  sobre la la configurancion de codex chat
-
-
-
-
-
