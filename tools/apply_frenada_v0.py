@@ -85,7 +85,10 @@ def main() -> None:
     next_lim = _pick_series(df, "next_limit_kph")
 
     if dist is None:
-        raise KeyError("No se encontró 'dist_next_limit_m' en el CSV de --dist. Genera antes con tools/dist_next_limit.py")
+        raise KeyError(
+            "No se encontró 'dist_next_limit_m' en el CSV de --dist. "
+            "Genera antes con tools/dist_next_limit.py"
+        )
 
     dist_arr = np.asarray(dist, dtype=float)
     lim_arr = np.asarray(next_lim, dtype=float) if next_lim is not None else None

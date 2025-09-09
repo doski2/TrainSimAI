@@ -21,7 +21,6 @@ from typing import List, Dict, Any
 
 import matplotlib
 matplotlib.use("Agg")  # sin GUI
-import matplotlib.pyplot as plt
 
 
 def _detect_delimiter(sample: str) -> str:
@@ -117,7 +116,9 @@ def nearest_idx(seq: List[float], val: float) -> int:
     return best_i
 
 
-def build_event_table(events: List[Dict[str, Any]], run: Dict[str, List[float]]) -> List[Dict[str, Any]]:
+def build_event_table(
+    events: List[Dict[str, Any]], run: Dict[str, List[float]]
+) -> List[Dict[str, Any]]:
     table = []
     for e in events:
         t = e.get("t_ingame") or e.get("time")
@@ -133,13 +134,16 @@ def build_event_table(events: List[Dict[str, Any]], run: Dict[str, List[float]])
             row["dist_m_travelled"] = e.get("dist_m_travelled")
         elif e.get("type") == "marker_pass":
             row["marker"] = e.get("marker")
-        elif e.get("type") in ("stop_begin","stop_end"):
+        elif e.get("type") in ("stop_begin", "stop_end"):
             row["station"] = e.get("station")
         table.append(row)
     return table
 
 
-def plot_speed_vs_odom(run: Dict[str, List[float]], evtable: List[Dict[str, Any]], out_path: str) -> None:
+def plot_speed_vs_odom(
+    run: Dict[str, List[float]], evtable: List[Dict[str, Any]], out_path: str
+) -> None:
+    import matplotlib.pyplot as plt
     xs, ys, idxs = [], [], []
     for i, om in enumerate(run["odom"]):
         if om is None or run["v_kmh"][i] is None:
@@ -166,7 +170,15 @@ def plot_speed_vs_odom(run: Dict[str, List[float]], evtable: List[Dict[str, Any]
             ax.text(x, ymax*0.80, f"reached {r.get('limit_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
         elif t == "marker_pass":
             ax.axvline(x, linestyle="-.", alpha=0.5)
-            ax.text(x, ymax*0.60, f"M:{r.get('marker','')}", rotation=90, va="top", ha="right", fontsize=7)
+            ax.text(
+                x,
+                ymax * 0.60,
+                f"M:{r.get('marker', '')}",
+                rotation=90,
+                va="top",
+                ha="right",
+                fontsize=7,
+            )
 
     # marcas por fase (si run incluye 'phase')
     try:
@@ -237,4 +249,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

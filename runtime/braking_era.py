@@ -86,7 +86,9 @@ class EraCurve:
             v_hi = v_lo
         return d
 
-    def v_safe_for_distance(self, d_eff_m: float, v_lim_kph: float, vmax_kph: float = 400.0) -> float:
+    def v_safe_for_distance(
+        self, d_eff_m: float, v_lim_kph: float, vmax_kph: float = 400.0
+    ) -> float:
         """Máxima v0_kph tal que la distancia para frenar a v_lim_kph ≤ d_eff_m (búsqueda binaria)."""
         lo = v_lim_kph
         hi = max(lo + 0.5, float(vmax_kph))
@@ -130,6 +132,7 @@ def compute_target_speed_kph_era(
     else:
         phase = "CRUISE"
     return v_obj_kph, phase
+
 
 __all__ = ["EraCurve", "compute_target_speed_kph_era"]
 

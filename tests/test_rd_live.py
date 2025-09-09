@@ -11,9 +11,9 @@ def test_rd_live_snapshot():
     from raildriver.events import Listener
 
     rd: Any = RailDriver()
-    rd.setRailSimConnected(True)            # type: ignore[attr-defined]
-    rd.setRailDriverConnected(True)         # type: ignore[attr-defined]
-    li: Any = Listener(rd, interval=0.1)    # type: ignore[call-arg]
+    rd.setRailSimConnected(True)
+    rd.setRailDriverConnected(True)
+    li: Any = Listener(rd, interval=0.1)
     li.add("!LocoName")
     li.add("!Coordinates")
     snap = li.snapshot()

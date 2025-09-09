@@ -5,19 +5,20 @@ import os
 import sys
 from collections import Counter, deque
 
-CSV_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.join("data","runs","run.csv")
-EVT_PATH = sys.argv[2] if len(sys.argv) > 2 else os.path.join("data","events","events.jsonl")
+CSV_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.join("data", "runs", "run.csv")
+EVT_PATH = sys.argv[2] if len(sys.argv) > 2 else os.path.join("data", "events", "events.jsonl")
 
 MAIN_FIELDS = {
-    "provider","product","engine","v_ms","v_kmh","t_wall","odom_m",
-    "VirtualBrake","TrainBrakeControl","VirtualEngineBrakeControl","Reverser",
-    "BrakePipePressureBAR","TrainBrakeCylinderPressureBAR",
-    "heading","gradient"
+    "provider", "product", "engine", "v_ms", "v_kmh", "t_wall", "odom_m",
+    "VirtualBrake", "TrainBrakeControl", "VirtualEngineBrakeControl", "Reverser",
+    "BrakePipePressureBAR", "TrainBrakeCylinderPressureBAR",
+    "heading", "gradient",
 }
 REQUIRED_ANY = [
-    {"SpeedometerKPH","SpeedometerMPH"},
-    {"Throttle","Regulator"},
+    {"SpeedometerKPH", "SpeedometerMPH"},
+    {"Throttle", "Regulator"},
 ]
+
 
 def read_csv(path):
     if not os.path.exists(path):
@@ -32,6 +33,7 @@ def read_csv(path):
         r = csv.DictReader(f, delimiter=";")
         rows = list(r)
     return r.fieldnames, rows
+
 
 def analyze_csv(fields, rows):
     print(f"[CSV] Filas: {len(rows)} | Columnas: {len(fields) if fields else 0}")
@@ -57,7 +59,17 @@ def analyze_csv(fields, rows):
     # muestra breve
     print("[CSV] Muestra (últimas 2 filas):")
     for r in rows[-2:]:
-        print({k: r.get(k) for k in ("v_kmh","Regulator","VirtualBrake","VirtualEngineBrakeControl","BrakePipePressureBAR")})
+        print({
+            k: r.get(k)
+            for k in (
+                "v_kmh",
+                "Regulator",
+                "VirtualBrake",
+                "VirtualEngineBrakeControl",
+                "BrakePipePressureBAR",
+            )
+        })
+
 
 def analyze_events(path):
     if not os.path.exists(path):
@@ -84,10 +96,12 @@ def analyze_events(path):
         for o in tail:
             print(o)
 
+
 def main():
     fields, rows = read_csv(CSV_PATH)
     analyze_csv(fields, rows)
     analyze_events(EVT_PATH)
+
 
 if __name__ == "__main__":
     main()

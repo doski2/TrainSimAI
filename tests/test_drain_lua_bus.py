@@ -51,7 +51,10 @@ def test_drain_incremental(tmp_path: Path):
 
     # escribir dos eventos al bus
     bus.write_text(
-        '{"type":"marker_pass","name":"m1","time":1}\n{"type":"marker_pass","name":"m2","time":2}\n',
+        (
+            '{"type":"marker_pass","name":"m1","time":1}\n'
+            '{"type":"marker_pass","name":"m2","time":2}\n'
+        ),
         encoding="utf-8",
     )
 
@@ -80,7 +83,10 @@ def test_drain_incremental(tmp_path: Path):
         evt = json.loads(line)
         evt = drain.enrich(evt, row)
         events.append(drain.normalize(evt))
-    out.write_text("\n".join(json.dumps(e, ensure_ascii=False) for e in events) + "\n", encoding="utf-8")
+    out.write_text(
+        "\n".join(json.dumps(e, ensure_ascii=False) for e in events) + "\n",
+        encoding="utf-8",
+    )
 
     # reintento: nada nuevo
     lines2, off2 = drain.iter_new_lines(bus, off1)
@@ -89,4 +95,3 @@ def test_drain_incremental(tmp_path: Path):
     # comprobar geo enriquecida
     tail = out.read_text(encoding="utf-8").strip().splitlines()[-1]
     assert '"lat": 51.11' in tail and '"lon": 13.6' in tail
-

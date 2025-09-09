@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import json
 import os
@@ -24,11 +24,11 @@ LUA_BUS = os.environ.get(
 )
 
 
-def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: bool = False) -> None:
-    os.makedirs(os.path.dirname(CSV_PATH), exist_ok=True)
-    os.makedirs(os.path.dirname(EVT_PATH), exist_ok=True)
-    # Asegura que el fichero existe desde el arranque
-    open(EVT_PATH, "a", encoding="utf-8").close()
+def run(
+    poll_hz: float = 10.0,
+    stop_time: float | None = None,
+    bus_from_start: bool = False,
+) -> None:
     # Inicializa heartbeat para que otras utilidades (p.ej., drain) detecten que el colector está activo
     try:
         with open(HB_PATH, "w", encoding="utf-8") as hb:
@@ -190,6 +190,7 @@ def run(poll_hz: float = 10.0, stop_time: float | None = None, bus_from_start: b
             with open(EVT_PATH, "a", encoding="utf-8") as f:
                 f.write(json.dumps(nrm, ensure_ascii=False) + "\n")
             drained += 1
+
 
 if __name__ == "__main__":
     import argparse

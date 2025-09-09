@@ -51,6 +51,7 @@ def _load_events_jsonl(path: Path) -> list[dict]:
                 continue
     return ev
 
+
 def dist_from_getdata_probes(df: pd.DataFrame, ev_path: Path) -> Optional[pd.Series]:
     """
     Construye una serie dist_next_limit_m alineada con df a partir de eventos

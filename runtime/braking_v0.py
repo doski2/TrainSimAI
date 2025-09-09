@@ -17,7 +17,11 @@ def mps_to_kph(v_mps: float) -> float:
     return float(v_mps) * 3.6
 
 
-def effective_distance(dist_next_limit_m: Optional[float], v_now_mps: float, cfg: "BrakingConfig") -> float:
+def effective_distance(
+    dist_next_limit_m: Optional[float],
+    v_now_mps: float,
+    cfg: "BrakingConfig",
+) -> float:
     """Distancia efectiva descontando el avance durante el tiempo de reacción.
 
     Si dist_next_limit_m es None o inválido, devuelve 0.0 (conservador).
@@ -81,5 +85,11 @@ def compute_target_speed_kph(
         lim_arr = np.asarray(next_limit_kph, dtype=float)
     s_eff = np.maximum(0.0, dist - v_ms * float(cfg.reaction_time_s))
     lim_adj_ms = np.maximum(0.0, (np.nan_to_num(lim_arr, nan=np.inf) - float(cfg.margin_kph)) / 3.6)
-    v_max_ms = np.sqrt(np.clip(lim_adj_ms**2 + 2.0 * float(cfg.max_service_decel) * s_eff, a_min=0.0, a_max=np.inf))
+    v_max_ms = np.sqrt(
+        np.clip(
+            lim_adj_ms**2 + 2.0 * float(cfg.max_service_decel) * s_eff,
+            a_min=0.0,
+            a_max=np.inf,
+        )
+    )
     return v_max_ms * 3.6

@@ -120,7 +120,11 @@ class CsvLogger:
         self._close()
         assert self.fieldnames is not None
         self._file = open(self.path, "w", newline="", encoding="utf-8")
-        self._writer = csv.DictWriter(self._file, fieldnames=self.fieldnames, delimiter=self.delimiter)
+        self._writer = csv.DictWriter(
+            self._file,
+            fieldnames=self.fieldnames,
+            delimiter=self.delimiter,
+        )
 
     def _open_append(self, retries: int = 5, delay: float = 0.05) -> None:
         self._close()
@@ -129,7 +133,11 @@ class CsvLogger:
             try:
                 assert self.fieldnames is not None
                 self._file = open(self.path, "a", newline="", encoding="utf-8")
-                self._writer = csv.DictWriter(self._file, fieldnames=self.fieldnames, delimiter=self.delimiter)
+                self._writer = csv.DictWriter(
+                    self._file,
+                    fieldnames=self.fieldnames,
+                    delimiter=self.delimiter,
+                )
                 return
             except PermissionError as e:
                 last_err = e

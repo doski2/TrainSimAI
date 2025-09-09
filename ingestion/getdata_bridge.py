@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 import os
 import time
 import json
@@ -6,14 +6,20 @@ import sys
 import argparse
 from pathlib import Path
 
-GETDATA = Path(os.getenv("TSC_GETDATA_FILE",
-    r"C:\Program Files (x86)\Steam\steamapps\common\RailWorks\plugins\GetData.txt"))
+GETDATA = Path(
+    os.getenv(
+        "TSC_GETDATA_FILE",
+        r"C:\\Program Files (x86)\\Steam\\steamapps\\common\\RailWorks\\plugins\\GetData.txt",
+    )
+)
 BUS = Path("data/lua_eventbus.jsonl")
 BUS.parent.mkdir(parents=True, exist_ok=True)
+
 
 def emit(d: dict) -> None:
     with BUS.open("a", encoding="utf-8") as f:
         f.write(json.dumps(d, ensure_ascii=False) + "\n")
+
 
 def read_pairs(text: str) -> dict[str, str]:
     out: dict[str, str] = {}
@@ -27,6 +33,7 @@ def read_pairs(text: str) -> dict[str, str]:
             last = None
     return out
 
+
 def fnum(s: str | None) -> float | None:
     if s is None:
         return None
@@ -35,7 +42,12 @@ def fnum(s: str | None) -> float | None:
     except ValueError:
         return None
 
-def run(duration: float = 0.0, interval: float = 0.25, verbose: bool = True) -> None:
+
+def run(
+    duration: float = 0.0,
+    interval: float = 0.25,
+    verbose: bool = True,
+) -> None:
     last_current_kph: float | None = None
     last_next_kph: float | None = None
     last_next_dist: float | None = None
@@ -115,6 +127,7 @@ def run(duration: float = 0.0, interval: float = 0.25, verbose: bool = True) -> 
                     last_probe_ts = now
 
         time.sleep(interval)
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()

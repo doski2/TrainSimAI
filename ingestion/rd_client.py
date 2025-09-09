@@ -36,8 +36,8 @@ if not USE_FAKE:
     if _os.environ.get("TSC_FAKE_RD") == "1":
         USE_FAKE = True
 if USE_FAKE:
-    from ingestion.rd_fake import FakeRailDriver as RailDriver  # type: ignore  # noqa: E402
-    from ingestion.rd_fake import FakeListener as Listener      # type: ignore  # noqa: E402
+    from ingestion.rd_fake import FakeRailDriver as RailDriver  # type: ignore  # noqa: E402, F811
+    from ingestion.rd_fake import FakeListener as Listener      # type: ignore  # noqa: E402, F811
 
 
 # Claves especiales disponibles en Listener (no se suscriben; se evalúan siempre)
@@ -105,7 +105,10 @@ def _resolve_plugins_dir() -> Path:
     p = os.getenv("RAILWORKS_PLUGINS")
     if p:
         return Path(p)
-    return Path(os.environ.get("PROGRAMFILES(X86)", r"C:\\Program Files (x86)")) / "Steam/steamapps/common/RailWorks/plugins"
+    return (
+        Path(os.environ.get("PROGRAMFILES(X86)", r"C:\\Program Files (x86)"))
+        / "Steam/steamapps/common/RailWorks/plugins"
+    )
 
 
 def _pick_dll_name() -> str:
@@ -121,7 +124,7 @@ def _prepare_dll_search_path(base: Path) -> Path:
             arch = "64" if _process_is_64bit() else "32"
             raise OSError(
                 f"RailDriver de arquitectura opuesta detectado ({alt.name}) en {alt.parent}. "
-                f"Tu Python es {arch}-bit. Instala la DLL que corresponde o usa Python de la otra arquitectura. "
+                f"Tu Python es {arch}-bit. Instala la DLL correcta o usa Python de otra arquitectura. "
                 f"También puedes definir TSC_RD_DLL_DIR/RAILWORKS_PLUGINS."
             )
         raise FileNotFoundError(
@@ -145,7 +148,12 @@ class RDClient:
     - Expone utilidades para obtener un subconjunto habitual de controles.
     """
 
-    def __init__(self, poll_dt: float = 0.2, poll_hz: float | None = None, dll_location: str | None = None) -> None:
+    def __init__(
+        self,
+        poll_dt: float = 0.2,
+        poll_hz: float | None = None,
+        dll_location: str | None = None,
+    ) -> None:
         # Permite sobrescribir por env: TSC_RD_DLL_DIR
         self.dll_location = os.getenv("TSC_RD_DLL_DIR") or dll_location
         if poll_hz and poll_hz > 0:
@@ -222,7 +230,12 @@ class RDClient:
         # Listener para cambios y snapshots unificados
         self.listener = Listener(self.rd, interval=self.poll_dt)
         # Caché de la última geo conocida para rellenar huecos momentáneos
-        self._last_geo: Dict[str, Any] = {"lat": None, "lon": None, "heading": None, "gradient": None}
+        self._last_geo: Dict[str, Any] = {
+            "lat": None,
+            "lon": None,
+            "heading": None,
+            "gradient": None,
+        }
         # Suscribir todos los controles disponibles (las especiales se evalúan siempre)
         try:
             self.listener.subscribe(list(self.ctrl_index_by_name.keys()))
@@ -400,15 +413,21 @@ class RDClient:
             "DynamicBrake", "Reverser",
             # Seguridad y sistemas
             "Sifa", "SIFA", "SifaReset", "SifaLight", "SifaAlarm", "VigilEnable",
-            "PZB_85", "PZB_70", "PZB_55", "PZB_1000Hz", "PZB_500Hz", "PZB_40", "PZB_B40", "PZB_Warning",
+            "PZB_85", "PZB_70", "PZB_55", "PZB_1000Hz", "PZB_500Hz",
+            "PZB_40", "PZB_B40", "PZB_Warning",
             "AFB", "AFB_Speed", "LZB_V_SOLL", "LZB_V_ZIEL", "LZB_DISTANCE",
             # Indicadores útiles
-            "BrakePipePressureBAR", "TrainBrakeCylinderPressureBAR", "Ammeter", "ForceBar", "BrakeBar",
+            "BrakePipePressureBAR", "TrainBrakeCylinderPressureBAR", "Ammeter",
+            "ForceBar", "BrakeBar",
             # Auxiliares
-            "Sander", "Headlights", "CabLight", "DoorsOpenCloseLeft", "DoorsOpenCloseRight", "VirtualPantographControl",
+            "Sander", "Headlights", "CabLight", "DoorsOpenCloseLeft",
+            "DoorsOpenCloseRight", "VirtualPantographControl",
         }
         # Criterios por patrón para capturar familias comunes
-        rx = re.compile(r"^(PZB_|Sifa|AFB|LZB_|BrakePipe|TrainBrake|VirtualBrake|VirtualEngineBrake|Headlights|CabLight|Doors)", re.I)
+        rx = re.compile(
+            r"^(PZB_|Sifa|AFB|LZB_|BrakePipe|TrainBrake|VirtualBrake|VirtualEngineBrake|Headlights|CabLight|Doors)",
+            re.I,
+        )
         chosen = {n for n in names if (n in preferred or rx.match(n))}
         return sorted(chosen)
 

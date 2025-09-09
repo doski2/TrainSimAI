@@ -18,8 +18,16 @@ def test_dist_from_getdata_probes_alignment(tmp_path: Path):
     # 2) events.jsonl con eventos *normalizados* getdata_next_limit
     ev_path = tmp_path / "events.jsonl"
     rows = [
-        {"type":"getdata_next_limit","t_wall":100.0,"meta":{"to":70.0,"dist_m":1000.0}},
-        {"type":"getdata_next_limit","t_wall":105.0,"meta":{"to":70.0,"dist_m":900.0}},
+        {
+            "type": "getdata_next_limit",
+            "t_wall": 100.0,
+            "meta": {"to": 70.0, "dist_m": 1000.0},
+        },
+        {
+            "type": "getdata_next_limit",
+            "t_wall": 105.0,
+            "meta": {"to": 70.0, "dist_m": 900.0},
+        },
     ]
     with ev_path.open("w", encoding="utf-8") as f:
         for r in rows:
@@ -40,4 +48,3 @@ def test_dist_from_getdata_probes_alignment(tmp_path: Path):
     assert vals[2] == pytest.approx(1000.0)
     assert vals[3] == pytest.approx(900.0)
     assert vals[4] == pytest.approx(900.0)
-

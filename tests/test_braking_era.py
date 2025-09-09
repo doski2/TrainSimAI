@@ -2,6 +2,7 @@ from __future__ import annotations
 from pathlib import Path
 from runtime.braking_era import EraCurve
 
+
 def test_era_distance_monotonic(tmp_path: Path):
     # Curva constante A=0.7 -> debe parecerse a modelo constante
     p = tmp_path / "curve.csv"
