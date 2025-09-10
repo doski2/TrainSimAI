@@ -8,6 +8,10 @@ from ingestion.rd_client import RDClient
 import math
 from ingestion.lua_eventbus import LuaEventBus
 from runtime.csv_logger import CsvLogger
+try:
+    from storage.sqlite_store import RunStore
+except Exception:
+    RunStore = None  # type: ignore
 from runtime.events_bus import normalize
 
 # Archivos de salida
@@ -28,6 +32,7 @@ def run(
     poll_hz: float = 10.0,
     stop_time: float | None = None,
     bus_from_start: bool = False,
+    sqlite_db: str = "data/run.db",
 ) -> None:
     # Inicializa heartbeat para que otras utilidades (p.ej., drain) detecten que el colector está activo
     try:
@@ -53,6 +58,13 @@ def run(
             "odom_m",
         ],
     )
+    # Opcional: store en SQLite si está disponible y se pasó sqlite_db
+    store = None
+    if RunStore is not None and sqlite_db:
+        try:
+            store = RunStore(sqlite_db)
+        except Exception as e:
+            print(f"[collector] SQLite deshabilitado: {e}")
     # si bus_from_start=True => NO tail; leer desde el principio
     bus = LuaEventBus(LUA_BUS, create_if_missing=True, from_end=(not bus_from_start))
     # Primar cabecera con superset de campos (specials + controles + derivados)
@@ -85,6 +97,12 @@ def run(
         row["odom_m"] = odom_m
         prev_t, prev_v = now, v
         csvlog.write_row(row)
+        if store is not None:
+            try:
+                store.insert_row(row)
+            except Exception:
+                # No bloquear el colector por errores en almacenamiento adicional
+                pass
         # Refresca heartbeat en cada tick (señal de vida del colector)
         try:
             with open(HB_PATH, "w", encoding="utf-8") as hb:

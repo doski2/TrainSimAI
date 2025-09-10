@@ -14,6 +14,7 @@ from runtime.braking_era import EraCurve, compute_target_speed_kph_era
 from runtime.profiles import load_braking_profile, load_profile_extras
 from runtime.guards import RateLimiter, overspeed_guard
 from runtime.csv_logger import CSVLogger
+from storage.sqlite_store import RunStore
 import math
 
 # Reutilizamos utilidades de tools.online_control
@@ -108,6 +109,9 @@ def main() -> None:
     ap.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
     ap.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
     ap.add_argument("--hz", type=float, default=5.0)
+    ap.add_argument("--db", default="data/run.db")
+    ap.add_argument("--source", choices=["sqlite","csv"], default="sqlite")
+    ap.add_argument("--no-csv-fallback", action="store_true", help="Desactiva fallback a CSV si SQLite está vacío")
     ap.add_argument("--profile", type=str, default=None)
     ap.add_argument("--era-curve", type=str, default=None)
     ap.add_argument("--start-events-from-end", action="store_true", help="Empezar a leer events.jsonl desde el final")
@@ -169,6 +173,11 @@ def main() -> None:
         ],
     )
 
+    # Fuente de datos opcional: SQLite
+    store = RunStore(args.db) if args.source == "sqlite" else None
+    last_rowid = 0
+    idle_ticks = 0
+
     period = 1.0 / max(0.5, float(args.hz))
     t0 = time.perf_counter()
     t_next = t0
@@ -193,11 +202,28 @@ def main() -> None:
                     anchor_dist_m = max(0.0, float(dist))
                     anchor_odom_m = None
 
-        # 2) muestrear última fila de run.csv
-        row = tail_csv_last_row(run_path)
-        if row is None:
-            time.sleep(0.05)
-            continue
+        # 2) muestrear última fila de run.csv (fuente configurable)
+        if store is not None:
+            latest = store.latest_since(last_rowid)
+            if latest is None:
+                idle_ticks += 1
+                # tras ~2s sin datos en SQLite, intentamos CSV si no está desactivado
+                if not args.no_csv_fallback and idle_ticks >= 40:
+                    row = tail_csv_last_row(run_path)
+                    if row is None:
+                        time.sleep(0.05)
+                        continue
+                else:
+                    time.sleep(0.05)
+                    continue
+            else:
+                idle_ticks = 0
+                last_rowid, row = latest
+        else:
+            row = tail_csv_last_row(run_path)
+            if row is None:
+                time.sleep(0.05)
+                continue
 
         # Conversión robusta (si no es numérico, saltamos el ciclo)
         t_wall = _to_float_loose(row.get("t_wall", ""))

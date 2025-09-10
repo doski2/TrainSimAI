@@ -28,7 +28,14 @@ python -m tools.apply_frenada_v0 --log data/run.csv --dist data/run.dist.csv --e
 python -m tools.plot_run data/run.ctrl.csv
 ```
 
-> Consulta **/docs** para detalles y fundamentos.
+
+### Windows (.bat)
+
+- **Simulado (sin juego):** `scripts\\tsc_sim.bat`
+- **Con juego (GetData):** `scripts\\tsc_real.bat`
+> Abren 2–3 ventanas: bridge/collector/control y un tail del CSV.
+
+> Desde ahora, el control lee de **SQLite** (`data/run.db`, WAL). El collector escribe tanto CSV como SQLite.
 
 ## Estructura
 ```
