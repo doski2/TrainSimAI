@@ -1,7 +1,21 @@
+from __future__ import annotations
 from pathlib import Path
 from typing import List, cast
-from runtime.csv_logger import CsvLogger
 import csv
+from runtime.csv_logger import CSVLogger, CsvLogger
+
+
+def test_csv_logger_header_once_and_append(tmp_path: Path):
+    f = tmp_path / "x.csv"
+    log = CSVLogger(f, delimiter=",", base_order=["a", "b", "c"])
+    log.write_row({"a": 1, "b": 2, "c": 3})
+    log.write_row({"a": 4, "b": 5, "c": 6})
+    log.close()
+    data = f.read_text(encoding="utf-8").strip().splitlines()
+    assert data[0] == "a,b,c"
+    assert data[1] == "1,2,3"
+    assert data[2] == "4,5,6"
+    assert len(data) == 3
 
 
 def test_csv_header_and_extension(tmp_path: Path):
