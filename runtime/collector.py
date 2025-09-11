@@ -8,6 +8,7 @@ from ingestion.rd_client import RDClient
 import math
 from ingestion.lua_eventbus import LuaEventBus
 from runtime.csv_logger import CSVLogger
+from math import radians, sin, cos, asin
 
 try:
     from storage.run_store_sqlite import RunStore
@@ -68,10 +69,19 @@ def run(
     # Primar cabecera con superset de campos (specials + controles + derivados)
     csvlog.init_with_fields(rd.schema())
 
-    # Estado para odometría
-    prev_t = None
-    prev_v = None
-    odom_m = 0.0
+    # --- estado para derivar odómetro/velocidad ---
+    prev_t: float | None = None
+    prev_lat: float | None = None
+    prev_lon: float | None = None
+    odom_accum_m: float = 0.0
+    debug_next_log_t: float = 0.0
+
+    def _haversine_m(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        R = 6371000.0
+        dlat = radians(lat2 - lat1)
+        dlon = radians(lon2 - lon1)
+        a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+        return 2 * R * asin(math.sqrt(max(0.0, a)))
 
     # Seguimiento de último anuncio de límite (snapshot crudo)
     pending_limit = None  # dict con {"limit_next_kmh","odom_m","time","lat","lon"}
@@ -86,14 +96,55 @@ def run(
             break
         now = time.time()
         row["t_wall"] = now
-        # --- Odómetro (regla trapezoidal)
-        v = float(row.get("v_ms") or 0.0)
-        if prev_t is not None:
-            dt = max(0.0, now - prev_t)
-            v_prev = float(prev_v or v)
-            odom_m += 0.5 * (v_prev + v) * dt
-        row["odom_m"] = odom_m
-        prev_t, prev_v = now, v
+        # ---- enriquecer: odómetro/velocidad si faltan ----
+        # Preferencias de keys de posición: lat/lon en grados si existen (fila o meta)
+        meta = row.get("meta") or {}
+        lat = row.get("lat") or row.get("lat_deg") or meta.get("lat") or meta.get("lat_deg")
+        lon = row.get("lon") or row.get("lon_deg") or meta.get("lon") or meta.get("lon_deg")
+        t_wall = float(row.get("t_wall") or 0.0)
+        odom_m = row.get("odom_m")
+        speed_kph = row.get("speed_kph")
+
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and prev_t is not None and prev_lat is not None and prev_lon is not None:
+            dt = max(1e-3, t_wall - prev_t)
+            d = _haversine_m(float(prev_lat), float(prev_lon), float(lat), float(lon))
+            # descartar picos imposibles (>150 m en dt de 0.2 s ~ >2700 km/h)
+            if d <= 150.0:
+                odom_accum_m += d
+                if speed_kph in (None, "", 0, 0.0):
+                    speed_kph = (d / dt) * 3.6
+        elif (speed_kph not in (None, "", 0, 0.0)) and prev_t is not None:
+            # fallback: integrar por velocidad si no hay lat/lon
+            try:
+                v = float(speed_kph) / 3.6
+                dt = max(1e-3, t_wall - prev_t)
+                odom_accum_m += v * dt
+            except Exception:
+                pass
+
+        # clamp y asignación a la fila si faltaban
+        if odom_m in (None, "", 0, 0.0):
+            row["odom_m"] = float(round(odom_accum_m, 3))
+        if speed_kph not in (None, ""):
+            try:
+                row["speed_kph"] = float(max(0.0, min(400.0, float(speed_kph))))
+            except Exception:
+                pass
+
+        # actualizar estado
+        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)):
+            prev_lat, prev_lon = float(lat), float(lon)
+        prev_t = t_wall
+
+        # log de salud (cada ~1 s)
+        if time.time() >= debug_next_log_t:
+            try:
+                print(f"[collector] t={t_wall:.3f} odom={row.get('odom_m')} speed={row.get('speed_kph')}")
+            except Exception:
+                pass
+            debug_next_log_t = time.time() + 1.0
+
+        # ---- escritura ----
         csvlog.write_row(row)
         if store is not None:
             try:
@@ -155,7 +206,7 @@ def run(
             if nrm.get("type") == "speed_limit_change":
                 prev = pending_limit
                 if prev:
-                    dist = float(odom_m) - float(prev["odom_m"])  # distancia por odometro
+                    dist = float(odom_m or 0.0) - float(prev.get("odom_m") or 0.0)  # distancia por odometro
                     reach = {
                         "type": "limit_reached",
                         "limit_kmh": prev["limit_next_kmh"],

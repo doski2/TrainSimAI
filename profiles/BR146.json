@@ -7,5 +7,11 @@
     "coast_band_kph": 1.0,
     "min_target_kph": 5.0
   },
-  "era_curve_csv": "profiles/BR146_era_curve.csv"
+  "era_curve_csv": "profiles/BR146_era_curve.csv",
+  "braking": {
+    "a_service_mps2": 0.7,
+    "t_react_s": 0.8,
+    "margin_m": 40.0,
+    "v_margin_kph": 1.5
+  }
 }

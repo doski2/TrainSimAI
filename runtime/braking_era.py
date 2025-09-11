@@ -1,17 +1,19 @@
 from __future__ import annotations
 
-"""
-Braking v1 (ERA): velocidad objetivo usando curva A(v) (m/s^2) dependiente de la velocidad.
-Se integra distancia: d = ∫ v / a(v) dv, con búsqueda binaria para hallar v_safe.
-Entrada de curva: CSV con columnas: speed_kph, decel_service_mps2
-"""
-from dataclasses import dataclass  # noqa: E402
-from math import ceil  # noqa: E402
-from pathlib import Path  # noqa: E402
-from typing import List, Optional  # noqa: E402
-import csv  # noqa: E402
+from dataclasses import dataclass
+from math import ceil
+from pathlib import Path
+from typing import List, Optional
+import csv
 
-from runtime.braking_v0 import BrakingConfig, kph_to_mps, effective_distance, clamp  # noqa: E402
+from runtime.braking_v0 import BrakingConfig, kph_to_mps, effective_distance, clamp
+
+"""Braking ERA implementation.
+
+This module implements ERA-style braking target computation and a concrete
+``EraCurve`` that can be loaded from CSV. The control loop uses
+``EraCurve.from_csv`` if an ERA CSV path is provided.
+"""
 
 
 def _lin_interp(x: float, xs: List[float], ys: List[float]) -> float:
@@ -23,7 +25,6 @@ def _lin_interp(x: float, xs: List[float], ys: List[float]) -> float:
         return ys[0]
     if x >= xs[-1]:
         return ys[-1]
-    # búsqueda lineal sencilla (listas cortas); optimizable si hace falta
     for i in range(n - 1):
         x0, x1 = xs[i], xs[i + 1]
         if x0 <= x <= x1:

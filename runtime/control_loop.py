@@ -4,6 +4,7 @@ import argparse
 from dataclasses import replace
 import time
 import csv
+import json
 from pathlib import Path
 from typing import Optional
 
@@ -56,7 +57,7 @@ def tail_csv_last_row(path: Path) -> dict | None:
 
     # 2) Leer desde el final con ventanas crecientes hasta encontrar una fila válida.
     max_window = 2 * 1024 * 1024  # 2 MiB
-    window = 64 * 1024            # 64 KiB inicial
+    window = 64 * 1024  # 64 KiB inicial
     filesize = path.stat().st_size
     with path.open("rb") as fb:
         while True:
@@ -107,13 +108,21 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
     ap.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
     ap.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
+    ap.add_argument("--bus", default="data/lua_eventbus.jsonl", help="Event bus JSONL (fallback si events.jsonl no avanza)")
     ap.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
     ap.add_argument("--hz", type=float, default=5.0)
     ap.add_argument("--db", default="data/run.db")
-    ap.add_argument("--source", choices=["sqlite","csv"], default="sqlite")
+    ap.add_argument("--source", choices=["sqlite", "csv"], default="sqlite")
     ap.add_argument("--no-csv-fallback", action="store_true", help="Desactiva fallback a CSV si SQLite está vacío")
-    ap.add_argument("--derive-speed-if-missing", action="store_true", default=True, help="Si falta speed_kph, derivarla de odom_m (por defecto: activado)")
-    ap.add_argument("--no-derive-speed", action="store_true", help="Desactiva la derivación automática de speed_kph si falta")
+    ap.add_argument(
+        "--derive-speed-if-missing",
+        action="store_true",
+        default=True,
+        help="Si falta speed_kph, derivarla de odom_m (por defecto: activado)",
+    )
+    ap.add_argument(
+        "--no-derive-speed", action="store_true", help="Desactiva la derivación automática de speed_kph si falta"
+    )
     ap.add_argument("--profile", type=str, default=None)
     ap.add_argument("--era-curve", type=str, default=None)
     ap.add_argument("--start-events-from-end", action="store_true", help="Empezar a leer events.jsonl desde el final")
@@ -127,6 +136,7 @@ def main() -> None:
     run_path: Path = args.run
     events_path: Path = args.events
     out_path: Path = args.out
+    bus_path: Path = Path(args.bus)
 
     # Configuración de frenada
     cfg = BrakingConfig()
@@ -134,6 +144,28 @@ def main() -> None:
     if args.profile:
         cfg = load_braking_profile(args.profile, base=cfg)
         extras = load_profile_extras(args.profile)
+        # si el perfil tiene bloque 'braking', mapear claves conocidas a BrakingConfig
+        if isinstance(extras, dict) and "braking" in extras and isinstance(extras["braking"], dict):
+            b = extras["braking"]
+            # keys posibles que podrían venir del bloque 'braking'
+            mapping_keys = {
+                "a_service_mps2": "max_service_decel",
+                "max_service_decel": "max_service_decel",
+                "t_react_s": "reaction_time_s",
+                "reaction_time_s": "reaction_time_s",
+                "margin_m": None,  # distancia, no es directamente mapeable en BrakingConfig
+                "v_margin_kph": "margin_kph",
+                "margin_kph": "margin_kph",
+            }
+            vals = {}
+            for src, dst in mapping_keys.items():
+                if src in b and dst is not None:
+                    try:
+                        vals[dst] = float(b[src])
+                    except Exception:
+                        pass
+            if vals:
+                cfg = replace(cfg, **vals)
     if args.margin_kph is not None:
         cfg = replace(cfg, margin_kph=float(args.margin_kph))
     if args.A is not None:
@@ -178,14 +210,16 @@ def main() -> None:
     # Fuente de datos opcional: SQLite
     store = RunStore(args.db) if args.source == "sqlite" else None
     last_rowid = 0
-    use_csv = (args.source == "csv")
+    use_csv = args.source == "csv"
     # decidir si derivamos speed_kph cuando falta (flag y complemento)
     derive_speed = bool(args.derive_speed_if_missing)
     if getattr(args, "no_derive_speed", False):
         derive_speed = False
 
     # Informar al inicio sobre las opciones relevantes (útil para debugging)
-    print(f"[control] source={args.source} db={args.db} derive_speed_if_missing={derive_speed} no_csv_fallback={args.no_csv_fallback}")
+    print(
+        f"[control] source={args.source} db={args.db} derive_speed_if_missing={derive_speed} no_csv_fallback={args.no_csv_fallback}"
+    )
     # memoria para derivar velocidad si falta
     prev_t_wall: float | None = None
     prev_odom_m: float | None = None
@@ -193,6 +227,35 @@ def main() -> None:
     period = 1.0 / max(0.5, float(args.hz))
     t0 = time.perf_counter()
     t_next = t0
+
+    # Puntero para tail del bus (empezar desde el final si se pidió --start-events-from-end)
+    bus_pos = 0
+    try:
+        bus_pos = bus_path.stat().st_size if args.start_events_from_end else 0
+    except Exception:
+        bus_pos = 0
+
+    def _drain_bus_events(path: Path, pos: int):
+        if not path.exists():
+            return [], pos
+        try:
+            with path.open("r", encoding="utf-8", errors="ignore") as f:
+                f.seek(pos)
+                chunk = f.read()
+                pos = f.tell()
+        except Exception:
+            return [], pos
+        evs = []
+        for ln in chunk.splitlines():
+            ln = ln.strip()
+            if not ln:
+                continue
+            try:
+                ev = json.loads(ln)
+            except Exception:
+                continue
+            evs.append(ev)
+        return evs, pos
 
     while True:
         if args.duration and (time.perf_counter() - t0) >= float(args.duration):
@@ -256,6 +319,22 @@ def main() -> None:
                 time.sleep(0.05)
                 continue
         prev_t_wall, prev_odom_m = t_wall, odom_m
+
+        # --- LEER EVENTOS DEL BUS (getdata_next_limit) ---
+        evs, bus_pos = _drain_bus_events(bus_path, bus_pos)
+        for ev in evs:
+            et = ev.get("type")
+            if et == "getdata_next_limit":
+                kph = ev.get("kph") or ev.get("speed_kph") or ev.get("limit_kph")
+                dist = ev.get("dist_m") or ev.get("dist")
+                if kph is not None and dist is not None:
+                    next_limit_kph = float(kph)
+                    anchor_dist_m = float(dist)
+                    anchor_odom_m = odom_m
+                    try:
+                        print(f"[control] next_limit={next_limit_kph} kph  dist≈{anchor_dist_m} m")
+                    except Exception:
+                        pass
         if math.isnan(speed_kph):
             time.sleep(0.05)
             continue
@@ -325,17 +404,19 @@ def main() -> None:
             th = 0.0
 
         # 5) registrar usando CSVLogger
-        writer.write_row({
-            "t_wall": float(t_wall),
-            "odom_m": float(odom_m),
-            "speed_kph": float(speed_kph),
-            "next_limit_kph": "" if next_limit_kph is None else float(next_limit_kph),
-            "dist_next_limit_m": "" if dist_next_limit_m is None else float(dist_next_limit_m),
-            "target_speed_kph": float(v_tgt),
-            "phase": phase,
-            "throttle": float(round(th, 3)),
-            "brake": float(round(br, 3)),
-        })
+        writer.write_row(
+            {
+                "t_wall": float(t_wall),
+                "odom_m": float(odom_m),
+                "speed_kph": float(speed_kph),
+                "next_limit_kph": "" if next_limit_kph is None else float(next_limit_kph),
+                "dist_next_limit_m": "" if dist_next_limit_m is None else float(dist_next_limit_m),
+                "target_speed_kph": float(v_tgt),
+                "phase": phase,
+                "throttle": float(round(th, 3)),
+                "brake": float(round(br, 3)),
+            }
+        )
         last_t_wall_written = t_wall
 
         # 6) temporización de bucle
