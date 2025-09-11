@@ -37,6 +37,145 @@ python -m tools.plot_run data/run.ctrl.csv
 
 > Desde ahora, el control lee de **SQLite** (`data/run.db`, WAL). El collector escribe tanto CSV como SQLite.
 
+### Uso en tiempo real (con SQLite)
+
+Ejemplo de ejecución en tiempo real (el control intentará leer desde SQLite y, por compatibilidad, hará fallback automático a CSV si SQLite está vacío):
+
+```bash
+# tiempo real (con fallback a CSV automático)
+python -m runtime.control_loop --source sqlite --db data/run.db \
+	--events data/events.jsonl --profile profiles/BR146.json \
+	--hz 5 --start-events-from-end --out data/ctrl_live.csv
+```
+
+Explicación de flags relevantes:
+
+- `--source {sqlite,csv}`
+	- `sqlite`: el control leerá la última telemetría desde la base de datos SQLite indicada con `--db` (método preferido; usa `RunStore`).
+	- `csv`: fuerza la lectura desde el CSV de salida (`--out`), útil para entornos simples o debugging.
+
+- `--db <path>`
+	- Ruta al fichero SQLite (por ejemplo `data/run.db`). Usado solo cuando `--source sqlite`.
+
+- `--start-events-from-end`
+	- Inicia la lectura del fichero de eventos (`--events`) desde el final en lugar de procesar todo el historial. Muy útil para retomar una sesión en tiempo real y evitar reprocesar todo el historial.
+
+- `--derive-speed-if-missing` (por defecto: ON)
+	- Si la muestra entrante no trae `speed_kph`, el control intentará derivar la velocidad a partir de la diferencia del odómetro entre muestras sucesivas. Esto está activado por defecto; puede desactivarse con `--no-derive-speed`.
+
+Fallback a CSV
+- Por compatibilidad y robustez en arranques, si `--source sqlite` está seleccionado pero la base de datos está vacía o inaccesible, el control puede caer automáticamente al modo CSV (leer la última línea del CSV `--out`). Este comportamiento se puede desactivar con la opción `--no-csv-fallback` si se desea un fallo explícito en ausencia de datos en la base.
+
+Nota: el `collector` escribe tanto un CSV append-only como intentos no bloqueantes de insertar en SQLite (WAL). Esto evita problemas de bloqueo en Windows y permite la migración progresiva de consumidores al `RunStore`.
+
+### Troubleshooting — `ctrl_live.csv` vacío
+
+Si el fichero `--out` (por ejemplo `data/ctrl_live.csv`) está vacío o no se actualiza, sigue estos pasos:
+
+1) Comprobar si la base de datos SQLite tiene filas:
+
+PowerShell:
+
+```powershell
+python -m tools.db_check --db data\run.db
+```
+
+Linux / Git Bash:
+
+```bash
+python -m tools.db_check --db data/run.db
+```
+
+Salida esperada (ejemplo cuando hay datos):
+
+```
+[db_check] filas en telemetry: 10126
+[db_check] última fila: (10126, 1757536887.6454296, 40790.31661716371, 40.79)
+```
+
+Si `filas en telemetry: 0` → migrar desde el CSV histórico (si lo tienes):
+
+PowerShell / Bash:
+
+```powershell
+python -m tools.migrate_run_csv_to_sqlite --in data/runs/run.csv --out data/run.db
+```
+
+2) Confirmar que el `collector` activo está insertando en SQLite
+
+- Verifica el heartbeat del collector (archivo creado por el collector):
+
+PowerShell:
+
+```powershell
+if (Test-Path data\events\.collector_heartbeat) { Get-Content data\events\.collector_heartbeat } else { Write-Host 'No hay heartbeat (collector no activo)' }
+```
+
+También puedes observar si el número de filas en la DB aumenta en tiempo real (ejecuta en bucle):
+
+PowerShell (comprobar cada 2s):
+
+```powershell
+while ($true) { python -m tools.db_check --db data\run.db; Start-Sleep -s 2 }
+```
+
+Linux / Git Bash (equivalente):
+
+```bash
+watch -n 2 "python -m tools.db_check --db data/run.db"
+```
+
+Si las filas aumentan con el tiempo, el collector está insertando correctamente en SQLite.
+
+3) Comando de `tail` y ejemplos de salida esperada
+
+PowerShell (últimas 5 líneas del CSV):
+
+```powershell
+Get-Content data\ctrl_live.csv -Tail 5
+```
+
+Linux / Git Bash:
+
+```bash
+tail -n 5 data/ctrl_live.csv
+```
+
+Salida tipo (cabecera + una fila de ejemplo):
+
+```
+t_wall,time_ingame_h,time_ingame_m,time_ingame_s,lat,lon,heading,gradient,v_ms,v_kmh,odom_m,...
+1757536887.6454296,12,34,56,51.5074,-0.1278,180,0.0,11.33,40.79,40790.3166,...
+```
+
+Si el CSV sigue sin actualizarse pero la DB sí recibe filas, revisa que el proceso del collector no esté lanzado con otro `CSV_PATH` (variable de entorno `RUN_CSV_PATH`) o que `--out` usado por el control no sea un fichero distinto.
+
+Si necesitas ayuda para depurar procesos en Windows (identificar qué proceso es el collector), puedo añadir comandos PowerShell sugeridos para listarlo y su línea de comandos.
+
+### Guía rápida `.BAT` — `scripts\tsc_sim.bat` y `scripts\tsc_real.bat`
+
+Dentro de `scripts/` hay atajos para arrancar la pila en Windows. Resumen del comportamiento y cómo usarlos:
+
+- `scripts\tsc_sim.bat` (modo simulado)
+	- Variables por defecto: `TSC_FAKE_RD=1`, `RUN_CSV=data\runs\run.csv`, `EVENTS=data\events.jsonl`, `PROFILE=profiles\BR146.json`, `OUT=data\ctrl_live.csv`.
+	- Orden de ventanas/procesos lanzados:
+		1. `collector` (simulado) — normaliza telemetría y escribe CSV + SQLite.
+		2. `tools.db_check` — chequeo rápido de `data\run.db` antes de arrancar control (impide arrancar control vacio si DB está a 0 filas).
+		3. `control_loop` — en modo `--source sqlite --db data/run.db` con `--start-events-from-end`.
+		4. `tail` de `data\ctrl_live.csv` en una ventana PowerShell (Get-Content -Tail -Wait).
+
+- `scripts\tsc_real.bat` (con juego / GetData)
+	- Similar a `tsc_sim.bat` pero además arranca `ingestion.getdata_bridge` para leer `GetData.txt` del juego.
+	- No establece `TSC_FAKE_RD` (usa el backend real RDClient). Asegúrate de ajustar `TSC_GETDATA_FILE` en el script si tu ruta es distinta.
+
+Detalles y notas:
+- `TSC_FAKE_RD=1` (en `tsc_sim.bat`) obliga a usar el backend simulado para pruebas sin hardware; útil para debugging y CI locales.
+- La ventana de `tail` abre una PowerShell con `Get-Content -Tail <N> -Wait` para seguir el CSV en tiempo real.
+- Si modificas `--out` u `RUN_CSV`, actualiza la variable correspondiente en el `.bat` para que el `tail` y `control` usen el mismo fichero.
+
+Si quieres, actualizo `tsc_sim.bat` para que convenga explícitamente `--no-csv-fallback` o añadir logging más verboso al arranque del `control_loop`.
+
+
 ## Estructura
 ```
 ingestion/   # Bridges y captura (GetData → bus LUA)
