@@ -1,4 +1,7 @@
 py-raildriver>=0.6
 typing-extensions>=4.9
-matplotlib>=3.7
+numpy>=1.26
 pandas>=2.2
+matplotlib>=3.7
+# Optional runtime dependency used in some utilities
+pydantic>=1.10

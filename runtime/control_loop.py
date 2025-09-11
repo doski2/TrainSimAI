@@ -113,6 +113,7 @@ def main() -> None:
     ap.add_argument("--source", choices=["sqlite","csv"], default="sqlite")
     ap.add_argument("--no-csv-fallback", action="store_true", help="Desactiva fallback a CSV si SQLite está vacío")
     ap.add_argument("--derive-speed-if-missing", action="store_true", default=True, help="Si falta speed_kph, derivarla de odom_m (por defecto: activado)")
+    ap.add_argument("--no-derive-speed", action="store_true", help="Desactiva la derivación automática de speed_kph si falta")
     ap.add_argument("--profile", type=str, default=None)
     ap.add_argument("--era-curve", type=str, default=None)
     ap.add_argument("--start-events-from-end", action="store_true", help="Empezar a leer events.jsonl desde el final")
@@ -178,6 +179,13 @@ def main() -> None:
     store = RunStore(args.db) if args.source == "sqlite" else None
     last_rowid = 0
     use_csv = (args.source == "csv")
+    # decidir si derivamos speed_kph cuando falta (flag y complemento)
+    derive_speed = bool(args.derive_speed_if_missing)
+    if getattr(args, "no_derive_speed", False):
+        derive_speed = False
+
+    # Informar al inicio sobre las opciones relevantes (útil para debugging)
+    print(f"[control] source={args.source} db={args.db} derive_speed_if_missing={derive_speed} no_csv_fallback={args.no_csv_fallback}")
     # memoria para derivar velocidad si falta
     prev_t_wall: float | None = None
     prev_odom_m: float | None = None
@@ -236,7 +244,7 @@ def main() -> None:
             time.sleep(0.05)
             continue
         # Derivar velocidad si falta y está habilitado
-        if (math.isnan(speed_kph) or speed_kph is None) and args.derive_speed_if_missing:
+        if (math.isnan(speed_kph) or speed_kph is None) and derive_speed:
             if prev_t_wall is not None and prev_odom_m is not None:
                 dt = max(1e-3, t_wall - prev_t_wall)
                 dv = odom_m - prev_odom_m

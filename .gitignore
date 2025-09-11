@@ -81,7 +81,7 @@ node_modules/
 .tmp_run/
 data/runs/
 data/events/*.jsonl
-plot_speed_vs_odom.png
+plot_*.png
 events_timeline.csv
 TEMP_*.py
 TEMP_*.txt
@@ -101,8 +101,6 @@ __pycache__/
 # datos generados por el collector y herramientas
 data/runs/
 data/events/*.jsonl
-plot_speed_vs_odom.png
-events_timeline.csv
 
 # temporales y pruebas manuales
 TEMP_*.py
