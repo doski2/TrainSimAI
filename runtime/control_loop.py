@@ -13,7 +13,7 @@ import numpy as np
 from runtime.braking_v0 import BrakingConfig, compute_target_speed_kph
 from runtime.braking_era import EraCurve, compute_target_speed_kph_era
 from runtime.profiles import load_braking_profile, load_profile_extras
-from runtime.guards import RateLimiter, overspeed_guard
+from runtime.guards import RateLimiter, JerkBrakeLimiter, overspeed_guard
 from runtime.csv_logger import CSVLogger
 from storage.run_store_sqlite import RunStore
 import math
@@ -179,7 +179,7 @@ def main() -> None:
     # Estado de eventos y rate limiters
     ev_stream = NonBlockingEventStream(events_path, from_end=bool(args.start_events_from_end))
     rl_th = RateLimiter(max_delta_per_s=0.8)
-    rl_br = RateLimiter(max_delta_per_s=1.2)
+    jerk_br = JerkBrakeLimiter(max_rate_per_s=1.2, max_jerk_per_s2=3.0)
 
     # Estado de próxima señal de límite
     next_limit_kph: Optional[float] = None
@@ -187,6 +187,10 @@ def main() -> None:
     anchor_odom_m: Optional[float] = None
     last_limit_kph: Optional[float] = None
     last_dist_m: Optional[float] = None
+    # última fase observada (CRUISE/COAST/BRAKE) — necesario para detectar entrada en frenada
+    last_phase: Optional[str] = None
+    # Límite en vigor (tras cruzar el hito). Se usa para guard/vel objetivo si no hay "próximo límite"
+    active_limit_kph: Optional[float] = None
     last_t_wall_written: Optional[float] = None
 
     # CSV salida con logger (coma, append seguro)
@@ -369,12 +373,27 @@ def main() -> None:
             last_dist_m = dist_next_limit_m
             last_limit_kph = next_limit_kph
 
+        # 3.1) Si ya estamos "en" el hito (distances cercanas a 0), promover el límite a 'activo'
+        if dist_next_limit_m is not None and dist_next_limit_m <= 2.0:
+            try:
+                active_limit_kph = float(next_limit_kph) if next_limit_kph is not None else active_limit_kph
+            except Exception:
+                pass
+            # limpiar el próximo límite y su anclaje
+            next_limit_kph = None
+            anchor_dist_m = None
+            anchor_odom_m = None
+            dist_next_limit_m = None
+            last_dist_m = None
+            last_limit_kph = None
+
         # 4) objetivo y PID
         if curve and next_limit_kph is not None:
             v_tgt, phase = compute_target_speed_kph_era(
                 speed_kph, next_limit_kph, dist_next_limit_m, curve=curve, cfg=cfg
             )
-        else:
+        elif next_limit_kph is not None and dist_next_limit_m is not None:
+            # sin curva ERA, usar v0 vectorizado sobre el próximo límite
             v_tgt = float(
                 compute_target_speed_kph(
                     np.asarray([speed_kph]),
@@ -388,6 +407,17 @@ def main() -> None:
                 if v_tgt < speed_kph - cfg.coast_band_kph
                 else ("COAST" if abs(v_tgt - speed_kph) <= cfg.coast_band_kph else "CRUISE")
             )
+        elif active_limit_kph is not None:
+            # No hay próximo límite; mantener por debajo del límite activo con margen
+            try:
+                v_margin = float(getattr(cfg, "margin_kph", 2.0))
+            except Exception:
+                v_margin = 2.0
+            v_tgt = min(speed_kph, max(0.0, active_limit_kph - v_margin))
+            phase = "COAST" if v_tgt < speed_kph - 0.1 else "CRUISE"
+        else:
+            v_tgt = speed_kph
+            phase = "CRUISE"
 
         # Failsafe: si algo devolviera NaN, usar velocidad actual
         if not (v_tgt == v_tgt):  # NaN check
@@ -397,11 +427,21 @@ def main() -> None:
         th, br = SplitPID().update(v_tgt, speed_kph, dt=period)
         # aplicar rate limiters
         th = rl_th.step(th, period)
-        br = rl_br.step(br, period)
-        # overspeed guard (mínimo de freno)
-        br = max(br, overspeed_guard(speed_kph, next_limit_kph))
+        # overspeed guard (mínimo de freno) — aplicamos al próximo si existe, si no al activo
+        og = overspeed_guard(speed_kph, next_limit_kph if next_limit_kph is not None else active_limit_kph)
+        # decidir si hemos entrado en fase de frenada recientemente
+        just_entered_brake = (phase == "BRAKE" and last_phase != "BRAKE") or og > 0.0
+        if just_entered_brake:
+            rl_th.reset(0.0)
+            # reset suave del limitador con reenganche
+            jerk_br.reset(jerk_br.step(0.0, 1e-3))
+            th = 0.0
+        br = jerk_br.step(br, period)
+        # aplicar overspeed como piso
+        br = max(br, og)
         if br > 0:
             th = 0.0
+        last_phase = phase
 
         # 5) registrar usando CSVLogger
         writer.write_row(

@@ -16,7 +16,9 @@ set "TSC_GETDATA_FILE=C:\Program Files (x86)\Steam\steamapps\common\RailWorks\pl
 set RUN_CSV=data\runs\run.csv
 set EVENTS=data\events.jsonl
 set PROFILE=profiles\BR146.json
-set OUT=data\ctrl_live.csv
+set BUS=data\lua_eventbus.jsonl
+rem salida única por ejecución (evita bloqueos de Excel/AV y colisiones)
+set OUT=data\runs\ctrl_live_%RANDOM%.csv
 
 if not exist "data\runs" mkdir "data\runs"
 if not exist "data" mkdir "data"
@@ -27,7 +29,7 @@ timeout /t 2 >nul
 start "TSC Collector" cmd /k "python -m runtime.collector --hz 10 --bus-from-start"
 timeout /t 2 >nul
 python -m tools.db_check --db data\run.db
-start "TSC Control Loop" cmd /k "python -m runtime.control_loop --source sqlite --db data\run.db --events %EVENTS% --profile %PROFILE% --hz 5 --start-events-from-end --out %OUT%"
+start "TSC Control Loop" cmd /k "python -m runtime.control_loop --source sqlite --db data\run.db --bus %BUS% --events %EVENTS% --profile %PROFILE% --hz 5 --start-events-from-end --out %OUT%"
 start "Tail ctrl_live" powershell -NoLogo -NoProfile -Command "while(!(Test-Path '%OUT%')){Start-Sleep 0.5}; Get-Content '%OUT%' -Tail 10 -Wait"
 
 popd

@@ -11,7 +11,7 @@
   "braking": {
     "a_service_mps2": 0.7,
     "t_react_s": 0.8,
-    "margin_m": 40.0,
-    "v_margin_kph": 1.5
+    "margin_m": 70.0,
+    "v_margin_kph": 2.0
   }
 }

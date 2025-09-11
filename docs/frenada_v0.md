@@ -21,13 +21,22 @@ Donde:
 - `CRUISE`: `target > now + coast_band`
 
 ## Parámetros por defecto (sugeridos)
-- `margin_kph = 3.0`
-- `max_service_decel = 0.7`
-- `reaction_time_s = 0.6`
-- `coast_band_kph = 1.0`
-- `min_target_kph = 5.0`
+ `margin_m`: margen de distancia antes del hito (p.ej. 70 m)
+ `v_margin_kph`: margen bajo el límite (p.ej. 2.0 kph)
 
-## Flujo offline
+## Suavidad (Jerk)
+Se aplica un **JerkBrakeLimiter** que limita la tasa de cambio del freno y la variación de esa tasa. Mejora confort y evita “serrucho”.
+
+## Criterios de aceptación (v0)
+`dist_next_limit_m` decrece monótona (sin subidas > 2 m dentro del mismo límite).
+**Llegada**: en `dist <= 5 m`, velocidad ≤ `límite + 0.5 kph` al menos en el **90%** de los casos.
+**Últimos 50 m**: margen medio `límite - velocidad` ≈ **+0.5…+1.0 kph**.
+**Overspeed guard** entra siempre que `speed > limit + 0.5 kph`.
+
+## Tuning rápido
+1. Si llegas “largo”: sube `margin_m` (+10…+20 m).  
+2. Si quieres llegar un poco más “retenido”: sube `v_margin_kph` (+0.5).  
+3. Si frena “a saltos”: baja `max_jerk_per_s2` (p.ej. 2.0) en `JerkBrakeLimiter`.
 ```powershell
 python -m tools.apply_frenada_v0 `
   --log data/run.csv `

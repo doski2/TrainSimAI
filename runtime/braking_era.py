@@ -107,25 +107,61 @@ def compute_target_speed_kph_era(
     v_now_kph: float,
     next_limit_kph: Optional[float],
     dist_next_limit_m: Optional[float],
-    curve: EraCurve,
+    curve: Optional[EraCurve] = None,
     *,
     gradient_pct: Optional[float] = None,
-    cfg: BrakingConfig = BrakingConfig(),
+    cfg: BrakingConfig | dict = BrakingConfig(),
 ) -> tuple[float, str]:
-    """Devuelve (v_objetivo_kph, fase) usando curva ERA si hay próximo límite/distancia."""
+    """Devuelve (v_objetivo_kph, fase).
+
+    Si se proporciona una `curve` (EraCurve) se usa la integración ERA. Si
+    `curve` es None se delega a la regla conservadora `braking_v0.compute_target_speed_kph`.
+    El parámetro `cfg` puede ser un `BrakingConfig` o un `dict` con claves
+    equivalentes (por compatibilidad con tests rápidos).
+    """
     if next_limit_kph is None:
         return v_now_kph, "CRUISE"
 
+    # Normalizar cfg a BrakingConfig si vino como dict
+    if isinstance(cfg, dict):
+        cfg = BrakingConfig(
+            margin_kph=float(cfg.get("v_margin_kph", cfg.get("margin_kph", 3.0))),
+            max_service_decel=float(cfg.get("a_service_mps2", cfg.get("max_service_decel", 0.7))),
+            reaction_time_s=float(cfg.get("t_react_s", cfg.get("reaction_time_s", 0.6))),
+        )
+
+    # Si no hay curva, delegar a la versión v0 (vectorizada)
+    if curve is None:
+        try:
+            from runtime.braking_v0 import compute_target_speed_kph as _compute_v0
+            import numpy as _np
+        except Exception:
+            # no debería pasar, pero en caso de import fallido devolvemos crucero seguro
+            return v_now_kph, "CRUISE"
+
+        v_obj_arr = _compute_v0(
+            _np.asarray([v_now_kph], dtype=float),
+            _np.asarray([dist_next_limit_m if dist_next_limit_m is not None else _np.nan], dtype=float),
+            _np.asarray([next_limit_kph]) if next_limit_kph is not None else None,
+            cfg,
+        )
+        v_obj_kph = float(v_obj_arr[0])
+        # fase igual que en v0
+        if v_obj_kph < v_now_kph - cfg.coast_band_kph:
+            phase = "BRAKE"
+        elif v_obj_kph <= v_now_kph + cfg.coast_band_kph:
+            phase = "COAST"
+        else:
+            phase = "CRUISE"
+        return v_obj_kph, phase
+
+    # ERA path: usar la curva proporcionada
     v_lim_kph = max(0.0, next_limit_kph - cfg.margin_kph)
-    # distancia efectiva con tiempo de reacción (pendiente: tratada dentro de A(v) o ajuste externo si se desea)
     v_now_mps = kph_to_mps(max(0.0, v_now_kph))
     d_eff = effective_distance(dist_next_limit_m, v_now_mps, cfg)
-
-    # v_safe por binaria sobre la curva
     v_safe_kph = curve.v_safe_for_distance(d_eff, v_lim_kph)
     v_obj_kph = clamp(min(v_now_kph, v_safe_kph), max(cfg.min_target_kph, 0.0), 400.0)
 
-    # fase
     if v_obj_kph < v_now_kph - cfg.coast_band_kph:
         phase = "BRAKE"
     elif v_obj_kph <= v_now_kph + cfg.coast_band_kph:

@@ -26,7 +26,7 @@ class RateLimiter:
         return out
 
 
-def overspeed_guard(speed_kph: float, limit_kph: float | None, *, delta_kph: float = 0.8) -> float:
+def overspeed_guard(speed_kph: float, limit_kph: float | None, *, delta_kph: float = 0.5) -> float:
     """Devuelve nivel mínimo de freno [0..1] cuando se excede el límite en delta_kph."""
     if limit_kph is None:
         return 0.0
@@ -38,4 +38,41 @@ def overspeed_guard(speed_kph: float, limit_kph: float | None, *, delta_kph: flo
     return clamp01(0.2 + 0.1 * exc)
 
 
-__all__ = ["RateLimiter", "overspeed_guard", "clamp01"]
+class JerkBrakeLimiter:
+    """
+    Limitador de jerk para el freno (dos etapas):
+      - Limita la **tasa** de cambio del freno (max_rate_per_s).
+      - Limita la **variación de la tasa** (jerk: max_jerk_per_s2).
+    Integra internamente la salida.
+    """
+    def __init__(self, max_rate_per_s: float = 1.2, max_jerk_per_s2: float = 3.0):
+        self.max_rate = float(max_rate_per_s)
+        self.max_jerk = float(max_jerk_per_s2)
+        self._rate = 0.0
+        self._y = 0.0
+
+    def reset(self, y0: float = 0.0):
+        self._y = clamp01(float(y0))
+        self._rate = 0.0
+
+    def step(self, target: float, dt: float) -> float:
+        target = clamp01(float(target))
+        dt = max(1e-3, float(dt))
+        # Tasa deseada para alcanzar target en un dt (cap a max_rate)
+        r_target = (target - self._y) / dt
+        r_target = max(-self.max_rate, min(self.max_rate, r_target))
+        # Limitar jerk (cambio de tasa)
+        dr = r_target - self._rate
+        max_dr = self.max_jerk * dt
+        if dr > max_dr:
+            dr = max_dr
+        elif dr < -max_dr:
+            dr = -max_dr
+        self._rate += dr
+        # Integrar salida
+        self._y += self._rate * dt
+        self._y = clamp01(self._y)
+        return self._y
+
+
+__all__ = ["RateLimiter", "overspeed_guard", "clamp01", "JerkBrakeLimiter"]
