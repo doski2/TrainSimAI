@@ -5,7 +5,7 @@ import argparse
 from pathlib import Path
 from typing import Optional
 
-from storage.sqlite_store import RunStore
+from storage.run_store_sqlite import RunStore
 
 
 def pick_delim(line: str) -> str:

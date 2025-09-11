@@ -1,3 +1,19 @@
+# Troubleshooting
+
+## ctrl_live.csv vacío
+
+1. `python -m tools.db_check --db data\run.db` → ¿filas > 0?
+2. Si 0 y tienes CSV: `python -m tools.migrate_run_csv_to_sqlite --in data\runs\run.csv --out data\run.db`
+3. Asegura collector parcheado (escribe SQLite). Reinicia procesos.
+4. Control: usa `--source sqlite` (fallback a CSV automático salvo `--no-csv-fallback`).
+
+## Distancia sube
+
+- Verifica clamp monótono activo (control_loop.py) y eventos `getdata_next_limit`.
+
+## Overspeed sin freno
+
+- `overspeed_guard`: delta 0.8 kph, suelo 0.2; ajusta si hace falta.
 # Troubleshooting — checklist de errores comunes
 
 Esta guía rápida agrupa problemas frecuentes y pasos para solucionarlos.

@@ -14,7 +14,7 @@ from runtime.braking_era import EraCurve, compute_target_speed_kph_era
 from runtime.profiles import load_braking_profile, load_profile_extras
 from runtime.guards import RateLimiter, overspeed_guard
 from runtime.csv_logger import CSVLogger
-from storage.sqlite_store import RunStore
+from storage.run_store_sqlite import RunStore
 import math
 
 # Reutilizamos utilidades de tools.online_control

@@ -7,9 +7,10 @@ import time
 from ingestion.rd_client import RDClient
 import math
 from ingestion.lua_eventbus import LuaEventBus
-from runtime.csv_logger import CsvLogger
+from runtime.csv_logger import CSVLogger
+
 try:
-    from storage.sqlite_store import RunStore
+    from storage.run_store_sqlite import RunStore
 except Exception:
     RunStore = None  # type: ignore
 from runtime.events_bus import normalize
@@ -22,14 +23,11 @@ HB_PATH = os.environ.get("RUN_HB_PATH", os.path.join("data", "events", ".collect
 # Dónde leer los eventos que emite el LUA:
 #  - Si existe la variable de entorno LUA_BUS_PATH → úsala
 #  - En su defecto, usa la ruta por defecto del script LUA
-LUA_BUS = os.environ.get(
-    "LUA_BUS_PATH",
-    os.path.join("data", "lua_eventbus.jsonl")
-)
+LUA_BUS = os.environ.get("LUA_BUS_PATH", os.path.join("data", "lua_eventbus.jsonl"))
 
 
 def run(
-    poll_hz: float = 10.0,
+    hz: float = 10.0,
     stop_time: float | None = None,
     bus_from_start: bool = False,
     sqlite_db: str = "data/run.db",
@@ -41,8 +39,8 @@ def run(
     except Exception:
         pass
 
-    rd = RDClient(poll_hz=poll_hz)
-    csvlog = CsvLogger(
+    rd = RDClient(poll_hz=hz)
+    csvlog = CSVLogger(
         CSV_PATH,
         base_order=[
             "t_wall",
@@ -128,7 +126,7 @@ def run(
                     h = float(row.get("time_ingame_h") or 0)
                     m = float(row.get("time_ingame_m") or 0)
                     s = float(row.get("time_ingame_s") or 0)
-                    e["time"] = h + m/60.0 + s/3600.0
+                    e["time"] = h + m / 60.0 + s / 3600.0
                 except Exception:
                     pass
             # Sellos siempre presentes para downstream (normalizer/analizadores)
@@ -136,21 +134,14 @@ def run(
             e["t_wall"] = now
 
             # De-dup básico: mismo tipo+identificador+tiempo ⇒ no reescribir
-            ident = (
-                e.get("marker")
-                or e.get("name")
-                or e.get("station")
-                or e.get("payload")
-            )
+            ident = e.get("marker") or e.get("name") or e.get("station") or e.get("payload")
             sig = (e.get("type"), ident, e.get("time"))
             if sig == last_sig:
                 drained += 1
                 continue
             last_sig = sig
             # Skip incomplete marker events lacking coordinates
-            if e.get("type") == "marker_pass" and (
-                e.get("lat") in (None, "") or e.get("lon") in (None, "")
-            ):
+            if e.get("type") == "marker_pass" and (e.get("lat") in (None, "") or e.get("lon") in (None, "")):
                 drained += 1
                 continue
             # --- logica de alcance de limite (estimado)
@@ -183,8 +174,8 @@ def run(
                             p1, p2 = math.radians(float(plat)), math.radians(float(clat))
                             dphi = p2 - p1
                             dl = math.radians(float(clon) - float(plon))
-                            a = math.sin(dphi/2)**2 + math.cos(p1)*math.cos(p2)*math.sin(dl/2)**2
-                            reach["dist_geo_m"] = 2*R*math.asin(math.sqrt(a))
+                            a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+                            reach["dist_geo_m"] = 2 * R * math.asin(math.sqrt(a))
                     except Exception:
                         pass
                     # Anti-ruido: ignora si avance < 5 m
@@ -214,11 +205,15 @@ if __name__ == "__main__":
     import argparse
     import time as _t
     import sys as _sys
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--hz", type=float, default=12.0, help="Frecuencia objetivo (Hz)")
     ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0=infinito)")
-    ap.add_argument("--bus-from-start", action="store_true",
-                    help="Leer el bus LUA desde el inicio (por defecto, solo nuevas líneas)")
+    ap.add_argument(
+        "--bus-from-start",
+        action="store_true",
+        help="Leer el bus LUA desde el inicio (por defecto, solo nuevas líneas)",
+    )
     args = ap.parse_args()
     end_t = (_t.time() + args.duration) if args.duration > 0 else None
     try:
@@ -229,11 +224,13 @@ if __name__ == "__main__":
 
 if __name__ == "__main__DISABLED_OLD":
     import argparse
+
     ap = argparse.ArgumentParser()
     ap.add_argument("--hz", type=float, default=12.0, help="Frecuencia objetivo")
     ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-stop (0=sin límite)")
     args = ap.parse_args()
     import time as _t
+
     t0 = _t.time()
     try:
         run(args.hz)

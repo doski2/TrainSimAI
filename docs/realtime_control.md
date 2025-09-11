@@ -1,3 +1,14 @@
+# Real-time control con SQLite (WAL)
+
+- Collector inserta en `data/run.db` (tabla `telemetry`).
+- Control lee por defecto de SQLite y cae a CSV si no hay filas.
+
+## Comandos
+```powershell
+$env:TSC_FAKE_RD='1'
+python -m runtime.collector --hz 10 --bus-from-start
+python -m runtime.control_loop --source sqlite --db data\run.db --events data\events.jsonl --profile profiles\BR146.json --hz 5 --start-events-from-end --out data\ctrl_live.csv
+```
 # Control en tiempo real (SQLite / WAL)
 
 Este documento resume la configuración y las banderas recomendadas para ejecutar el `control_loop` en tiempo real usando SQLite como fuente de telemetría.

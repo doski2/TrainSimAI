@@ -5,6 +5,13 @@ Pipeline: **GetData → Bus LUA → Collector → Distancia próximo límite →
 
 ## TL;DR (rápido)
 
+### Windows (.bat)
+- **Simulado (sin juego):** `scripts\tsc_sim.bat`
+- **Con juego (GetData):** `scripts\tsc_real.bat`
+> Abren bridge/collector/control y un *tail* del CSV.
+
+> Desde ahora, el **control** lee de **SQLite** (`data/run.db`, WAL) y mantiene **fallback a CSV** si la DB aún no tiene filas.
+
 ```powershell
 # 0) Entorno
 python -m venv .venv
@@ -16,26 +23,19 @@ $env:TSC_GETDATA_FILE="C:\\Program Files (x86)\\Steam\\steamapps\\common\\RailWo
 python -m ingestion.getdata_bridge
 
 # 2) Collector (normaliza y sella t_wall/odom)
+$env:TSC_FAKE_RD='1'
 python -m runtime.collector --hz 10 --bus-from-start
 
-# 3) Distancia al próximo límite
-python -m tools.dist_next_limit
+# 3) Control (SQLite + fallback)
+python -m runtime.control_loop --source sqlite --db data\run.db --events data\events.jsonl --profile profiles\BR146.json --hz 5 --start-events-from-end --out data\ctrl_live.csv
 
-# 4) Frenada v0 (offline → target_speed_kph, phase)
-python -m tools.apply_frenada_v0 --log data/run.csv --dist data/run.dist.csv --events data/events.jsonl --out data/run.ctrl.csv --A 0.7 --margin-kph 3 --reaction 0.6
-
-# 5) Plot
-python -m tools.plot_run data/run.ctrl.csv
+### Flags clave
+- `--source {sqlite,csv}`: fuente de datos (por defecto: `sqlite`).
+- `--db data\run.db`: ruta DB SQLite (WAL).
+- `--run data\runs\run.csv`: CSV de respaldo.
+- `--derive-speed-if-missing` (ON por defecto): deriva velocidad de odómetro si falta `speed_kph`.
+- `--no-csv-fallback`: desactiva el fallback automático a CSV.
 ```
-
-
-### Windows (.bat)
-
-- **Simulado (sin juego):** `scripts\\tsc_sim.bat`
-- **Con juego (GetData):** `scripts\\tsc_real.bat`
-> Abren 2–3 ventanas: bridge/collector/control y un tail del CSV.
-
-> Desde ahora, el control lee de **SQLite** (`data/run.db`, WAL). El collector escribe tanto CSV como SQLite.
 
 ### Uso en tiempo real (con SQLite)
 

@@ -131,3 +131,18 @@ stderr.txt
 stderr2.txt
 tmp_head.txt
 tmp_tail.txt
+
+# TSC runtime artifacts
+data/*.csv
+data/*.jsonl
+data/*.db-shm
+data/*.db-wal
+data/run.db
+data/runs/*.csv
+*.png
+*.txt
+*.log
+tmp_*
+plot_*.png
+stderr*.txt
+stdout*.txt
