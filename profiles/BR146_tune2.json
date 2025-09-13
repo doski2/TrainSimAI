@@ -1,0 +1,7 @@
+{
+  "//": "BR146 tune #2: empuja más el final, manteniendo guardias",
+  "a_service_mps2": 0.70,
+  "t_react_s": 0.70,
+  "margin_m": 80.0,
+  "v_margin_kph": 5.0
+}

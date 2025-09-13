@@ -7,6 +7,7 @@ import csv
 import json
 from pathlib import Path
 from typing import Optional
+import os
 
 import numpy as np
 
@@ -16,6 +17,7 @@ from runtime.profiles import load_braking_profile, load_profile_extras
 from runtime.guards import RateLimiter, JerkBrakeLimiter, overspeed_guard
 from runtime.csv_logger import CSVLogger
 from storage.run_store_sqlite import RunStore
+from runtime.mode_guard import ModeGuard
 import math
 
 # Reutilizamos utilidades de tools.online_control
@@ -133,7 +135,15 @@ def main() -> None:
     ap.add_argument("--A", type=float, default=None)
     ap.add_argument("--margin-kph", type=float, default=None)
     ap.add_argument("--reaction", type=float, default=None)
+    ap.add_argument(
+        "--mode",
+        choices=["full", "brake", "advisory"],
+        default=os.environ.get("TSC_MODE", "brake"),
+        help="Modo de actuación: full=acel+freno, brake=solo freno (tú aceleras), advisory=solo consejo (no envía comandos). Por defecto, %ENV:TSC_MODE% o 'brake'.",
+    )
     args = ap.parse_args()
+    mode_guard = ModeGuard(args.mode)
+    print(f"[control] mode={args.mode}")
 
     run_path: Path = args.run
     events_path: Path = args.events
@@ -484,6 +494,13 @@ def main() -> None:
         }
         if getattr(args, "emit_active_limit", False):
             row_out["active_limit_kph"] = active_limit_kph if active_limit_kph is not None else ""
+        # Envío condicionado por el modo
+        if 'rd' in locals() and rd is not None:
+            t_send, b_send = mode_guard.clamp_outputs(th, br)
+            if t_send is not None and mode_guard.send_throttle:
+                rd.set_throttle(t_send)
+            if b_send is not None and mode_guard.send_brake:
+                rd.set_brake(b_send)
         writer.write_row(row_out)
         last_t_wall_written = t_wall
 

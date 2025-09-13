@@ -10,4 +10,15 @@ if "%LAST%"=="" (
 echo [tsc_report] Analizando %LAST%
 python -m tools.session_report --in "%LAST%"
 echo [tsc_report] Hecho.
+REM ================================
+REM KPI gate (despues del informe)
+REM ================================
+call "%~dp0tsc_kpi.bat"
+set "KPI_RC=%errorlevel%"
+if not "%KPI_RC%"=="0" (
+  echo [tsc_report] KPI gate FAILED (rc=%KPI_RC%). Revisa arriba.
+  exit /b %KPI_RC%
+) else (
+  echo [tsc_report] KPI gate OK.
+)
 endlocal
