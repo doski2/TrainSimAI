@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import os  # para leer TSC_MODE en --mode por defecto
 from dataclasses import replace
 import time
 import csv
 import json
 from pathlib import Path
 from typing import Optional
-import os
+import math
 
 import numpy as np
 
@@ -18,10 +19,7 @@ from runtime.guards import RateLimiter, JerkBrakeLimiter, overspeed_guard
 from runtime.csv_logger import CSVLogger
 from storage.run_store_sqlite import RunStore
 from runtime.mode_guard import ModeGuard
-import math
-
-# Reutilizamos utilidades de tools.online_control
-from tools.online_control import NonBlockingEventStream, SplitPID
+from runtime.actuators import scan_for_rd, get_plan, send_to_rd, debug_trace
 
 
 def tail_csv_last_row(path: Path) -> dict | None:
@@ -494,13 +492,22 @@ def main() -> None:
         }
         if getattr(args, "emit_active_limit", False):
             row_out["active_limit_kph"] = active_limit_kph if active_limit_kph is not None else ""
-        # Envío condicionado por el modo
-        if 'rd' in locals() and rd is not None:
-            t_send, b_send = mode_guard.clamp_outputs(th, br)
-            if t_send is not None and mode_guard.send_throttle:
-                rd.set_throttle(t_send)
-            if b_send is not None and mode_guard.send_brake:
-                rd.set_brake(b_send)
+        # Envío condicionado por el modo, con detección robusta y trazas
+        rd_obj, rd_name = scan_for_rd(locals(), globals())
+        t_plan, b_plan, t_src, b_src = get_plan(locals(), globals())
+        t_send, b_send = mode_guard.clamp_outputs(t_plan, b_plan)
+        debug_on = os.getenv("TSC_RD_DEBUG", "0") in ("1", "true", "True")
+        if rd_obj is None:
+            debug_trace(debug_on, f"NO-RD mode={mode_guard.mode} t_plan={t_plan} b_plan={b_plan}")
+        else:
+            thr_ok, brk_ok, thr_m, brk_m = send_to_rd(rd_obj, t_send, b_send)
+            debug_trace(
+                debug_on,
+                f"RD={rd_name} mode={mode_guard.mode} t_src={t_src} b_src={b_src} "
+                f"plan(t={t_plan},b={b_plan}) send(t={t_send},b={b_send}) "
+                f"applied(thr={thr_ok}:{thr_m}, brk={brk_ok}:{brk_m})"
+            )
+        # log CSV (PLAN): se mantiene igual, independientemente del modo de envío
         writer.write_row(row_out)
         last_t_wall_written = t_wall
 

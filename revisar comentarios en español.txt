@@ -3,7 +3,7 @@ corregir los fallos
 revisa el proyecto entero y dime si ves algo que cambiar y nos falta actualizar la documentacion
 siguente paso 
 
-podemos cerrar el tema frenado v0?-micro parches-probar session entera-preguntar si la IA controla es mejor o no
+podemos cerrar el tema frenado v0?-micro parches-probar session entera-ya tenemos .bat yo acelero y la IA frena
 
 scripts\tsc_sim.bat — Simulado (sin juego, rápido)
 scripts\tsc_real.bat — Con juego real (GetData bridge)
