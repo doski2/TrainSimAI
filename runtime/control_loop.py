@@ -191,6 +191,8 @@ def main() -> None:
     last_dist_m: Optional[float] = None
     # última fase observada (CRUISE/COAST/BRAKE) — necesario para detectar entrada en frenada
     last_phase: Optional[str] = None
+    # EMA para suavizar speed solo a efectos de objetivo
+    speed_ema: Optional[float] = None
     # Límite en vigor (tras cruzar el hito). Se usa para guard/vel objetivo si no hay "próximo límite"
     active_limit_kph: Optional[float] = None
     last_t_wall_written: Optional[float] = None
@@ -309,6 +311,14 @@ def main() -> None:
         # compat: speed_kph o v_kmh
         v = row.get("speed_kph") or row.get("v_kmh") or row.get("SpeedometerKPH")
         speed_kph = _to_float_loose(v)
+        # EMA con tau ~0.4 s => alpha ≈ dt / (tau + dt)
+        dt_real = period  # por defecto, pero si t_wall es confiable, usar diferencia real
+        if last_t_wall_written is not None and t_wall > last_t_wall_written:
+            dt_real = t_wall - last_t_wall_written
+        tau = 0.4
+        alpha = dt_real / (tau + dt_real) if dt_real > 0 else 0.2
+        speed_ema = speed_kph if speed_ema is None else (1 - alpha) * speed_ema + alpha * speed_kph
+        speed_for_target = speed_ema
         if any(math.isnan(x) for x in (t_wall, odom_m)):
             time.sleep(0.05)
             continue
@@ -392,7 +402,7 @@ def main() -> None:
         # 4) objetivo y PID
         if curve and next_limit_kph is not None:
             v_tgt, phase = compute_target_speed_kph_era(
-                speed_kph, next_limit_kph, dist_next_limit_m, curve=curve, cfg=cfg
+                speed_for_target, next_limit_kph, dist_next_limit_m, curve=curve, cfg=cfg
             )
         elif next_limit_kph is not None and dist_next_limit_m is not None:
             # sin curva ERA, usar v0 vectorizado sobre el próximo límite
@@ -431,6 +441,21 @@ def main() -> None:
         th = rl_th.step(th, period)
         # overspeed guard (mínimo de freno) — aplicamos al próximo si existe, si no al activo
         og = overspeed_guard(speed_kph, next_limit_kph if next_limit_kph is not None else active_limit_kph)
+
+        # 4.1) Guard FÍSICO por distancia (a_req > a_service -> pisar más freno)
+        try:
+            a_service = float(getattr(cfg, "a_service_mps2", 0.6))
+            if dist_next_limit_m is not None and next_limit_kph is not None:
+                v = max(0.0, speed_kph) / 3.6
+                vlim = max(0.0, next_limit_kph) / 3.6
+                d = max(1.0, float(dist_next_limit_m))  # evita div/0
+                a_req = max(0.0, (v*v - vlim*vlim) / (2.0 * d))
+                if a_req > 0.70 * a_service:
+                    phase = "BRAKE"
+                    # mapear (a_req / a_service) a mando de freno (0..1), con ganancia suave
+                    br = max(br, min(1.0, 0.4 + 0.9 * (a_req / max(0.1, a_service))))
+        except Exception:
+            pass
         # decidir si hemos entrado en fase de frenada recientemente
         just_entered_brake = (phase == "BRAKE" and last_phase != "BRAKE") or og > 0.0
         if just_entered_brake:

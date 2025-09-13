@@ -45,7 +45,7 @@ class JerkBrakeLimiter:
       - Limita la **variación de la tasa** (jerk: max_jerk_per_s2).
     Integra internamente la salida.
     """
-    def __init__(self, max_rate_per_s: float = 1.2, max_jerk_per_s2: float = 3.0):
+    def __init__(self, max_rate_per_s: float = 1.8, max_jerk_per_s2: float = 6.0):
         self.max_rate = float(max_rate_per_s)
         self.max_jerk = float(max_jerk_per_s2)
         self._rate = 0.0
@@ -56,8 +56,6 @@ class JerkBrakeLimiter:
         self._rate = 0.0
 
     def step(self, target: float, dt: float) -> float:
-        target = clamp01(float(target))
-        dt = max(1e-3, float(dt))
         # Tasa deseada para alcanzar target en un dt (cap a max_rate)
         r_target = (target - self._y) / dt
         r_target = max(-self.max_rate, min(self.max_rate, r_target))
