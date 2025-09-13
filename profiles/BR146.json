@@ -10,8 +10,8 @@
   "era_curve_csv": "profiles/BR146_era_curve.csv",
   "braking": {
     "a_service_mps2": 0.7,
-    "t_react_s": 0.8,
-    "margin_m": 70.0,
-    "v_margin_kph": 2.0
+    "t_react_s": 0.9,
+    "margin_m": 90.0,
+    "v_margin_kph": 2.5
   }
 }

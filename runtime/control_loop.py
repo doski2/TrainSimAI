@@ -108,6 +108,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
     ap.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
     ap.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
+    ap.add_argument("--emit-active-limit", action="store_true",
+                    help="Incluye columna active_limit_kph en la salida CSV")
     ap.add_argument("--bus", default="data/lua_eventbus.jsonl", help="Event bus JSONL (fallback si events.jsonl no avanza)")
     ap.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
     ap.add_argument("--hz", type=float, default=5.0)
@@ -444,19 +446,20 @@ def main() -> None:
         last_phase = phase
 
         # 5) registrar usando CSVLogger
-        writer.write_row(
-            {
-                "t_wall": float(t_wall),
-                "odom_m": float(odom_m),
-                "speed_kph": float(speed_kph),
-                "next_limit_kph": "" if next_limit_kph is None else float(next_limit_kph),
-                "dist_next_limit_m": "" if dist_next_limit_m is None else float(dist_next_limit_m),
-                "target_speed_kph": float(v_tgt),
-                "phase": phase,
-                "throttle": float(round(th, 3)),
-                "brake": float(round(br, 3)),
-            }
-        )
+        row_out = {
+            "t_wall": float(t_wall),
+            "odom_m": float(odom_m),
+            "speed_kph": float(speed_kph),
+            "next_limit_kph": "" if next_limit_kph is None else float(next_limit_kph),
+            "dist_next_limit_m": "" if dist_next_limit_m is None else float(dist_next_limit_m),
+            "target_speed_kph": float(v_tgt),
+            "phase": phase,
+            "throttle": float(round(th, 3)),
+            "brake": float(round(br, 3)),
+        }
+        if getattr(args, "emit_active_limit", False):
+            row_out["active_limit_kph"] = active_limit_kph if active_limit_kph is not None else ""
+        writer.write_row(row_out)
         last_t_wall_written = t_wall
 
         # 6) temporización de bucle
