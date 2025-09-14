@@ -41,7 +41,7 @@ timeout /t 2 >nul
 start "TSC Collector" cmd /k "python -m runtime.collector --hz 10 --bus-from-start"
 timeout /t 2 >nul
 python -m tools.db_check --db data\run.db
-start "TSC Control Loop" cmd /k "python -m runtime.control_loop --source sqlite --db data\run.db --bus %BUS% --events %EVENTS% --profile %TSC_PROFILE% --hz 5 --start-events-from-end --mode %TSC_MODE% --out %OUT%"
+start "TSC Control Loop" cmd /k "python -m runtime.control_loop --source sqlite --db data\run.db --bus %BUS% --events %EVENTS% --profile %TSC_PROFILE% --hz 5 --start-events-from-end --mode %TSC_MODE% --rd "%TSC_RD%" --emit-active-limit --out %OUT%"
 start "Tail ctrl_live" powershell -NoLogo -NoProfile -Command "while(!(Test-Path '%OUT%')){Start-Sleep 0.5}; Get-Content '%OUT%' -Tail 10 -Wait"
 
 popd

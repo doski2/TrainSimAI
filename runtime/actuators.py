@@ -15,6 +15,7 @@ METHODS_BRAKE = (
     "set_brake", "write_brake", "setBrake",
     "setTrainBrake", "setCombinedBrake", "setDynamicBrake",
     "set_brake_notch", "set_notch_brake",
+    "applyBrake", "apply_brake",
 )
 
 def _all_objs(env: Dict[str, Any]):
