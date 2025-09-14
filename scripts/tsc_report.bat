@@ -15,8 +15,15 @@ if not defined CSV (
   exit /b 1
 )
 :csv_ok
+
 echo [tsc_report] Analizando "%CD%\%CSV%"
-python tools\session_report.py --csv "%CSV%"
+
+REM ===== ejecutar session_report (soporta --in o --csv) =====
+call :run_report "%CSV%"
+if errorlevel 1 (
+  echo [tsc_report] ERROR: session_report.py fallo.
+  exit /b 1
+)
 echo [tsc_report] Hecho.
 
 REM ===== KPI gate (despues del informe) =====
@@ -27,4 +34,13 @@ echo [tsc_report] KPI gate FAILED (rc=%KPI_RC%). Revisa arriba.
 exit /b %KPI_RC%
 :kpi_ok
 echo [tsc_report] KPI gate OK
+
 endlocal
+exit /b 0
+
+:run_report
+REM intenta interfaz nueva (--in); si falla, interfaz antigua (--csv)
+python tools\session_report.py --in "%~1"
+if "%errorlevel%"=="0" exit /b 0
+python tools\session_report.py --csv "%~1"
+exit /b %errorlevel%

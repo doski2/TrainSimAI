@@ -33,11 +33,12 @@ except Exception:
     USE_FAKE = True
 if not USE_FAKE:
     import os as _os
+
     if _os.environ.get("TSC_FAKE_RD") == "1":
         USE_FAKE = True
 if USE_FAKE:
     from ingestion.rd_fake import FakeRailDriver as RailDriver  # type: ignore  # noqa: E402, F811
-    from ingestion.rd_fake import FakeListener as Listener      # type: ignore  # noqa: E402, F811
+    from ingestion.rd_fake import FakeListener as Listener  # type: ignore  # noqa: E402, F811
 
 
 # Claves especiales disponibles en Listener (no se suscriben; se evalúan siempre)
@@ -61,9 +62,17 @@ def _locate_raildriver_dll() -> str | None:
     # Rutas comunes de Steam
     common_bases = [
         Path(os.environ.get("PROGRAMFILES(X86)", r"C:\\Program Files (x86)"))
-        / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
+        / "Steam"
+        / "steamapps"
+        / "common"
+        / "RailWorks"
+        / "plugins",
         Path(os.environ.get("PROGRAMFILES", r"C:\\Program Files"))
-        / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
+        / "Steam"
+        / "steamapps"
+        / "common"
+        / "RailWorks"
+        / "plugins",
     ]
     # Intentar SteamPath del registro, si está disponible
     try:
@@ -91,13 +100,14 @@ def _locate_raildriver_dll() -> str | None:
 
 # ---- Utilidades alternativas de localización y preparación de DLL ----
 
+
 def _process_is_64bit() -> bool:
     return 8 * struct.calcsize("P") == 8
 
 
 def _resolve_plugins_dir() -> Path:
     """Orden de precedencia para localizar plugins:
-       1) TSC_RD_DLL_DIR  2) RAILWORKS_PLUGINS  3) ruta Steam por defecto.
+    1) TSC_RD_DLL_DIR  2) RAILWORKS_PLUGINS  3) ruta Steam por defecto.
     """
     p = os.getenv("TSC_RD_DLL_DIR")
     if p:
@@ -127,9 +137,7 @@ def _prepare_dll_search_path(base: Path) -> Path:
                 f"Tu Python es {arch}-bit. Instala la DLL correcta o usa Python de otra arquitectura. "
                 f"También puedes definir TSC_RD_DLL_DIR/RAILWORKS_PLUGINS."
             )
-        raise FileNotFoundError(
-            f"No se encontró {want.name} en {base}. Define RAILWORKS_PLUGINS o TSC_RD_DLL_DIR."
-        )
+        raise FileNotFoundError(f"No se encontró {want.name} en {base}. Define RAILWORKS_PLUGINS o TSC_RD_DLL_DIR.")
     try:
         if hasattr(os, "add_dll_directory"):
             os.add_dll_directory(str(base))  # type: ignore[attr-defined]
@@ -223,9 +231,7 @@ class RDClient:
             pass
 
         # Índices cacheados por nombre para lecturas directas cuando conviene
-        self.ctrl_index_by_name: Dict[str, int] = {
-            name: idx for idx, name in self.rd.get_controller_list()
-        }
+        self.ctrl_index_by_name: Dict[str, int] = {name: idx for idx, name in self.rd.get_controller_list()}
 
         # Listener para cambios y snapshots unificados
         self.listener = Listener(self.rd, interval=self.poll_dt)
@@ -260,11 +266,13 @@ class RDClient:
         if "!LocoName" in snap:
             loco = snap["!LocoName"] or []
             if isinstance(loco, (list, tuple)) and len(loco) >= 3:
-                out.update({
-                    "provider": loco[0],
-                    "product": loco[1],
-                    "engine": loco[2],
-                })
+                out.update(
+                    {
+                        "provider": loco[0],
+                        "product": loco[1],
+                        "engine": loco[2],
+                    }
+                )
         # Coordenadas/tiempo/rumbo/pendiente…
         coords = snap.get("!Coordinates")
         if coords and isinstance(coords, (list, tuple)) and len(coords) >= 2:
@@ -406,22 +414,51 @@ class RDClient:
         names = set(self.ctrl_index_by_name.keys())
         # Alias / variantes habituales y útiles
         preferred = {
-            "SpeedometerKPH", "SpeedometerMPH",
-            "Regulator", "Throttle",
-            "TrainBrakeControl", "VirtualBrake", "TrainBrake",
-            "LocoBrakeControl", "VirtualEngineBrakeControl", "EngineBrake",
-            "DynamicBrake", "Reverser",
+            "SpeedometerKPH",
+            "SpeedometerMPH",
+            "Regulator",
+            "Throttle",
+            "TrainBrakeControl",
+            "VirtualBrake",
+            "TrainBrake",
+            "LocoBrakeControl",
+            "VirtualEngineBrakeControl",
+            "EngineBrake",
+            "DynamicBrake",
+            "Reverser",
             # Seguridad y sistemas
-            "Sifa", "SIFA", "SifaReset", "SifaLight", "SifaAlarm", "VigilEnable",
-            "PZB_85", "PZB_70", "PZB_55", "PZB_1000Hz", "PZB_500Hz",
-            "PZB_40", "PZB_B40", "PZB_Warning",
-            "AFB", "AFB_Speed", "LZB_V_SOLL", "LZB_V_ZIEL", "LZB_DISTANCE",
+            "Sifa",
+            "SIFA",
+            "SifaReset",
+            "SifaLight",
+            "SifaAlarm",
+            "VigilEnable",
+            "PZB_85",
+            "PZB_70",
+            "PZB_55",
+            "PZB_1000Hz",
+            "PZB_500Hz",
+            "PZB_40",
+            "PZB_B40",
+            "PZB_Warning",
+            "AFB",
+            "AFB_Speed",
+            "LZB_V_SOLL",
+            "LZB_V_ZIEL",
+            "LZB_DISTANCE",
             # Indicadores útiles
-            "BrakePipePressureBAR", "TrainBrakeCylinderPressureBAR", "Ammeter",
-            "ForceBar", "BrakeBar",
+            "BrakePipePressureBAR",
+            "TrainBrakeCylinderPressureBAR",
+            "Ammeter",
+            "ForceBar",
+            "BrakeBar",
             # Auxiliares
-            "Sander", "Headlights", "CabLight", "DoorsOpenCloseLeft",
-            "DoorsOpenCloseRight", "VirtualPantographControl",
+            "Sander",
+            "Headlights",
+            "CabLight",
+            "DoorsOpenCloseLeft",
+            "DoorsOpenCloseRight",
+            "VirtualPantographControl",
         }
         # Criterios por patrón para capturar familias comunes
         rx = re.compile(
@@ -434,9 +471,23 @@ class RDClient:
     # -------- Superset de campos para “comprimir” el CSV ----------------------
     def schema(self) -> List[str]:
         base = [
-            "provider", "product", "engine",
-            "lat", "lon", "heading", "heading_deg", "gradient", "fuel_level", "is_in_tunnel",
-            "time_ingame_h", "time_ingame_m", "time_ingame_s", "time_ingame",
-            "v_ms", "v_kmh", "odom_m", "t_wall",
+            "provider",
+            "product",
+            "engine",
+            "lat",
+            "lon",
+            "heading",
+            "heading_deg",
+            "gradient",
+            "fuel_level",
+            "is_in_tunnel",
+            "time_ingame_h",
+            "time_ingame_m",
+            "time_ingame_s",
+            "time_ingame",
+            "v_ms",
+            "v_kmh",
+            "odom_m",
+            "t_wall",
         ]
         return sorted(set(base + self._common_controls()))

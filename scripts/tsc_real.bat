@@ -46,13 +46,35 @@ start "Tail ctrl_live" powershell -NoLogo -NoProfile -Command "while(!(Test-Path
 
 REM Cargar defaults (perfil, modo, reset de logs)
 if exist "%~dp0env\defaults.bat" call "%~dp0env\defaults.bat"
+
+REM Cargar RD (si lo tienes)
+if exist "%~dp0env\rd_provider.bat" call "%~dp0env\rd_provider.bat"
+
 echo [tsc_real] profile=%TSC_PROFILE%
 echo [tsc_real] mode=%TSC_MODE%
 if defined TSC_RD echo [tsc_real] rd=%TSC_RD%
 
+REM ====== PROBAR ESPEC RD Y CAER AL STUB SI NO RESUELVE ======
+if defined TSC_RD (
+  REM Probar a cargar el spec con Python; si falla -> fallback a stub
+  python -c "from runtime.actuators import load_rd_from_spec;import os,sys;obj,_=load_rd_from_spec(os.getenv('TSC_RD',''));sys.exit(0 if obj else 1)"
+  if errorlevel 1 (
+    echo [tsc_real] AVISO: No se pudo cargar RD '%TSC_RD%'. Usando stub: runtime.raildriver_stub:rd
+    set "TSC_RD=runtime.raildriver_stub:rd"
+    set "TSC_RD_DEBUG=1"
+  )
+) else (
+  REM Si no hay RD definido, usa el stub (así siempre hay envío/log)
+  set "TSC_RD=runtime.raildriver_stub:rd"
+  set "TSC_RD_DEBUG=1"
+  echo [tsc_real] AVISO: TSC_RD no definido. Usando stub.
+)
+
+REM ====== Lanzar control ======
 python -m runtime.control_loop ^
   --source sqlite --db data\run.db --bus data\lua_eventbus.jsonl ^
   --events data\events.jsonl --profile "%TSC_PROFILE%" --hz 5 --start-events-from-end ^
   --mode %TSC_MODE% --rd "%TSC_RD%" ^
   --emit-active-limit --out data\runs\ctrl_live_%RANDOM%.csv
+
 endlocal
