@@ -158,50 +158,61 @@ def _to_float_loose(val: object) -> float:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
-    ap.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
-    ap.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
-    ap.add_argument(
+    p = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
+    p.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
+    p.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
+    p.add_argument(
         "--emit-active-limit", action="store_true", help="Incluye columna active_limit_kph en la salida CSV"
     )
-    ap.add_argument(
+    p.add_argument(
         "--bus", default="data/lua_eventbus.jsonl", help="Event bus JSONL (fallback si events.jsonl no avanza)"
     )
-    ap.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
-    ap.add_argument("--hz", type=float, default=5.0)
-    ap.add_argument("--db", default="data/run.db")
-    ap.add_argument("--source", choices=["sqlite", "csv"], default="sqlite")
-    ap.add_argument("--no-csv-fallback", action="store_true", help="Desactiva fallback a CSV si SQLite está vacío")
-    ap.add_argument(
+    p.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
+    p.add_argument("--hz", type=float, default=5.0)
+    p.add_argument(
+        "--rd",
+        default=os.environ.get("TSC_RD", ""),
+        help="Proveedor RD en formato 'modulo:atributo' (p.ej. runtime.raildriver_stub:rd). "
+             "Si es callable, se invoca sin args y se usa el retorno.",
+    )
+    p.add_argument("--db", default="data/run.db")
+    p.add_argument("--source", choices=["sqlite", "csv"], default="sqlite")
+    p.add_argument("--no-csv-fallback", action="store_true", help="Desactiva fallback a CSV si SQLite está vacío")
+    p.add_argument(
         "--derive-speed-if-missing",
         action="store_true",
         default=True,
         help="Si falta speed_kph, derivarla de odom_m (por defecto: activado)",
     )
-    ap.add_argument(
+    p.add_argument(
         "--no-derive-speed", action="store_true", help="Desactiva la derivación automática de speed_kph si falta"
     )
-    ap.add_argument("--profile", type=str, default=None)
-    ap.add_argument("--era-curve", type=str, default=None)
-    ap.add_argument("--start-events-from-end", action="store_true", help="Empezar a leer events.jsonl desde el final")
-    ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0 = infinito)")
+    p.add_argument("--profile", type=str, default=None)
+    p.add_argument("--era-curve", type=str, default=None)
+    p.add_argument("--start-events-from-end", action="store_true", help="Empezar a leer events.jsonl desde el final")
+    p.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0 = infinito)")
     # Overrides CLI (opcionales)
-    ap.add_argument("--A", type=float, default=None)
-    ap.add_argument("--margin-kph", type=float, default=None)
-    ap.add_argument("--reaction", type=float, default=None)
-    ap.add_argument(
+    p.add_argument("--A", type=float, default=None)
+    p.add_argument("--margin-kph", type=float, default=None)
+    p.add_argument("--reaction", type=float, default=None)
+    p.add_argument(
         "--mode",
         choices=["full", "brake", "advisory"],
         default=os.environ.get("TSC_MODE", "brake"),
         help="Modo de actuación: full=acel+freno, brake=solo freno (tú aceleras), advisory=solo consejo (no envía comandos). Por defecto, %ENV:TSC_MODE% o 'brake'.",
     )
-    args = ap.parse_args()
+    args = p.parse_args()
     mode_guard = ModeGuard(args.mode)
     print(f"[control] mode={args.mode}")
-    # RD preferente por --rd o TSC_RD
-    rd_spec = getattr(args, "rd", None) if hasattr(args, "rd") else None
-    if not rd_spec:
-        rd_spec = os.getenv("TSC_RD", "")
+    # Debug RD: reset de log salvo que se pida append
+    debug_on = os.getenv("TSC_RD_DEBUG", "0") in ("1", "true", "True")
+    if debug_on:
+        append = os.getenv("TSC_RD_LOG_APPEND", "0") in ("1", "true", "True")
+        if not append:
+            os.makedirs("data", exist_ok=True)
+            open("data\\rd_send.log", "w").close()
+    # RD preferente por --rd/TSC_RD
+    rd_spec = args.rd
     rd_static, rd_where = load_rd_from_spec(rd_spec)
     if rd_static:
         print(f"[control] rd provider: {rd_where}")
@@ -579,7 +590,7 @@ def main() -> None:
                 debug_on,
                 f"RD={rd_name} mode={mode_guard.mode} "
                 f"plan(t={throttle_cmd},b={brake_cmd}) send(t={t_send},b={b_send}) "
-                f"applied(thr={thr_ok}:{thr_m}, brk={brk_ok}:{brk_m})",
+                f"applied(thr={thr_ok}:{thr_m}, brk={brk_ok}:{brk_m})"
             )
         # log CSV (PLAN): se mantiene igual, independientemente del modo de envío
         writer.write_row(row_out)
