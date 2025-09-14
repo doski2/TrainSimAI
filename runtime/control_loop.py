@@ -10,10 +10,8 @@ from pathlib import Path
 from typing import Optional
 import math
 
-import numpy as np
-
-from runtime.braking_v0 import BrakingConfig, compute_target_speed_kph
-from runtime.braking_era import EraCurve, compute_target_speed_kph_era
+from runtime.braking_v0 import BrakingConfig
+from runtime.braking_era import EraCurve
 from runtime.profiles import load_braking_profile, load_profile_extras
 from runtime.guards import RateLimiter, JerkBrakeLimiter, overspeed_guard
 from runtime.csv_logger import CSVLogger
@@ -157,6 +155,23 @@ def _to_float_loose(val: object) -> float:
         return float("nan")
 
 
+# --- utilidades físicas simples ---
+def _kph_to_mps(kph: float) -> float:
+    return kph / 3.6
+
+
+def _brake_distance_m(v_kph: float, v_target_kph: float, a_mps2: float, t_react_s: float) -> float:
+    """Distancia necesaria para pasar de v -> v_target con deceleración de servicio + tiempo de reacción."""
+    v = max(0.0, _kph_to_mps(v_kph))
+    vt = max(0.0, _kph_to_mps(v_target_kph))
+    dv = max(0.0, v - vt)
+    if a_mps2 <= 1e-6:
+        return float("inf")
+    d_react = t_react_s * dv
+    d_brake = max(0.0, (v * v - vt * vt) / (2.0 * a_mps2))
+    return d_react + d_brake
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
     p.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
@@ -264,6 +279,11 @@ def main() -> None:
     ev_stream = NonBlockingEventStream(events_path, from_end=bool(args.start_events_from_end))
     rl_th = RateLimiter(max_delta_per_s=0.8)
     jerk_br = JerkBrakeLimiter(max_rate_per_s=1.2, max_jerk_per_s2=3.0)
+    # Estado para suavizado ligero y flag de approach (estado local, no usar self.* en función)
+    v_filt_kph_state: Optional[float] = None
+    approach_active: bool = False
+    # PID instanciado una vez (no por cada iteración)
+    pid = SplitPID()
 
     # Estado de próxima señal de límite
     next_limit_kph: Optional[float] = None
@@ -288,12 +308,14 @@ def main() -> None:
             "t_wall",
             "odom_m",
             "speed_kph",
+            "speed_filt_kph",
             "next_limit_kph",
             "dist_next_limit_m",
             "target_speed_kph",
             "phase",
             "throttle",
             "brake",
+            "approach_active",
         ],
     )
 
@@ -401,6 +423,16 @@ def main() -> None:
         alpha = dt_real / (tau + dt_real) if dt_real > 0 else 0.2
         speed_ema = speed_kph if speed_ema is None else (1 - alpha) * speed_ema + alpha * speed_kph
         speed_for_target = speed_ema
+
+        # --- suavizado ligero para control (no para ocultar errores de sensado) ---
+        alpha = 0.25  # 0<alpha<=1; menor = más suave
+        if v_filt_kph_state is None:
+            v_filt_kph_state = float(speed_kph) if (speed_kph is not None and not math.isnan(speed_kph)) else 0.0
+        else:
+            sf = float(speed_kph) if (speed_kph is not None and not math.isnan(speed_kph)) else v_filt_kph_state
+            v_filt_kph_state = alpha * sf + (1 - alpha) * v_filt_kph_state
+        v_for_control_kph = v_filt_kph_state
+
         if any(math.isnan(x) for x in (t_wall, odom_m)):
             time.sleep(0.05)
             continue
@@ -481,45 +513,64 @@ def main() -> None:
             last_dist_m = None
             last_limit_kph = None
 
-        # 4) objetivo y PID
-        if curve and next_limit_kph is not None:
-            v_tgt, phase = compute_target_speed_kph_era(
-                speed_for_target, next_limit_kph, dist_next_limit_m, curve=curve, cfg=cfg
-            )
-        elif next_limit_kph is not None and dist_next_limit_m is not None:
-            # sin curva ERA, usar v0 vectorizado sobre el próximo límite
-            v_tgt = float(
-                compute_target_speed_kph(
-                    np.asarray([speed_kph]),
-                    np.asarray([dist_next_limit_m if dist_next_limit_m is not None else np.nan]),
-                    np.asarray([next_limit_kph]) if next_limit_kph is not None else None,
-                    cfg,
-                )[0]
-            )
-            phase = (
-                "BRAKE"
-                if v_tgt < speed_kph - cfg.coast_band_kph
-                else ("COAST" if abs(v_tgt - speed_kph) <= cfg.coast_band_kph else "CRUISE")
-            )
-        elif active_limit_kph is not None:
-            # No hay próximo límite; mantener por debajo del límite activo con margen
-            try:
-                v_margin = float(getattr(cfg, "margin_kph", 2.0))
-            except Exception:
-                v_margin = 2.0
-            v_tgt = min(speed_kph, max(0.0, active_limit_kph - v_margin))
-            phase = "COAST" if v_tgt < speed_kph - 0.1 else "CRUISE"
-        else:
-            v_tgt = speed_kph
-            phase = "CRUISE"
+        # 4) objetivo y PID (lógica 'approach' conservadora basada en distancia física)
+        # Resolver parámetros físicos y de perfil (compatibilidad con nombres antiguos)
+        v_margin_kph = float(getattr(cfg, "v_margin_kph", getattr(cfg, "margin_kph", 3.0)))
+        a_service = float(getattr(cfg, "a_service_mps2", getattr(cfg, "max_service_decel", 0.7)))
+        t_react = float(getattr(cfg, "t_react_s", getattr(cfg, "reaction_time_s", 0.6)))
+        margin_m = float(extras.get("margin_m", 0.0) if isinstance(extras, dict) else 0.0)
 
-        # Failsafe: si algo devolviera NaN, usar velocidad actual
-        if not (v_tgt == v_tgt):  # NaN check
-            v_tgt = float(speed_kph)
+        # Crucero por defecto: si hay límite activo, lo usamos con margen; si no, mantenemos velocidad actual
+        cruise_kph = speed_kph
+        if active_limit_kph is not None:
+            cruise_kph = max(0.0, float(active_limit_kph) - v_margin_kph)
+
+        target_next_kph = None
+        if next_limit_kph is not None:
+            target_next_kph = max(0.0, float(next_limit_kph) - v_margin_kph)
+
+        if next_limit_kph is None or dist_next_limit_m is None:
+            # No hay siguiente límite -> mantén crucero del límite actual o velocidad actual
+            v_tgt = cruise_kph
+            phase = "CRUISE" if (speed_kph is not None and v_tgt >= speed_kph - 0.1) else "COAST"
+            approach_active = False
+        else:
+            # Distancia que necesitamos para llegar a target_next_kph con seguridad
+            # Asegurar tipos válidos
+            v_use = float(v_for_control_kph if v_for_control_kph is not None else (speed_kph if speed_kph is not None else 0.0))
+            tgt = float(target_next_kph if target_next_kph is not None else 0.0)
+            d_need = _brake_distance_m(v_use, tgt, a_service, t_react) + margin_m
+
+            # Histeresis para evitar oscilaciones (10%)
+            prev = approach_active
+            if dist_next_limit_m < d_need * 0.9:
+                approach = True
+            elif dist_next_limit_m > d_need * 1.1:
+                approach = False
+            else:
+                approach = prev
+            approach_active = approach
+
+            if approach:
+                v_tgt = target_next_kph if target_next_kph is not None else 0.0
+                phase = "BRAKE" if (speed_kph is not None and v_tgt < speed_kph - cfg.coast_band_kph) else "COAST"
+            else:
+                v_tgt = cruise_kph
+                phase = "CRUISE" if (speed_kph is not None and v_tgt >= speed_kph - 0.1) else "COAST"
+
+        # Failsafe: si algo devolviera NaN o None, usar velocidad actual
+        try:
+            if v_tgt is None or not (float(v_tgt) == float(v_tgt)):
+                raise ValueError
+        except Exception:
+            v_tgt = float(speed_kph) if (speed_kph is not None) else 0.0
             phase = "CRUISE"
 
         # SplitPID.update espera (error, dt); aquí error = v_tgt - speed_kph
-        pid_out = SplitPID().update(v_tgt - speed_kph, period)
+        # Asegurar que speed_kph y v_tgt son floats válidos
+        sp = float(speed_kph) if (speed_kph is not None and not math.isnan(speed_kph)) else 0.0
+        tgt_err = float(v_tgt) - sp
+        pid_out = pid.update(tgt_err, period)
         # Si el PID real devuelve una tupla (th, br), descomponer; si es float, usar como throttle y brake=0
         if isinstance(pid_out, tuple) and len(pid_out) == 2:
             th, br = pid_out
@@ -528,14 +579,14 @@ def main() -> None:
         # aplicar rate limiters
         th = rl_th.step(th, period)
         # overspeed guard (mínimo de freno) — aplicamos al próximo si existe, si no al activo
-        og = overspeed_guard(speed_kph, next_limit_kph if next_limit_kph is not None else active_limit_kph)
+        og = overspeed_guard(float(speed_kph) if speed_kph is not None else 0.0, float(next_limit_kph) if next_limit_kph is not None else (float(active_limit_kph) if active_limit_kph is not None else 0.0))
 
         # 4.1) Guard FÍSICO por distancia (a_req > a_service -> pisar más freno)
         try:
             a_service = float(getattr(cfg, "a_service_mps2", 0.6))
             if dist_next_limit_m is not None and next_limit_kph is not None:
-                v = max(0.0, speed_kph) / 3.6
-                vlim = max(0.0, next_limit_kph) / 3.6
+                v = max(0.0, float(speed_kph if speed_kph is not None else 0.0)) / 3.6
+                vlim = max(0.0, float(next_limit_kph)) / 3.6
                 d = max(1.0, float(dist_next_limit_m))  # evita div/0
                 a_req = max(0.0, (v * v - vlim * vlim) / (2.0 * d))
                 if a_req > 0.70 * a_service:
@@ -563,6 +614,7 @@ def main() -> None:
             "t_wall": float(t_wall),
             "odom_m": float(odom_m),
             "speed_kph": float(speed_kph),
+            "speed_filt_kph": float(v_for_control_kph),
             "next_limit_kph": "" if next_limit_kph is None else float(next_limit_kph),
             "dist_next_limit_m": "" if dist_next_limit_m is None else float(dist_next_limit_m),
             "target_speed_kph": float(v_tgt),
@@ -570,6 +622,7 @@ def main() -> None:
             "throttle": float(round(th, 3)),
             "brake": float(round(br, 3)),
         }
+        row_out["approach_active"] = int(bool(approach_active))
         if getattr(args, "emit_active_limit", False):
             row_out["active_limit_kph"] = active_limit_kph if active_limit_kph is not None else ""
         # === Envío condicionado por el modo ===

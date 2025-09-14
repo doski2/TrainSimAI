@@ -3,10 +3,14 @@ corregir los fallos
 revisa el proyecto entero y dime si ves algo que cambiar y nos falta actualizar la documentacion
 siguente paso 
 
-podemos cerrar el tema frenado v0?-micro parches-probar session entera-ya tenemos .bat yo acelero y la IA frena
+podemos cerrar el tema frenado v0?-micro parches-probar session entera-perfiles de frenado en fake1 estamos 
+frena todo el camino falta la regular la distancia de frenado
+y el tema de los eventos
+y el tema de los actuadores
 
-scripts\tsc_sim.bat — Simulado (sin juego, rápido)
-scripts\tsc_real.bat — Con juego real (GetData bridge)
+set TSC_PROFILE=profiles\BR146_ok4.json
+scripts\tsc_real.bat
+scripts\tsc_report.bat
 
 
     1.Nombres de controles no homogéneos.
