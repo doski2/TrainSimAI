@@ -285,6 +285,12 @@ def main() -> None:
     # PID instanciado una vez (no por cada iteración)
     pid = SplitPID()
 
+    # Estado para control de freno (histéresis + retención + rampa)
+    _brake_on: bool = False
+    _brake_hold_until: float = 0.0
+    _brake_cmd: float = 0.0
+    _last_t_for_brake: float = 0.0
+
     # Estado de próxima señal de límite
     next_limit_kph: Optional[float] = None
     anchor_dist_m: Optional[float] = None
@@ -625,6 +631,48 @@ def main() -> None:
         row_out["approach_active"] = int(bool(approach_active))
         if getattr(args, "emit_active_limit", False):
             row_out["active_limit_kph"] = active_limit_kph if active_limit_kph is not None else ""
+        # --- control de freno con histéresis + retención ---
+        # error respecto al objetivo (positivo => vamos "pasados")
+        err_kph = max(0.0, v_for_control_kph - v_tgt)
+        on = _brake_on
+
+        # Schmitt (evita aleteo): enciende con >0.7 kph; apaga con <0.3 kph
+        if err_kph > 0.7:
+            on = True
+        elif err_kph < 0.3:
+            on = False
+
+        # no frenar en crucero si no estamos en aproximación y vamos por debajo de cruise + 0.3
+        if not approach_active and v_for_control_kph <= (cruise_kph + 0.3):
+            on = False
+
+        now = float(row_out["t_wall"])
+        hold_s = 0.5
+        hold_until = _brake_hold_until
+        if on:
+            # al encender, garantizamos 0.5 s de retención mínima
+            hold_until = max(hold_until, now + hold_s)
+        _brake_hold_until = hold_until
+        if now < hold_until:
+            on = True
+        _brake_on = on
+
+        # rampa suave de mando (sube más lento de lo que baja)
+        brake_cmd_local = _brake_cmd
+        dt_br = max(1e-3, now - _last_t_for_brake)
+        _last_t_for_brake = now
+        rise_per_s = 1.2   # subir a 1.0 en ~0.8 s
+        fall_per_s = 2.0   # liberar rápido
+        if on:
+            brake_cmd_local = min(1.0, brake_cmd_local + rise_per_s * dt_br)
+        else:
+            brake_cmd_local = max(0.0, brake_cmd_local - fall_per_s * dt_br)
+        _brake_cmd = brake_cmd_local
+
+        # aplicar en modo brake (la IA no toca throttle)
+        row_out["throttle"] = 0.0
+        row_out["brake"] = float(round(brake_cmd_local, 3))
+
         # === Envío condicionado por el modo ===
         throttle_cmd = th  # <- ajustar si tu variable se llama distinto
         brake_cmd = br  # <- ajustar si tu variable se llama distinto

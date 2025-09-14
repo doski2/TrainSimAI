@@ -211,6 +211,68 @@ def plot_speed_vs_odom(
     else:
         ax.legend(loc="upper right")
 
+    # Si existen columnas diagnósticas, añadirlas
+    # speed_filt_kph traza la velocidad filtrada usada por el lazo de control
+    if "speed_filt_kph" in run:
+        try:
+            sf_x, sf_y = [], []
+            for i, om in enumerate(run["odom"]):
+                if om is None:
+                    continue
+                sf = run.get("speed_filt_kph", [None]*len(run["odom"]))[i]
+                if sf is None:
+                    continue
+                sf_x.append(om)
+                sf_y.append(sf)
+            if sf_x:
+                ax.plot(sf_x, sf_y, label="speed_filt_kph", linestyle="--", alpha=0.6)
+        except Exception:
+            pass
+
+    # Si hay active_limit_kph, lo dibujamos en eje Y secundario (señal de límite en vigor)
+    if "active_limit_kph" in run:
+        try:
+            ax2 = ax.twinx()
+            al_x, al_y = [], []
+            for i, om in enumerate(run["odom"]):
+                if om is None:
+                    continue
+                al = run.get("active_limit_kph", [None]*len(run["odom"]))[i]
+                if al is None or al == "":
+                    continue
+                al_x.append(om)
+                al_y.append(float(al))
+            if al_x:
+                ax2.plot(al_x, al_y, label="active_limit_kph", alpha=0.35)
+                ax2.set_ylabel("active_limit_kph")
+                # leyenda combinada (manera tipada y compatible con Pylance/Ruff)
+                h1, lab1 = ax.get_legend_handles_labels()
+                h2, lab2 = ax2.get_legend_handles_labels()
+                ax.legend(h1 + h2, lab1 + lab2, loc="upper left")
+        except Exception:
+            pass
+
+    # Sombreado (axvspan) para zonas donde approach_active=1
+    if "approach_active" in run:
+        try:
+            mask = [int(x) if x not in (None, "") else 0 for x in run.get("approach_active", [0]*len(run["odom"]))]
+            s = None
+            for i, m in enumerate(mask):
+                if m and s is None:
+                    s = i
+                if (not m or i == len(mask) - 1) and s is not None:
+                    e = i if not m else i
+                    # mapear índice a coordenada de odómetro (si disponible)
+                    try:
+                        x0 = run["odom"][s] if run["odom"][s] is not None else s
+                        x1 = run["odom"][e] if run["odom"][e] is not None else e
+                        ax.axvspan(x0, x1, alpha=0.08, color="gray")
+                    except Exception:
+                        pass
+                    s = None
+        except Exception:
+            pass
+
     ax.set_xlabel("odom_m")
     ax.set_ylabel("v_kmh")
     ax.set_title("Velocidad vs Odómetro (con eventos)")
