@@ -44,5 +44,15 @@ python -m tools.db_check --db data\run.db
 start "TSC Control Loop" cmd /k "python -m runtime.control_loop --source sqlite --db data\run.db --bus %BUS% --events %EVENTS% --profile %TSC_PROFILE% --hz 5 --start-events-from-end --mode %TSC_MODE% --rd "%TSC_RD%" --emit-active-limit --out %OUT%"
 start "Tail ctrl_live" powershell -NoLogo -NoProfile -Command "while(!(Test-Path '%OUT%')){Start-Sleep 0.5}; Get-Content '%OUT%' -Tail 10 -Wait"
 
-popd
+REM Cargar defaults (perfil, modo, reset de logs)
+if exist "%~dp0env\defaults.bat" call "%~dp0env\defaults.bat"
+echo [tsc_real] profile=%TSC_PROFILE%
+echo [tsc_real] mode=%TSC_MODE%
+if defined TSC_RD echo [tsc_real] rd=%TSC_RD%
+
+python -m runtime.control_loop ^
+  --source sqlite --db data\run.db --bus data\lua_eventbus.jsonl ^
+  --events data\events.jsonl --profile "%TSC_PROFILE%" --hz 5 --start-events-from-end ^
+  --mode %TSC_MODE% --rd "%TSC_RD%" ^
+  --emit-active-limit --out data\runs\ctrl_live_%RANDOM%.csv
 endlocal

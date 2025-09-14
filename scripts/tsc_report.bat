@@ -1,6 +1,5 @@
 @echo off
-setlocal enabledelayedexpansion
-call ".venv\Scripts\activate.bat"
+setlocal
 REM ===== elegir ultimo ctrl_live_*.csv (no events/report) =====
 set "CSV="
 for /f "usebackq delims=" %%F in (`dir /b /a-d /o-d "data\runs\ctrl_live_*.csv" 2^>nul`) do (
@@ -17,10 +16,11 @@ if not defined CSV (
 )
 :csv_ok
 echo [tsc_report] Analizando "%CD%\%CSV%"
-python -m tools.session_report --in "%CSV%"
+python tools\session_report.py --csv "%CSV%"
 echo [tsc_report] Hecho.
+
 REM ===== KPI gate (despues del informe) =====
-call "%~dp0tsc_kpi.bat"
+call "%~dp0tsc_kpi.bat" "%CSV%"
 set "KPI_RC=%errorlevel%"
 if "%KPI_RC%"=="0" goto :kpi_ok
 echo [tsc_report] KPI gate FAILED (rc=%KPI_RC%). Revisa arriba.

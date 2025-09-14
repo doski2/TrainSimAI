@@ -6,11 +6,7 @@ REM ============================================
 set "CSV=%~1"
 
 REM 0) Si nos pasan ruta por argumento y existe, usarla
-if defined CSV (
-  if exist "%CSV%" goto :after_find
-  echo [tsc_kpi] CSV pasado por argumento no existe: %CSV%
-  exit /b 1
-)
+if defined CSV if exist "%CSV%" goto :have_csv
 
 REM 1) Buscar el CSV de control mas reciente en data\runs (desc), excluyendo *_events.csv y *_report*.csv
 for /f "usebackq delims=" %%F in (`dir /b /a-d /o-d "data\runs\ctrl_live_*.csv" 2^>nul`) do (
@@ -18,7 +14,7 @@ for /f "usebackq delims=" %%F in (`dir /b /a-d /o-d "data\runs\ctrl_live_*.csv" 
   echo %%~nF | findstr /I "_events _report" >nul
   if errorlevel 1 (
     set "CSV=data\runs\%%~nxF"
-    goto :after_find
+    goto :have_csv
   )
 )
 
@@ -30,7 +26,7 @@ if exist "data\ctrl_live.csv" (
   exit /b 1
 )
 
-:after_find
+:have_csv
 echo [tsc_kpi] CSV: %CSV%
 
 REM Ejecutar validador (llamada directa al .py para no depender de paquete Python)
