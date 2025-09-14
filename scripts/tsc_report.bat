@@ -26,14 +26,19 @@ if errorlevel 1 (
 )
 echo [tsc_report] Hecho.
 
-REM ===== KPI gate (despues del informe) =====
-call "%~dp0tsc_kpi.bat" "%CSV%"
+
+REM ===== KPI gate (capturando a archivo para autotune) =====
+set "KPI_TXT=data\runs\kpi_latest.txt"
+call "%~dp0tsc_kpi.bat" "%CSV%" > "%KPI_TXT%"
 set "KPI_RC=%errorlevel%"
-if "%KPI_RC%"=="0" goto :kpi_ok
-echo [tsc_report] KPI gate FAILED (rc=%KPI_RC%). Revisa arriba.
-exit /b %KPI_RC%
-:kpi_ok
+if not "%KPI_RC%"=="0" (
+  echo [tsc_report] KPI gate FAILED (rc=%KPI_RC%). Revisa arriba.
+  exit /b %KPI_RC%
+)
 echo [tsc_report] KPI gate OK
+
+REM ===== Auto-tune conservador (solo con KPI verde) =====
+python tools\autotune_profile.py --profile "%TSC_PROFILE%" --kpi-file "%KPI_TXT%" --target 0.8 --step 0.5
 
 endlocal
 exit /b 0

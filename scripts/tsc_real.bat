@@ -9,11 +9,33 @@ if not defined TSC_PROFILE set "TSC_PROFILE=profiles\BR146.json"
 if not exist "%TSC_PROFILE%" (
   echo [tsc_real] Aviso: No existe "%TSC_PROFILE%". Usando profiles\BR146.json
   set "TSC_PROFILE=profiles\BR146.json"
-)
 @echo off
 setlocal
-title TSC – Real (GetData)
-pushd "%~dp0\.."
+
+REM ===== Perfil por defecto =====
+if not defined TSC_PROFILE set "TSC_PROFILE=profiles\BR146.json"
+
+REM ===== Modo por defecto =====
+if not defined TSC_MODE set "TSC_MODE=brake"
+
+REM ===== FAKE RD (stub) si TSC_FAKE_RD=1 =====
+if "%TSC_FAKE_RD%"=="1" (
+  set "TSC_RD=runtime.raildriver_stub:rd"
+  set "TSC_RD_DEBUG=1"
+  echo [tsc_real] FAKE_RD=1 -> usando stub runtime.raildriver_stub:rd
+)
+
+echo [tsc_real] profile=%TSC_PROFILE%
+echo [tsc_real] mode=%TSC_MODE%
+if defined TSC_RD echo [tsc_real] rd=%TSC_RD%
+)
+@echo off
+  --source sqlite --db data\run.db --bus data\lua_eventbus.jsonl ^
+  --events data\events.jsonl --profile "%TSC_PROFILE%" --hz 5 --start-events-from-end ^
+  --mode %TSC_MODE% --rd "%TSC_RD%" ^
+  --emit-active-limit --out data\runs\ctrl_live_%RANDOM%.csv
+
+endlocal
 
 if not exist ".venv\Scripts\activate.bat" (
   echo [!] No se encuentra .venv. Crea el entorno:  python -m venv .venv  &&  .venv\Scripts\activate && pip install -r requirements.txt

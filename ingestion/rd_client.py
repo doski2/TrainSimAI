@@ -491,3 +491,72 @@ class RDClient:
             "t_wall",
         ]
         return sorted(set(base + self._common_controls()))
+
+
+# --- TSC actuator shim: expone `rd` con set_brake / set_throttle -------------
+
+
+def _clamp01(x: float) -> float:
+    return 0.0 if x <= 0.0 else (1.0 if x >= 1.0 else float(x))
+
+
+def _make_rd():
+    try:
+        client = RDClient(poll_dt=0.2)
+    except Exception:
+        # Sin RD real disponible -> cae al stub (solo log, no actúa en cabina)
+        from runtime.raildriver_stub import rd as _stub  # type: ignore
+        return _stub
+
+    # Índices por nombre ya los tienes en RDClient
+    idx = client.ctrl_index_by_name
+
+    # Candidatos habituales (muchas locomotoras cambian nombres)
+    BRAKE_NAMES = [
+        "TrainBrakeControl",
+        "TrainBrake",
+        "VirtualBrake",
+        "LocoBrakeControl",
+        "EngineBrake",
+        "DynamicBrake",
+        "CombinedThrottleBrake",
+        "TrainBrakePipePressure",
+    ]
+    THROTTLE_NAMES = ["Throttle", "Regulator", "CombinedThrottleBrake"]
+
+    # Resuelve el primer control que exista para cada función
+    brake_idx = next((idx[n] for n in BRAKE_NAMES if n in idx), None)
+    thr_idx = next((idx[n] for n in THROTTLE_NAMES if n in idx), None)
+
+    class RDShim:
+        """Interfaz mínima que espera el lazo (solo setters)."""
+
+        def __init__(self, cli: RDClient) -> None:
+            self.c = cli
+
+        # El lazo buscará alguno de estos nombres:
+        # set_brake / setBrake / setTrainBrake / setCombinedBrake / set_throttle / setThrottle...
+        def set_brake(self, v: float) -> None:
+            if brake_idx is None:
+                return
+            try:
+                self.c.rd.set_controller_value(brake_idx, _clamp01(v))  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+        def setThrottle(self, v: float) -> None:  # alias
+            self.set_throttle(v)
+
+        def set_throttle(self, v: float) -> None:
+            if thr_idx is None:
+                return
+            try:
+                self.c.rd.set_controller_value(thr_idx, _clamp01(v))  # type: ignore[attr-defined]
+            except Exception:
+                pass
+
+    return RDShim(client)
+
+
+# `rd` es lo que importa para runtime.actuators.send_to_rd(...)
+rd = _make_rd()

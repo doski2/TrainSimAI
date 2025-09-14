@@ -12,6 +12,6 @@
         "a_service_mps2": 0.6,
         "t_react_s": 1.0,
         "margin_m": 125.0,
-        "v_margin_kph": 3.5
+        "v_margin_kph": 3.0
     }
 }
