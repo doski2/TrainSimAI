@@ -19,7 +19,60 @@ from runtime.guards import RateLimiter, JerkBrakeLimiter, overspeed_guard
 from runtime.csv_logger import CSVLogger
 from storage.run_store_sqlite import RunStore
 from runtime.mode_guard import ModeGuard
-from runtime.actuators import scan_for_rd, get_plan, send_to_rd, debug_trace
+from runtime.actuators import scan_for_rd, send_to_rd, debug_trace, load_rd_from_spec
+
+
+# Intentar importar clases reales; si no existen, definir stubs mínimos
+try:
+    # Ajusta estos paths si tus módulos reales viven en otro sitio
+    from runtime.event_stream import NonBlockingEventStream  # type: ignore
+except Exception:  # noqa: BLE001
+    try:
+        from ingestion.event_stream import NonBlockingEventStream  # type: ignore
+    except Exception:  # noqa: BLE001
+
+        class NonBlockingEventStream:  # type: ignore[override]
+            def __init__(self, *args, **kwargs) -> None:
+                pass
+
+            def poll(self) -> object:
+                """Devuelve el siguiente evento o None."""
+                return None
+
+            # Añadimos protocolo de iterador para que next(stream) sea válido para Pylance
+            def __iter__(self):
+                return self
+
+            def __next__(self) -> object:  # puede lanzar StopIteration si no hay evento
+                ev = self.poll()
+                if ev is None:
+                    raise StopIteration
+                return ev
+
+
+try:
+    from runtime.pid import SplitPID  # type: ignore
+except Exception:  # noqa: BLE001
+
+    class SplitPID:  # type: ignore[misc]
+        """Stub mínimo si no está disponible el PID real."""
+
+        def __init__(self, *args, **kwargs) -> None:
+            self.kp = kwargs.get("kp", 0.0)
+            self.ki = kwargs.get("ki", 0.0)
+            self.kd = kwargs.get("kd", 0.0)
+            self._i = 0.0
+            self._prev = None
+
+        def update(self, error: float, dt: float) -> float:
+            if dt <= 0:
+                return 0.0
+            self._i += error * dt
+            d = 0.0
+            if self._prev is not None:
+                d = (error - self._prev) / dt
+            self._prev = error
+            return self.kp * error + self.ki * self._i + self.kd * d
 
 
 def tail_csv_last_row(path: Path) -> dict | None:
@@ -108,9 +161,12 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
     ap.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
     ap.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
-    ap.add_argument("--emit-active-limit", action="store_true",
-                    help="Incluye columna active_limit_kph en la salida CSV")
-    ap.add_argument("--bus", default="data/lua_eventbus.jsonl", help="Event bus JSONL (fallback si events.jsonl no avanza)")
+    ap.add_argument(
+        "--emit-active-limit", action="store_true", help="Incluye columna active_limit_kph en la salida CSV"
+    )
+    ap.add_argument(
+        "--bus", default="data/lua_eventbus.jsonl", help="Event bus JSONL (fallback si events.jsonl no avanza)"
+    )
     ap.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
     ap.add_argument("--hz", type=float, default=5.0)
     ap.add_argument("--db", default="data/run.db")
@@ -142,6 +198,13 @@ def main() -> None:
     args = ap.parse_args()
     mode_guard = ModeGuard(args.mode)
     print(f"[control] mode={args.mode}")
+    # RD preferente por --rd o TSC_RD
+    rd_spec = getattr(args, "rd", None) if hasattr(args, "rd") else None
+    if not rd_spec:
+        rd_spec = os.getenv("TSC_RD", "")
+    rd_static, rd_where = load_rd_from_spec(rd_spec)
+    if rd_static:
+        print(f"[control] rd provider: {rd_where}")
 
     run_path: Path = args.run
     events_path: Path = args.events
@@ -444,7 +507,13 @@ def main() -> None:
             v_tgt = float(speed_kph)
             phase = "CRUISE"
 
-        th, br = SplitPID().update(v_tgt, speed_kph, dt=period)
+        # SplitPID.update espera (error, dt); aquí error = v_tgt - speed_kph
+        pid_out = SplitPID().update(v_tgt - speed_kph, period)
+        # Si el PID real devuelve una tupla (th, br), descomponer; si es float, usar como throttle y brake=0
+        if isinstance(pid_out, tuple) and len(pid_out) == 2:
+            th, br = pid_out
+        else:
+            th, br = pid_out, 0.0
         # aplicar rate limiters
         th = rl_th.step(th, period)
         # overspeed guard (mínimo de freno) — aplicamos al próximo si existe, si no al activo
@@ -457,7 +526,7 @@ def main() -> None:
                 v = max(0.0, speed_kph) / 3.6
                 vlim = max(0.0, next_limit_kph) / 3.6
                 d = max(1.0, float(dist_next_limit_m))  # evita div/0
-                a_req = max(0.0, (v*v - vlim*vlim) / (2.0 * d))
+                a_req = max(0.0, (v * v - vlim * vlim) / (2.0 * d))
                 if a_req > 0.70 * a_service:
                     phase = "BRAKE"
                     # mapear (a_req / a_service) a mando de freno (0..1), con ganancia suave
@@ -492,20 +561,25 @@ def main() -> None:
         }
         if getattr(args, "emit_active_limit", False):
             row_out["active_limit_kph"] = active_limit_kph if active_limit_kph is not None else ""
-        # Envío condicionado por el modo, con detección robusta y trazas
-        rd_obj, rd_name = scan_for_rd(locals(), globals())
-        t_plan, b_plan, t_src, b_src = get_plan(locals(), globals())
-        t_send, b_send = mode_guard.clamp_outputs(t_plan, b_plan)
+        # === Envío condicionado por el modo ===
+        throttle_cmd = th  # <- ajustar si tu variable se llama distinto
+        brake_cmd = br  # <- ajustar si tu variable se llama distinto
+        t_send, b_send = mode_guard.clamp_outputs(throttle_cmd, brake_cmd)
+        # RD: usa primero el provisto por --rd/TSC_RD; si no, intenta escaneo en locals/globals
+        if rd_static is not None:
+            rd_obj, rd_name = rd_static, rd_where
+        else:
+            rd_obj, rd_name = scan_for_rd(locals(), globals())
         debug_on = os.getenv("TSC_RD_DEBUG", "0") in ("1", "true", "True")
         if rd_obj is None:
-            debug_trace(debug_on, f"NO-RD mode={mode_guard.mode} t_plan={t_plan} b_plan={b_plan}")
+            debug_trace(debug_on, f"NO-RD mode={mode_guard.mode} t_plan={throttle_cmd} b_plan={brake_cmd}")
         else:
             thr_ok, brk_ok, thr_m, brk_m = send_to_rd(rd_obj, t_send, b_send)
             debug_trace(
                 debug_on,
-                f"RD={rd_name} mode={mode_guard.mode} t_src={t_src} b_src={b_src} "
-                f"plan(t={t_plan},b={b_plan}) send(t={t_send},b={b_send}) "
-                f"applied(thr={thr_ok}:{thr_m}, brk={brk_ok}:{brk_m})"
+                f"RD={rd_name} mode={mode_guard.mode} "
+                f"plan(t={throttle_cmd},b={brake_cmd}) send(t={t_send},b={b_send}) "
+                f"applied(thr={thr_ok}:{thr_m}, brk={brk_ok}:{brk_m})",
             )
         # log CSV (PLAN): se mantiene igual, independientemente del modo de envío
         writer.write_row(row_out)

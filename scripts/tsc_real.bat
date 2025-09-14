@@ -1,5 +1,9 @@
 REM Modo (permite override por variable de entorno)
 if not defined TSC_MODE set "TSC_MODE=brake"
+REM Proveedor de RD (modulo:atributo), opcional
+REM Ejemplos:
+REM   set TSC_RD=runtime.raildriver_stub:rd
+REM   set TSC_RD=miwrapper.raildriver:create  (si 'create' devuelve el objeto)
 REM Perfil de control (permite override por variable de entorno)
 if not defined TSC_PROFILE set "TSC_PROFILE=profiles\BR146.json"
 if not exist "%TSC_PROFILE%" (

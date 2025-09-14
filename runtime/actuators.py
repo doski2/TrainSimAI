@@ -1,6 +1,9 @@
 from __future__ import annotations
 from typing import Any, Dict, Tuple, Optional
-import os, inspect, io
+import os
+import inspect
+import io
+import importlib
 from datetime import datetime
 
 METHODS_THROTTLE = (
@@ -35,7 +38,27 @@ def scan_for_rd(locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]) -> Tu
                     return obj, f"{scope_name}.{name}"
             except Exception:
                 continue
+    # Si no se encuentra nada, retornar explícitamente
     return None, ""
+
+def load_rd_from_spec(spec: Optional[str]) -> Tuple[Optional[Any], str]:
+    """
+    Carga un objeto RD desde un spec 'modulo:atributo'.
+    Si el atributo es callable, lo invoca sin args y usa su retorno.
+    Devuelve siempre (obj_o_None, origen_str).
+    """
+    if not spec:
+        return None, ""
+    try:
+        mod_name, attr = spec.split(":", 1)
+        mod = importlib.import_module(mod_name)
+        obj = getattr(mod, attr)
+        if callable(obj):
+            obj = obj()
+        return obj, f"{mod_name}:{attr}"
+    except Exception:
+        # En cualquier error, devolvemos tupla nula y texto vacío
+        return None, ""
 
 def get_plan(locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]) -> Tuple[Optional[float], Optional[float], str, str]:
     """Recupera (throttle, brake) planificados sin referenciar nombres fijos, evitando F821."""
@@ -45,22 +68,27 @@ def get_plan(locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]) -> Tuple
     t = next((locals_dict[n] for n in cand_t if n in locals_dict), None)
     if t is None:
         t = next((globals_dict[n] for n in cand_t if n in globals_dict), None)
-        if t is not None: t_src = "globals"
+        if t is not None:
+            t_src = "globals"
     else:
         t_src = "locals"
     b = next((locals_dict[n] for n in cand_b if n in locals_dict), None)
     if b is None:
         b = next((globals_dict[n] for n in cand_b if n in globals_dict), None)
-        if b is not None: b_src = "globals"
+        if b is not None:
+            b_src = "globals"
     else:
         b_src = "locals"
     return t, b, t_src, b_src
 
 def _clamp01(x: Optional[float]) -> Optional[float]:
-    if x is None: return None
+    if x is None:
+        return None
     try:
-        if x < 0: return 0.0
-        if x > 1: return 1.0
+        if x < 0:
+            return 0.0
+        if x > 1:
+            return 1.0
         return float(x)
     except Exception:
         return None
@@ -109,7 +137,8 @@ def send_to_rd(rd_obj: Any, throttle: Optional[float], brake: Optional[float]) -
     return thr_sent, brk_sent, thr_m, brk_m
 
 def debug_trace(enabled: bool, msg: str) -> None:
-    if not enabled: return
+    if not enabled:
+        return
     line = f"{datetime.now().isoformat(timespec='seconds')} {msg}\n"
     print("[RD]", msg)
     try:
