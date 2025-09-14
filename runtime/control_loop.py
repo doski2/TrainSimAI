@@ -206,11 +206,11 @@ def main() -> None:
     print(f"[control] mode={args.mode}")
     # Debug RD: reset de log salvo que se pida append
     debug_on = os.getenv("TSC_RD_DEBUG", "0") in ("1", "true", "True")
-    if debug_on:
-        append = os.getenv("TSC_RD_LOG_APPEND", "0") in ("1", "true", "True")
-        if not append:
-            os.makedirs("data", exist_ok=True)
-            open("data\\rd_send.log", "w").close()
+    force_reset = os.getenv("TSC_RD_LOG_RESET", "0") in ("1", "true", "True")
+    append = os.getenv("TSC_RD_LOG_APPEND", "0") in ("1", "true", "True")
+    if (debug_on or force_reset) and not append:
+        os.makedirs("data", exist_ok=True)
+        open("data\\rd_send.log", "w").close()
     # RD preferente por --rd/TSC_RD
     rd_spec = args.rd
     rd_static, rd_where = load_rd_from_spec(rd_spec)
