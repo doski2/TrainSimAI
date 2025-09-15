@@ -281,6 +281,52 @@ def plot_speed_vs_odom(
     plt.close(fig)
 
 
+def plot_speed_vs_index_df(df, out_path: str) -> None:
+    """Plot usando un DataFrame (índice como eje X). Añade trazas diagnósticas si existen.
+    Esta función no modifica el comportamiento legado; es opcional via --pandas.
+    """
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    # curvas principales
+    ax.plot(df.index, df["speed_kph"], label="speed_kph")
+    if "target_speed_kph" in df.columns:
+        ax.plot(df.index, df["target_speed_kph"], label="target_speed_kph")
+    if "speed_filt_kph" in df.columns:
+        ax.plot(df.index, df["speed_filt_kph"], label="speed_filt_kph", linestyle="--", alpha=0.6)
+
+    # active_limit en eje secundario
+    if "active_limit_kph" in df.columns:
+        ax2 = ax.twinx()
+        ax2.plot(df.index, df["active_limit_kph"], label="active_limit_kph", alpha=0.35)
+        ax2.set_ylabel("active_limit_kph")
+        h1, lab1 = ax.get_legend_handles_labels()
+        h2, lab2 = ax2.get_legend_handles_labels()
+        ax.legend(h1 + h2, lab1 + lab2, loc="upper left")
+
+    # sombreado para approach_active (índices)
+    if "approach_active" in df.columns:
+        try:
+            mask = df["approach_active"].fillna(0).astype(int).values
+            s = None
+            for i, m in enumerate(mask):
+                if m and s is None:
+                    s = i
+                if (not m or i == len(mask) - 1) and s is not None:
+                    e = i if not m else i
+                    ax.axvspan(s, e, alpha=0.08, color="gray")
+                    s = None
+        except Exception:
+            pass
+
+    ax.set_xlabel("index")
+    ax.set_ylabel("speed_kph")
+    ax.set_title("Velocidad (índice) — con señales de control y approach")
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=120)
+    plt.close(fig)
+
+
 def save_events_csv(evtable, out_csv):
     if not evtable:
         return
@@ -297,12 +343,33 @@ def main():
     ap.add_argument("--run", default=os.path.join("data", "runs", "run.csv"))
     ap.add_argument("--events", default=os.path.join("data", "events", "events.jsonl"))
     ap.add_argument("--out", default="plot_speed_vs_odom.png")
+    ap.add_argument("--pandas", action="store_true", help="Usar pandas DataFrame como fuente y trazado alternativo")
     ap.add_argument("--events-out-csv", default="events_timeline.csv")
     args = ap.parse_args()
     run = read_run_csv(args.run)
     events = read_events(args.events)
     evtable = build_event_table(events, run)
-    plot_speed_vs_odom(run, evtable, args.out)
+    if getattr(args, "pandas", False):
+        try:
+            import pandas as pd
+        except Exception:
+            raise RuntimeError("Se solicitó --pandas pero no está disponible 'pandas' en el entorno")
+        # construir DataFrame simple (index incremental)
+        df = pd.DataFrame(run)
+        df.index = pd.RangeIndex(start=0, stop=len(df))
+        # Normalizar nombres/formatos: algunos CSV usan 'v_kmh' en vez de 'speed_kph'
+        if "speed_kph" not in df.columns and "v_kmh" in df.columns:
+            df["speed_kph"] = df["v_kmh"]
+        # Forzar columnas numéricas donde corresponda (coerce -> NaN si no convertible)
+        for col in ("speed_kph", "target_speed_kph", "speed_filt_kph", "active_limit_kph", "approach_active"):
+            if col in df.columns:
+                try:
+                    df[col] = pd.to_numeric(df[col], errors="coerce")
+                except Exception:
+                    pass
+        plot_speed_vs_index_df(df, args.out)
+    else:
+        plot_speed_vs_odom(run, evtable, args.out)
     save_events_csv(evtable, args.events_out_csv)
     print(f"[OK] Gráfico: {args.out}")
     print(f"[OK] Timeline eventos: {args.events_out_csv}")
