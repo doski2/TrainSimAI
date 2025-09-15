@@ -9,6 +9,9 @@ y el tema de los eventos
 y el tema de los actuadores
 
 set TSC_PROFILE=profiles\BR146_ok4.json
+set TSC_RD=ingestion.rd_client:rd
+set TSC_RD_DEBUG=1
+set TSC_RD_LOG_RESET=1
 scripts\tsc_real.bat
 scripts\tsc_report.bat
 

@@ -324,6 +324,7 @@ def main() -> None:
             "throttle",
             "brake",
             "approach_active",
+            "control_ready",
         ],
     )
 
@@ -343,6 +344,8 @@ def main() -> None:
     # memoria para derivar velocidad si falta
     prev_t_wall: float | None = None
     prev_odom_m: float | None = None
+    # tiempo de inicio según t_wall (para compuerta de arranque)
+    start_t_wall: float | None = None
 
     period = 1.0 / max(0.5, float(args.hz))
     t0 = time.perf_counter()
@@ -521,6 +524,17 @@ def main() -> None:
             last_dist_m = None
             last_limit_kph = None
 
+        # --- compuerta de arranque: sin límites válidos, no frenar ---
+        # inicializar start_t_wall la primera vez que tengamos t_wall válido
+        if start_t_wall is None:
+            start_t_wall = float(t_wall)
+        t_since = float(t_wall) - float(start_t_wall)
+        limits_valid = (active_limit_kph is not None and not math.isnan(float(active_limit_kph))) or (
+            next_limit_kph is not None and dist_next_limit_m is not None
+        )
+        startup_gate_s = 4.0  # ventana inicial durante la que el control se mantiene inactivo
+        control_ready = (t_since >= startup_gate_s) and bool(limits_valid)
+
         # 4) objetivo y PID (lógica 'approach' conservadora basada en distancia física)
         # Resolver parámetros físicos y de perfil (compatibilidad con nombres antiguos)
         v_margin_kph = float(getattr(cfg, "v_margin_kph", getattr(cfg, "margin_kph", 3.0)))
@@ -631,6 +645,7 @@ def main() -> None:
             "phase": phase,
             "throttle": float(round(th, 3)),
             "brake": float(round(br, 3)),
+            "control_ready": int(bool(control_ready)),
         }
         row_out["approach_active"] = int(bool(approach_active))
         if getattr(args, "emit_active_limit", False):
@@ -648,6 +663,10 @@ def main() -> None:
 
         # no frenar en crucero si no estamos en aproximación y vamos por debajo de cruise + 0.3
         if not approach_active and v_for_control_kph <= (cruise_kph + 0.3):
+            on = False
+
+        # compuerta de arranque: hasta que el control esté "ready", NUNCA frenes
+        if not bool(control_ready):
             on = False
 
         now = float(row_out["t_wall"])
