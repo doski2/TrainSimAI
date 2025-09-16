@@ -3,10 +3,8 @@ corregir los fallos
 revisa el proyecto entero y dime si ves algo que cambiar y nos falta actualizar la documentacion
 siguente paso 
 
-podemos cerrar el tema frenado v0?-micro parches-probar session entera-perfiles de frenado en fake1 estamos 
-frena todo el camino falta la regular la distancia de frenado
-y el tema de los eventos
-y el tema de los actuadores
+podemos cerrar el tema frenado v0?-micro parches-probar session entera-
+revisar y borrar archivo cada uno por uno  algunos no se reinician se acumulan
 
 set TSC_PROFILE=profiles\BR146_ok4.json
 set TSC_RD=ingestion.rd_client:rd
@@ -14,6 +12,11 @@ set TSC_RD_DEBUG=1
 set TSC_RD_LOG_RESET=1
 scripts\tsc_real.bat
 scripts\tsc_report.bat
+
+scripts\tsc_test.bat --rd-impl mi_paquete.mi_modulo:mi_objeto --save-rd-impl
+
+
+
 
 
     1.Nombres de controles no homogéneos.
