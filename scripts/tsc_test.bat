@@ -79,6 +79,9 @@ if defined DURATION       set "EXTRA_ARGS=!EXTRA_ARGS! --duration !DURATION!"
 if defined BUS_FROM_START set "EXTRA_ARGS=!EXTRA_ARGS! --bus-from-start"
 
 echo.
+REM Forzamos CWD al root del repo (este .bat vive en scripts\)
+pushd "%~dp0\.."
+
 echo === TSC TEST (unificado) =======================================
 echo PROFILE : %TSC_PROFILE%
 echo MODE    : %TSC_MODE%
@@ -100,10 +103,12 @@ if defined TSC_RD_IMPL (
 		set "RD_MOD=%%A"
 		set "RD_OBJ=%%B"
 	)
-	python -c "import importlib,sys; m=importlib.import_module(r'%RD_MOD%'); getattr(m,r'%RD_OBJ%'); print('RD_IMPL_OK')" 1>nul 2>nul
+	REM Validamos import y dejamos ver el traceback si falla
+	python -c "import importlib,traceback; m=importlib.import_module(r'%RD_MOD%'); getattr(m,r'%RD_OBJ%'); print('RD_IMPL_OK')"
 	if errorlevel 1 (
-		echo [ERROR] No puedo importar %TSC_RD_IMPL%  ^(comprueba modulo:objeto^)
-		echo         Ej: scripts\tsc_test.bat --rd-impl mi_paquete.mi_modulo:mi_objeto
+		echo [ERROR] No puedo importar %TSC_RD_IMPL%
+		echo ---- Traceback arriba ----
+		popd
 		exit /b 2
 	)
 	if defined SAVE_RD_IMPL (
@@ -128,6 +133,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 	"$items=@(); foreach($p in $patterns){ $items+=Get-ChildItem -Path $p -ErrorAction SilentlyContinue };" ^
 	"if($items.Count -gt 0){ Compress-Archive -Path $items.FullName -DestinationPath $zip -Force; Write-Host ('ZIP: '+$zip) } else { Write-Host 'ZIP: (sin archivos que comprimir)'}"
 
+popd
 exit /b %RUN_EXIT%
 
 :help

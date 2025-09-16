@@ -14,6 +14,8 @@ scripts\tsc_real.bat
 scripts\tsc_report.bat
 
 scripts\tsc_test.bat --rd-impl mi_paquete.mi_modulo:mi_objeto --save-rd-impl
+scripts\tsc_test.bat
+
 
 
 

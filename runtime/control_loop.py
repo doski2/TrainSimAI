@@ -218,19 +218,19 @@ def main() -> None:
     )
     args = p.parse_args()
     mode_guard = ModeGuard(args.mode)
-    print(f"[control] mode={args.mode}")
+    debug_trace(False, f"[control] mode={args.mode}")
     # Debug RD: reset de log salvo que se pida append
     debug_on = os.getenv("TSC_RD_DEBUG", "0") in ("1", "true", "True")
     force_reset = os.getenv("TSC_RD_LOG_RESET", "0") in ("1", "true", "True")
     append = os.getenv("TSC_RD_LOG_APPEND", "0") in ("1", "true", "True")
     if (debug_on or force_reset) and not append:
-        os.makedirs("data", exist_ok=True)
-        open("data\\rd_send.log", "w").close()
+        Path("data").mkdir(parents=True, exist_ok=True)
+        Path("data").joinpath("rd_send.log").open("w").close()
     # RD preferente por --rd/TSC_RD
     rd_spec = args.rd
     rd_static, rd_where = load_rd_from_spec(rd_spec)
     if rd_static:
-        print(f"[control] rd provider: {rd_where}")
+        debug_trace(False, f"[control] rd provider: {rd_where}")
 
     run_path: Path = args.run
     events_path: Path = args.events
@@ -650,21 +650,23 @@ def main() -> None:
         row_out["approach_active"] = int(bool(approach_active))
         if getattr(args, "emit_active_limit", False):
             row_out["active_limit_kph"] = active_limit_kph if active_limit_kph is not None else ""
-        # --- control de freno con histéresis + retención ---
+        # --- control de freno con histéresis + retención + rampa hacia "desired" ---
+        # desired_brake: lo que pide el PID/guard como mínimo efectivo
+        desired_brake = max(0.0, float(br))
         # error respecto al objetivo (positivo => vamos "pasados")
-        err_kph = max(0.0, v_for_control_kph - v_tgt)
+        err_kph = max(0.0, float(v_for_control_kph) - float(v_tgt))
         on = _brake_on
-
         # Schmitt (evita aleteo): enciende con >0.7 kph; apaga con <0.3 kph
         if err_kph > 0.7:
             on = True
         elif err_kph < 0.3:
             on = False
-
+        # Si el guard/phys pide freno, lo consideramos "on"
+        if desired_brake > 0.05:
+            on = True
         # no frenar en crucero si no estamos en aproximación y vamos por debajo de cruise + 0.3
-        if not approach_active and v_for_control_kph <= (cruise_kph + 0.3):
+        if not approach_active and float(v_for_control_kph) <= (float(cruise_kph) + 0.3):
             on = False
-
         # compuerta de arranque: hasta que el control esté "ready", NUNCA frenes
         if not bool(control_ready):
             on = False
@@ -680,25 +682,27 @@ def main() -> None:
             on = True
         _brake_on = on
 
-        # rampa suave de mando (sube más lento de lo que baja)
+        # rampa suave de mando hacia el objetivo (desired si on, 0 si off)
         brake_cmd_local = _brake_cmd
         dt_br = max(1e-3, now - _last_t_for_brake)
         _last_t_for_brake = now
-        rise_per_s = 1.2   # subir a 1.0 en ~0.8 s
-        fall_per_s = 2.0   # liberar rápido
-        if on:
-            brake_cmd_local = min(1.0, brake_cmd_local + rise_per_s * dt_br)
+        rise_per_s = 1.2   # velocidad de subida
+        fall_per_s = 2.0   # velocidad de bajada
+        target_brake = desired_brake if on else 0.0
+        delta = target_brake - brake_cmd_local
+        if delta >= 0.0:
+            brake_cmd_local = min(1.0, brake_cmd_local + min(delta, rise_per_s * dt_br))
         else:
-            brake_cmd_local = max(0.0, brake_cmd_local - fall_per_s * dt_br)
+            brake_cmd_local = max(0.0, brake_cmd_local + max(delta, -fall_per_s * dt_br))
         _brake_cmd = brake_cmd_local
 
-        # aplicar en modo brake (la IA no toca throttle)
+        # aplicar en modo brake (la IA no toca throttle en brake/advisory)
         row_out["throttle"] = 0.0
         row_out["brake"] = float(round(brake_cmd_local, 3))
 
         # === Envío condicionado por el modo ===
-        throttle_cmd = th  # <- ajustar si tu variable se llama distinto
-        brake_cmd = br  # <- ajustar si tu variable se llama distinto
+        throttle_cmd = th if mode_guard.mode == "full" else 0.0
+        brake_cmd = brake_cmd_local
         t_send, b_send = mode_guard.clamp_outputs(throttle_cmd, brake_cmd)
         # RD: usa primero el provisto por --rd/TSC_RD; si no, intenta escaneo en locals/globals
         if rd_static is not None:

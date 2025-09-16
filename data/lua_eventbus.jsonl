@@ -9872,3 +9872,7 @@
 {"type": "getdata_next_limit", "kph": 80.0, "dist_m": 60.0, "t_game": 494.2419128418, "source": "getdata_probe"}
 {"type": "getdata_next_limit", "kph": 80.0, "dist_m": 35.0, "t_game": 495.01174926758, "source": "getdata_probe"}
 {"type": "getdata_next_limit", "kph": 80.0, "dist_m": 10.0, "t_game": 495.75500488281, "source": "getdata_probe"}
+{"type": "getdata_hello", "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RailWorks\\plugins\\GetData.txt"}
+{"type": "getdata_hello", "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RailWorks\\plugins\\GetData.txt"}
+{"type": "getdata_hello", "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RailWorks\\plugins\\GetData.txt"}
+{"type": "getdata_hello", "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RailWorks\\plugins\\GetData.txt"}

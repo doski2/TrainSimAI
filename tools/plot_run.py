@@ -17,7 +17,9 @@ import argparse
 import csv
 import json
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional, Sequence, Mapping, Tuple
+import math
+from pathlib import Path
 
 import matplotlib
 matplotlib.use("Agg")  # sin GUI
@@ -27,15 +29,19 @@ def _detect_delimiter(sample: str) -> str:
     return ";" if sample.count(";") >= sample.count(",") else ","
 
 
-def read_run_csv(path: str) -> Dict[str, List[float]]:
+def read_run_csv(path: str) -> Dict[str, List[Any]]:
     if not os.path.exists(path):
         raise FileNotFoundError(f"No existe CSV: {path}")
     try:
         csv.field_size_limit(50 * 1024 * 1024)
     except Exception:
         pass
-    t_ing, v_kmh, odom = [], [], []
-    throttle, brake, phase = [], [], []
+    t_ing: List[Optional[float]] = []
+    v_kmh: List[Optional[float]] = []
+    odom: List[Optional[float]] = []
+    throttle: List[Optional[float]] = []
+    brake: List[Optional[float]] = []
+    phase: List[Optional[str]] = []
     with open(path, "r", encoding="utf-8", errors="ignore", newline="") as f:
         sample = f.read(4096)
         delim = _detect_delimiter(sample)
@@ -78,14 +84,15 @@ def read_run_csv(path: str) -> Dict[str, List[float]]:
                 brake.append(float(br) if br not in (None, "") else None)
             except Exception:
                 brake.append(None)
-            phase.append(row.get("phase"))
+            ph = row.get("phase")
+            phase.append(ph if ph not in (None, "") else None)
     return {
         "t_ing": t_ing,
         "v_kmh": v_kmh,
         "odom": odom,
         "throttle": throttle,
         "brake": brake,
-        "phase": phase,
+        "phase": phase,  # Optional[str]
     }
 
 
@@ -105,7 +112,7 @@ def read_events(path: str) -> List[Dict[str, Any]]:
     return out
 
 
-def nearest_idx(seq: List[float], val: float) -> int:
+def nearest_idx(seq: Sequence[Optional[float]], val: float) -> int:
     best_i, best_d = -1, float("inf")
     for i, x in enumerate(seq):
         if x is None:
@@ -117,7 +124,7 @@ def nearest_idx(seq: List[float], val: float) -> int:
 
 
 def build_event_table(
-    events: List[Dict[str, Any]], run: Dict[str, List[float]]
+    events: List[Dict[str, Any]], run: Mapping[str, List[Optional[float]]]
 ) -> List[Dict[str, Any]]:
     table = []
     for e in events:
@@ -140,8 +147,35 @@ def build_event_table(
     return table
 
 
+def _clean_xy(
+    x_seq: Sequence[Optional[float]], y_seq: Sequence[Optional[float]],
+) -> Tuple[List[float], List[float]]:
+    """Filtra None/NaN y devuelve listas seguras para matplotlib."""
+    xs: List[float] = []
+    ys: List[float] = []
+    for xv, yv in zip(x_seq, y_seq):
+        if xv is None or yv is None:
+            continue
+        # evita NaN
+        if isinstance(xv, float) and math.isnan(xv):
+            continue
+        if isinstance(yv, float) and math.isnan(yv):
+            continue
+        try:
+            xs.append(float(xv))
+            ys.append(float(yv))
+        except Exception:
+            continue
+    return xs, ys
+
+def _ensure_parent_dir(path: str) -> str:
+    """Crea el directorio padre del path si no existe y devuelve el path."""
+    p = Path(path)
+    p.parent.mkdir(parents=True, exist_ok=True)
+    return str(p)
+
 def plot_speed_vs_odom(
-    run: Dict[str, List[float]], evtable: List[Dict[str, Any]], out_path: str
+    run: Mapping[str, List[Optional[float]]], evtable: List[Dict[str, Any]], out_path: str
 ) -> None:
     import matplotlib.pyplot as plt
     xs, ys, idxs = [], [], []
@@ -191,6 +225,7 @@ def plot_speed_vs_odom(
         pass
 
     # Eje secundario para throttle/brake
+    ax2 = None
     has_th = any(v is not None for v in run.get("throttle", []))
     has_br = any(v is not None for v in run.get("brake", []))
     if has_th or has_br:
@@ -205,9 +240,9 @@ def plot_speed_vs_odom(
         if has_br:
             ax2.plot(ctrl_x, br_y, label="brake", color="tab:red", alpha=0.7)
         ax2.set_ylabel("ctrl 0..1")
-        lines1, labels1 = ax.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax2.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+        h1, lab1 = ax.get_legend_handles_labels()
+        h2, lab2 = ax2.get_legend_handles_labels()
+        ax.legend(h1 + h2, lab1 + lab2, loc="upper right")
     else:
         ax.legend(loc="upper right")
 
@@ -232,7 +267,8 @@ def plot_speed_vs_odom(
     # Si hay active_limit_kph, lo dibujamos en eje Y secundario (señal de límite en vigor)
     if "active_limit_kph" in run:
         try:
-            ax2 = ax.twinx()
+            if ax2 is None:
+                ax2 = ax.twinx()
             al_x, al_y = [], []
             for i, om in enumerate(run["odom"]):
                 if om is None:
@@ -264,8 +300,19 @@ def plot_speed_vs_odom(
                     e = i if not m else i
                     # mapear índice a coordenada de odómetro (si disponible)
                     try:
-                        x0 = run["odom"][s] if run["odom"][s] is not None else s
-                        x1 = run["odom"][e] if run["odom"][e] is not None else e
+                        raw0 = run["odom"][s]
+                        raw1 = run["odom"][e]
+                        x0 = None
+                        x1 = None
+                        if raw0 is not None and not (isinstance(raw0, float) and math.isnan(raw0)):
+                            x0 = float(raw0)
+                        if raw1 is not None and not (isinstance(raw1, float) and math.isnan(raw1)):
+                            x1 = float(raw1)
+                        # fallback a índices si no hay coordenadas de odómetro válidas
+                        if x0 is None:
+                            x0 = float(s)
+                        if x1 is None:
+                            x1 = float(e)
                         ax.axvspan(x0, x1, alpha=0.08, color="gray")
                     except Exception:
                         pass
@@ -277,6 +324,7 @@ def plot_speed_vs_odom(
     ax.set_ylabel("v_kmh")
     ax.set_title("Velocidad vs Odómetro (con eventos)")
     fig.tight_layout()
+    out_path = _ensure_parent_dir(out_path)
     fig.savefig(out_path, dpi=120)
     plt.close(fig)
 
@@ -323,6 +371,7 @@ def plot_speed_vs_index_df(df, out_path: str) -> None:
     ax.set_ylabel("speed_kph")
     ax.set_title("Velocidad (índice) — con señales de control y approach")
     fig.tight_layout()
+    out_path = _ensure_parent_dir(out_path)
     fig.savefig(out_path, dpi=120)
     plt.close(fig)
 
