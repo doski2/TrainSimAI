@@ -40,6 +40,7 @@ echo [WARN] Opcion desconocida: %1
 shift
 goto parse
 
+REM ---- Resolver RD_IMPL (param > archivo > env) --------------------
 :ready
 set "RD_IMPL_RES=%RD_IMPL%"
 if not defined RD_IMPL_RES (
@@ -102,7 +103,7 @@ if defined TSC_RD_IMPL (
 		set "RD_MOD=%%A"
 		set "RD_OBJ=%%B"
 	)
-	python -c "import importlib,traceback,sys; m=importlib.import_module(r'%RD_MOD%'); getattr(m,r'%RD_OBJ%'); print('RD_IMPL_OK')"
+	python -c "import importlib,traceback; m=importlib.import_module(r'%RD_MOD%'); getattr(m,r'%RD_OBJ%'); print('RD_IMPL_OK')"
 	if errorlevel 1 (
 		echo [ERROR] No puedo importar %TSC_RD_IMPL%
 		echo ---- Traceback arriba ----
@@ -145,23 +146,11 @@ echo     --duration SEG             Limita duracion del run
 echo     --bus-from-start          Lee el bus desde el inicio
 echo     --debug ^| --no-debug        Activa/desactiva rd_send.log
 exit /b 0
-		"$items=@(); foreach($p in $patterns){ $items+=Get-ChildItem -Path $p -ErrorAction SilentlyContinue };" ^
-		"if($items.Count -gt 0){ Compress-Archive -Path $items.FullName -DestinationPath $zip -Force; Write-Host ('ZIP: '+$zip) } else { Write-Host 'ZIP: (sin archivos que comprimir)'}"
+	)
+)
 
-	popd
-	exit /b %RUN_EXIT%
-
-	:help
-	echo Uso:
-	echo   scripts\tsc_test.bat [opciones]
-	echo     --rd-impl pkg.mod:obj      Usa RD real (si falla import, aborta)
-	echo     --save-rd-impl             Guarda el valor en scripts\rd_impl.txt
-	echo     --profile RUTA\perfil.json Perfil (por defecto %PROFILE%)
-	echo     --mode brake^|auto           Modo (default %MODE%)
-	echo     --duration SEG             Limita duracion del run
-	echo     --bus-from-start          Lee el bus desde el inicio
-	echo     --debug ^| --no-debug        Activa/desactiva rd_send.log
-	exit /b 0
+REM ---- Reset del log RD si procede ---------------------------------
+if defined TSC_RD_LOG_RESET if exist ".\data\rd_send.log" del /q ".\data\rd_send.log"
 
 REM ---- Ejecutar run + report ---------------------------------------
 call scripts\tsc_real.bat %EXTRA_ARGS%
@@ -181,6 +170,16 @@ popd
 exit /b %RUN_EXIT%
 
 :help
+echo Uso:
+echo   scripts\tsc_test.bat [opciones]
+echo     --rd-impl pkg.mod:obj      Usa RD real (si falla import, aborta)
+echo     --save-rd-impl             Guarda el valor en scripts\rd_impl.txt
+echo     --profile RUTA\perfil.json Perfil (por defecto %PROFILE%)
+echo     --mode brake^|auto           Modo (default %MODE%)
+echo     --duration SEG             Limita duracion del run
+echo     --bus-from-start          Lee el bus desde el inicio
+echo     --debug ^| --no-debug        Activa/desactiva rd_send.log
+exit /b 0
 echo Uso:
 echo   scripts\tsc_test.bat [opciones]
 echo     --rd-impl pkg.mod:obj      Usa RD real (si falla import, aborta)

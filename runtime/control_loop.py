@@ -73,6 +73,12 @@ except Exception:  # noqa: BLE001
             return self.kp * error + self.ki * self._i + self.kd * d
 
 
+    # --- Estado persistente de límite activo (FSM) ---
+    # Variables a nivel de módulo que permiten mantener el "active limit" entre ejecuciones
+    _active_limit_kph: float | None = None
+    _last_dist_next_m: float | None = None
+
+
 def tail_csv_last_row(path: Path) -> dict | None:
     """Lee la última fila completa del CSV usando la cabecera real y detectando el delimitador.
     Estrategia: detecta delimitador en la PRIMERA línea; luego lee desde el final con ventanas
@@ -218,6 +224,8 @@ def main() -> None:
     )
     args = p.parse_args()
     mode_guard = ModeGuard(args.mode)
+    # declarar globals que mantienen estado entre iteraciones
+    global _active_limit_kph, _last_dist_next_m
     debug_trace(False, f"[control] mode={args.mode}")
     # Debug RD: reset de log salvo que se pida append
     debug_on = os.getenv("TSC_RD_DEBUG", "0") in ("1", "true", "True")
@@ -490,7 +498,7 @@ def main() -> None:
                 t_next = time.perf_counter()
             continue
 
-        # 3) calcular dist_next_limit_m por odómetro
+    # 3) calcular dist_next_limit_m por odómetro
         if next_limit_kph is None or anchor_dist_m is None:
             dist_next_limit_m = None
         else:
@@ -510,10 +518,24 @@ def main() -> None:
             last_dist_m = dist_next_limit_m
             last_limit_kph = next_limit_kph
 
+        # --- FSM de límite activo -------------------------------------------------
+        # Si cruzamos la baliza del próximo límite (dist pasa de >0 a <=0), el
+        # límite activo pasa a ser el del próximo.
+        try:
+            dn = None if dist_next_limit_m is None else float(dist_next_limit_m)
+            nl = None if next_limit_kph is None else float(next_limit_kph)
+        except Exception:
+            dn, nl = None, None
+        if _last_dist_next_m is not None and dn is not None:
+            if _last_dist_next_m > 0.0 and dn <= 0.0 and nl is not None:
+                _active_limit_kph = nl
+        _last_dist_next_m = dn
+
         # 3.1) Si ya estamos "en" el hito (distances cercanas a 0), promover el límite a 'activo'
         if dist_next_limit_m is not None and dist_next_limit_m <= 2.0:
             try:
-                active_limit_kph = float(next_limit_kph) if next_limit_kph is not None else active_limit_kph
+                # promover a variable de módulo persistente
+                _active_limit_kph = float(next_limit_kph) if next_limit_kph is not None else _active_limit_kph
             except Exception:
                 pass
             # limpiar el próximo límite y su anclaje
@@ -544,8 +566,8 @@ def main() -> None:
 
         # Crucero por defecto: si hay límite activo, lo usamos con margen; si no, mantenemos velocidad actual
         cruise_kph = speed_kph
-        if active_limit_kph is not None:
-            cruise_kph = max(0.0, float(active_limit_kph) - v_margin_kph)
+        if _active_limit_kph is not None:
+            cruise_kph = max(0.0, float(_active_limit_kph) - v_margin_kph)
 
         target_next_kph = None
         if next_limit_kph is not None:
@@ -601,7 +623,11 @@ def main() -> None:
         # aplicar rate limiters
         th = rl_th.step(th, period)
         # overspeed guard (mínimo de freno) — aplicamos al próximo si existe, si no al activo
-        og = overspeed_guard(float(speed_kph) if speed_kph is not None else 0.0, float(next_limit_kph) if next_limit_kph is not None else (float(active_limit_kph) if active_limit_kph is not None else 0.0))
+        # overspeed_guard comparará contra next_limit_kph si está disponible, o bien contra _active_limit_kph
+        og = overspeed_guard(
+            float(speed_kph) if speed_kph is not None else 0.0,
+            float(next_limit_kph) if next_limit_kph is not None else (_active_limit_kph if _active_limit_kph is not None else 0.0),
+        )
 
         # 4.1) Guard FÍSICO por distancia (a_req > a_service -> pisar más freno)
         try:
@@ -639,7 +665,7 @@ def main() -> None:
             "speed_filt_kph": float(v_for_control_kph),
             "next_limit_kph": "" if next_limit_kph is None else float(next_limit_kph),
             "next_limit_used_kph": "" if next_limit_kph is None else float(next_limit_kph),
-            "cur_limit_used_kph": float(active_limit_kph) if active_limit_kph is not None else float("nan"),
+            "cur_limit_used_kph": float(_active_limit_kph) if _active_limit_kph is not None else float("nan"),
             "dist_next_limit_m": "" if dist_next_limit_m is None else float(dist_next_limit_m),
             "target_speed_kph": float(v_tgt),
             "phase": phase,
@@ -649,7 +675,7 @@ def main() -> None:
         }
         row_out["approach_active"] = int(bool(approach_active))
         if getattr(args, "emit_active_limit", False):
-            row_out["active_limit_kph"] = active_limit_kph if active_limit_kph is not None else ""
+            row_out["active_limit_kph"] = _active_limit_kph if _active_limit_kph is not None else ""
         # --- control de freno con histéresis + retención + rampa hacia "desired" ---
         # desired_brake: lo que pide el PID/guard como mínimo efectivo
         desired_brake = max(0.0, float(br))

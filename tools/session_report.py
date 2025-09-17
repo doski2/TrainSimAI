@@ -155,7 +155,39 @@ def _compute_report(df: pd.DataFrame) -> dict:
     return rep
 
 
+def _compute_kpis(df: pd.DataFrame, rep: dict, ev_df: pd.DataFrame | None) -> dict:
+    """
+    KPIs esperados por el pipeline:
+      - arrivals_ok                (ratio en [0,1])
+      - monotonicity_bumps         (int)  -> de dist_increases_gt2m
+      - mean_margin_last50_kph     (float)
+    """
+    kpi = {
+        "arrivals_ok": 0.0,
+        "monotonicity_bumps": int(rep.get("dist_increases_gt2m", 0)),
+        "mean_margin_last50_kph": float("nan"),
+    }
+    # arrivals_ok desde los eventos
+    if ev_df is not None and not ev_df.empty:
+        arr = int(ev_df["arrived"].sum())
+        ok = int(ev_df["ok_leq_limit_plus_0_5"].sum())
+        kpi["arrivals_ok"] = (ok / arr) if arr > 0 else 0.0
+    # mean_margin_last50_kph: media global en muestras con dist<=50 m
+    need = {"next_limit_kph", "speed_kph", "dist_next_limit_m"}
+    if need.issubset(df.columns):
+        m = df["dist_next_limit_m"].le(50) & df["next_limit_kph"].notna() & df["speed_kph"].notna()
+        if m.any():
+            margins = (df.loc[m, "next_limit_kph"] - df.loc[m, "speed_kph"]).astype(float)
+            kpi["mean_margin_last50_kph"] = float(margins.mean())
+    return kpi
+
+
+def _ensure_parent(p: Path) -> None:
+    p.parent.mkdir(parents=True, exist_ok=True)
+
+
 def _write_txt(path: Path, rep: dict, ev_df: pd.DataFrame | None):
+    _ensure_parent(path)
     with path.open("w", encoding="utf-8") as f:
         for k, v in rep.items():
             f.write(f"{k}: {v}\n")
@@ -179,7 +211,9 @@ def _plots(df: pd.DataFrame, stem: Path):
         plt.xlabel("muestra")
         plt.ylabel("km/h")
         plt.legend()
-        plt.savefig(stem.with_suffix("").as_posix() + "_speed_target.png", dpi=130)
+        outp = Path(stem.with_suffix("").as_posix() + "_speed_target.png")
+        _ensure_parent(outp)
+        plt.savefig(outp, dpi=130)
         plt.close()
     if "dist_next_limit_m" in df.columns:
         plt.figure()
@@ -187,7 +221,9 @@ def _plots(df: pd.DataFrame, stem: Path):
         plt.title("Distancia al próximo límite")
         plt.xlabel("muestra")
         plt.ylabel("m")
-        plt.savefig(stem.with_suffix("").as_posix() + "_dist.png", dpi=130)
+        outp = Path(stem.with_suffix("").as_posix() + "_dist.png")
+        _ensure_parent(outp)
+        plt.savefig(outp, dpi=130)
         plt.close()
     if ("throttle" in df.columns) or ("brake" in df.columns):
         plt.figure()
@@ -199,16 +235,23 @@ def _plots(df: pd.DataFrame, stem: Path):
         plt.xlabel("muestra")
         plt.ylabel("0..1")
         plt.legend()
-        plt.savefig(stem.with_suffix("").as_posix() + "_actuators.png", dpi=130)
+        outp = Path(stem.with_suffix("").as_posix() + "_actuators.png")
+        _ensure_parent(outp)
+        plt.savefig(outp, dpi=130)
         plt.close()
 
 
 def main():
     ap = argparse.ArgumentParser(description="Informe de sesión ctrl_live")
-    ap.add_argument("--in", dest="inp", required=True, help="Ruta al ctrl_live_*.csv")
+    ap.add_argument("--in", dest="inp", help="Ruta al ctrl_live_*.csv")
+    ap.add_argument("--csv", dest="csv", help="(compat) Ruta al ctrl_live_*.csv")
+    ap.add_argument("--kpi-out", default="data/kpi_latest.txt", help="Ruta de salida KPI (txt)")
     ap.add_argument("--no-plots", action="store_true", help="No generar PNGs")
     args = ap.parse_args()
-    in_path = Path(args.inp)
+    inp = args.inp or args.csv
+    if not inp:
+        raise SystemExit("Debe especificar --in o --csv con el ctrl_live_*.csv")
+    in_path = Path(inp)
     df = _load_csv(in_path)
     rep = _compute_report(df)
     ev_df = _segment_events(df)
@@ -217,12 +260,26 @@ def main():
     _write_txt(rep_txt, rep, ev_df)
     if ev_df is not None and not ev_df.empty:
         ev_csv = in_path.with_name(in_path.stem + "_events.csv")
+        _ensure_parent(ev_csv)
         ev_df.to_csv(ev_csv, index=False)
     if not args.no_plots:
         _plots(df, in_path)
     print(f"[session_report] txt={rep_txt}")
     if ev_df is not None and not ev_df.empty:
         print(f"[session_report] events_csv={in_path.with_name(in_path.stem + '_events.csv')}")
+    # KPI out
+    kpi = _compute_kpis(df, rep, ev_df)
+    kpi_path = Path(args.kpi_out)
+    _ensure_parent(kpi_path)
+    with kpi_path.open("w", encoding="utf-8") as f:
+        f.write(f"arrivals_ok={kpi['arrivals_ok']:.3f}\n")
+        f.write(f"monotonicity_bumps={kpi['monotonicity_bumps']}\n")
+        # permitir NaN si no hay datos (report lo manejará)
+        if np.isnan(kpi["mean_margin_last50_kph"]):
+            f.write("mean_margin_last50_kph=nan\n")
+        else:
+            f.write(f"mean_margin_last50_kph={kpi['mean_margin_last50_kph']:.3f}\n")
+    print(f"[session_report] kpi_txt={kpi_path}")
 
 
 if __name__ == "__main__":

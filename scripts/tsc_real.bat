@@ -1,102 +1,56 @@
-REM Modo (permite override por variable de entorno)
-if not defined TSC_MODE set "TSC_MODE=brake"
-REM Proveedor de RD (modulo:atributo), opcional
-REM Ejemplos:
-REM   set TSC_RD=runtime.raildriver_stub:rd
-REM   set TSC_RD=miwrapper.raildriver:create  (si 'create' devuelve el objeto)
-REM Perfil de control (permite override por variable de entorno)
-if not defined TSC_PROFILE set "TSC_PROFILE=profiles\BR146.json"
+@echo off
+setlocal EnableExtensions EnableDelayedExpansion
+
+REM Ir al root del repo (este .bat vive en scripts\)
+pushd "%~dp0\.."
+
+REM ========= Defaults y entorno =========
+if not defined TSC_MODE     set "TSC_MODE=brake"
+if not defined TSC_PROFILE  set "TSC_PROFILE=profiles\BR146_ok4.json"
+if not defined TSC_RD       set "TSC_RD="
+
+REM Si el perfil no existe, fallback a profiles\BR146.json
 if not exist "%TSC_PROFILE%" (
   echo [tsc_real] Aviso: No existe "%TSC_PROFILE%". Usando profiles\BR146.json
   set "TSC_PROFILE=profiles\BR146.json"
-@echo off
-setlocal
+)
 
-REM ===== Perfil por defecto =====
-if not defined TSC_PROFILE set "TSC_PROFILE=profiles\BR146.json"
-
-REM ===== Modo por defecto =====
-if not defined TSC_MODE set "TSC_MODE=brake"
-
-REM ===== FAKE RD (stub) si TSC_FAKE_RD=1 =====
-if "%TSC_FAKE_RD%"=="1" (
+REM Si no hay RD definido, usa el stub (así siempre haya envío/log)
+if not defined TSC_RD (
   set "TSC_RD=runtime.raildriver_stub:rd"
-  set "TSC_RD_DEBUG=1"
-  echo [tsc_real] FAKE_RD=1 -> usando stub runtime.raildriver_stub:rd
-)
-
-echo [tsc_real] profile=%TSC_PROFILE%
-echo [tsc_real] mode=%TSC_MODE%
-if defined TSC_RD echo [tsc_real] rd=%TSC_RD%
-)
-@echo off
-  --source sqlite --db data\run.db --bus data\lua_eventbus.jsonl ^
-  --events data\events.jsonl --profile "%TSC_PROFILE%" --hz 5 --start-events-from-end ^
-  --mode %TSC_MODE% --rd "%TSC_RD%" ^
-  --emit-active-limit --out data\runs\ctrl_live_%RANDOM%.csv
-
-endlocal
-
-if not exist ".venv\Scripts\activate.bat" (
-  echo [!] No se encuentra .venv. Crea el entorno:  python -m venv .venv  &&  .venv\Scripts\activate && pip install -r requirements.txt
-  pause
-  exit /b 1
-)
-call ".venv\Scripts\activate.bat"
-
-rem === Ajusta esta ruta si tu GetData.txt esta en otro sitio ===
-set "TSC_GETDATA_FILE=C:\Program Files (x86)\Steam\steamapps\common\RailWorks\plugins\GetData.txt"
-
-set RUN_CSV=data\runs\run.csv
-set EVENTS=data\events.jsonl
-REM (No usar PROFILE, usar TSC_PROFILE)
-set BUS=data\lua_eventbus.jsonl
-rem salida única por ejecución (evita bloqueos de Excel/AV y colisiones)
-set OUT=data\runs\ctrl_live_%RANDOM%.csv
-
-if not exist "data\runs" mkdir "data\runs"
-if not exist "data" mkdir "data"
-del /q "%OUT%" 2>nul
-
-start "TSC GetData Bridge" cmd /k "python -m ingestion.getdata_bridge"
-timeout /t 2 >nul
-start "TSC Collector" cmd /k "python -m runtime.collector --hz 10 --bus-from-start"
-timeout /t 2 >nul
-python -m tools.db_check --db data\run.db
-start "TSC Control Loop" cmd /k "python -m runtime.control_loop --source sqlite --db data\run.db --bus %BUS% --events %EVENTS% --profile %TSC_PROFILE% --hz 5 --start-events-from-end --mode %TSC_MODE% --rd "%TSC_RD%" --emit-active-limit --out %OUT%"
-start "Tail ctrl_live" powershell -NoLogo -NoProfile -Command "while(!(Test-Path '%OUT%')){Start-Sleep 0.5}; Get-Content '%OUT%' -Tail 10 -Wait"
-
-REM Cargar defaults (perfil, modo, reset de logs)
-if exist "%~dp0env\defaults.bat" call "%~dp0env\defaults.bat"
-
-REM Cargar RD (si lo tienes)
-if exist "%~dp0env\rd_provider.bat" call "%~dp0env\rd_provider.bat"
-
-echo [tsc_real] profile=%TSC_PROFILE%
-echo [tsc_real] mode=%TSC_MODE%
-if defined TSC_RD echo [tsc_real] rd=%TSC_RD%
-
-REM ====== PROBAR ESPEC RD Y CAER AL STUB SI NO RESUELVE ======
-if defined TSC_RD (
-  REM Probar a cargar el spec con Python; si falla -> fallback a stub
-  python -c "from runtime.actuators import load_rd_from_spec;import os,sys;obj,_=load_rd_from_spec(os.getenv('TSC_RD',''));sys.exit(0 if obj else 1)"
-  if errorlevel 1 (
-    echo [tsc_real] AVISO: No se pudo cargar RD '%TSC_RD%'. Usando stub: runtime.raildriver_stub:rd
-    set "TSC_RD=runtime.raildriver_stub:rd"
-    set "TSC_RD_DEBUG=1"
-  )
-) else (
-  REM Si no hay RD definido, usa el stub (así siempre hay envío/log)
-  set "TSC_RD=runtime.raildriver_stub:rd"
-  set "TSC_RD_DEBUG=1"
+  if not defined TSC_RD_DEBUG set "TSC_RD_DEBUG=1"
   echo [tsc_real] AVISO: TSC_RD no definido. Usando stub.
 )
 
-REM ====== Lanzar control ======
+REM ========= Preparar args dinámicos =========
+REM Por defecto, seguimos desde el final del bus; si el usuario pasa --bus-from-start lo anulamos
+set "BUS_TAIL=--start-events-from-end"
+echo %* | findstr /I /C:"--bus-from-start" >nul && set "BUS_TAIL="
+
+REM Asegurar carpetas de salida
+if not exist "data\runs"  mkdir "data\runs"
+if not exist "data\plots" mkdir "data\plots"
+
+REM Nombre de salida con RANDOM para evitar colisiones
+set "RUN_CSV=data\runs\ctrl_live_%RANDOM%.csv"
+
+echo === tsc_real ==============================================
+echo PROFILE : %TSC_PROFILE%
+echo MODE    : %TSC_MODE%
+echo RD      : %TSC_RD%
+if defined TSC_RD_DEBUG (echo RD_DEBUG=1) else (echo RD_DEBUG=0)
+echo BUS_TAIL: %BUS_TAIL%
+echo OUT CSV : %RUN_CSV%
+echo EXTRA   : %*
+echo ============================================================
+
+REM ========= Lanzar control loop =========
 python -m runtime.control_loop ^
   --source sqlite --db data\run.db --bus data\lua_eventbus.jsonl ^
-  --events data\events.jsonl --profile "%TSC_PROFILE%" --hz 5 --start-events-from-end ^
-  --mode %TSC_MODE% --rd "%TSC_RD%" ^
-  --emit-active-limit --out data\runs\ctrl_live_%RANDOM%.csv
+  --events data\events.jsonl --profile "%TSC_PROFILE%" --hz 5 %BUS_TAIL% ^
+  --mode %TSC_MODE% --rd "%TSC_RD%" --emit-active-limit ^
+  --out "%RUN_CSV%" %*
 
-endlocal
+set "RC=%ERRORLEVEL%"
+popd
+endlocal & exit /b %RC%
