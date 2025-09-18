@@ -45,11 +45,21 @@ echo EXTRA   : %*
 echo ============================================================
 
 REM ========= Lanzar control loop =========
+REM Construir lista de argumentos limpia (excluir --bus-from-start que es para este wrapper)
+set "ARGS_CLEAN="
+for %%A in (%*) do (
+  if /I "%%~A"=="--bus-from-start" (
+    rem skip this token
+  ) else (
+    set "ARGS_CLEAN=!ARGS_CLEAN! %%~A"
+  )
+)
+
 python -m runtime.control_loop ^
   --source sqlite --db data\run.db --bus data\lua_eventbus.jsonl ^
   --events data\events.jsonl --profile "%TSC_PROFILE%" --hz 5 %BUS_TAIL% ^
   --mode %TSC_MODE% --rd "%TSC_RD%" --emit-active-limit ^
-  --out "%RUN_CSV%" %*
+  --out "%RUN_CSV%" %ARGS_CLEAN%
 
 set "RC=%ERRORLEVEL%"
 popd

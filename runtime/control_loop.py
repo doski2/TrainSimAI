@@ -4,7 +4,6 @@ import argparse
 import os  # para leer TSC_MODE en --mode por defecto
 from dataclasses import replace
 import time
-import csv
 import json
 from pathlib import Path
 from typing import Optional
@@ -79,64 +78,39 @@ except Exception:  # noqa: BLE001
     _last_dist_next_m: float | None = None
 
 
-def tail_csv_last_row(path: Path) -> dict | None:
-    """Lee la última fila completa del CSV usando la cabecera real y detectando el delimitador.
-    Estrategia: detecta delimitador en la PRIMERA línea; luego lee desde el final con ventanas
-    crecientes (64 KiB → 2 MiB) hasta encontrar una fila completa que case con la cabecera.
-    Soporta ',', ';', '\t', '|'.
+def tail_csv_last_row(path: Path, max_bytes: int = 1_000_000) -> dict | None:
     """
-    if not path.exists():
+    Lee la última fila completa de un CSV sin bloquear.
+    Devuelve dict(header->valor) o None si el archivo está vacío/incompleto.
+    """
+    p = Path(path)
+    if not p.exists():
         return None
-
-    # 1) Leer cabecera REAL (primera línea) y detectar delimitador.
     try:
-        with path.open("r", encoding="utf-8", newline="") as f:
-            header_line = f.readline()
+        size = p.stat().st_size
     except Exception:
         return None
-    if not header_line:
+    if size < 64:
         return None
-
-    def _pick_delim(line: str) -> str:
-        cands = [",", ";", "\t", "|"]
-        counts = [(d, line.count(d)) for d in cands]
-        delim = max(counts, key=lambda t: t[1])[0]
-        return delim if line.count(delim) > 0 else ","
-
-    delim = _pick_delim(header_line)
     try:
-        header = next(csv.reader([header_line], delimiter=delim))
-    except Exception:
-        return None
-    if not header:
-        return None
-    ncols = len(header)
-
-    # 2) Leer desde el final con ventanas crecientes hasta encontrar una fila válida.
-    max_window = 2 * 1024 * 1024  # 2 MiB
-    window = 64 * 1024  # 64 KiB inicial
-    filesize = path.stat().st_size
-    with path.open("rb") as fb:
-        while True:
+        with p.open("rb") as f:
+            back = min(size, max_bytes)
             try:
-                fb.seek(-min(window, filesize), 2)
+                f.seek(-back, os.SEEK_END)
             except OSError:
-                fb.seek(0)
-            chunk = fb.read().decode("utf-8", errors="ignore")
-            lines = [ln for ln in chunk.splitlines() if ln.strip()]
-            for cand in reversed(lines):
-                try:
-                    fields = next(csv.reader([cand], delimiter=delim))
-                except Exception:
-                    continue
-                # saltar cabeceras/repeticiones
-                if [c.strip().lower() for c in fields] == [h.strip().lower() for h in header]:
-                    continue
-                if len(fields) == ncols:
-                    return {k: v for k, v in zip(header, fields)}
-            if window >= max_window or window >= filesize:
-                break
-            window = min(window * 2, max_window)
+                f.seek(0)
+            chunk = f.read().decode("utf-8", errors="ignore")
+    except Exception:
+        return None
+    lines = [ln for ln in chunk.splitlines() if ln.strip()]
+    if len(lines) < 2:
+        return None
+    # asumimos CSV con comas para cabecera simple
+    header = [h.strip().lower() for h in lines[0].split(",")]
+    for last in reversed(lines[1:]):
+        fields = [c.strip() for c in last.split(",")]
+        if len(fields) == len(header):
+            return dict(zip(header, fields))
     return None
 
 
@@ -420,7 +394,11 @@ def main() -> None:
             else:
                 last_rowid, row = latest
         if use_csv:
-            row = tail_csv_last_row(run_path)
+            # Reanudar desde la última fila (solo si el CSV ya tiene contenido)
+            if os.path.exists(run_path) and os.path.getsize(run_path) >= 128:
+                row = tail_csv_last_row(run_path)
+            else:
+                row = None
             if row is None:
                 time.sleep(0.05)
                 continue
