@@ -40,6 +40,33 @@ coverage.xml
 *.hypothesis/
 .pytest_cache/
 
+# --- TSC: artefactos de ejecución y datos generados ---
+# Caches comunes
+**/__pycache__/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# Logs y CSV derivados de runs
+*.log
+*.dist.csv
+run.*.csv
+ctrl_live_*.csv
+last.json
+
+# SQLite journaling
+*.sqlite-wal
+*.sqlite-shm
+
+# Datos generados (mantén fuentes si las tienes en otra carpeta)
+data/runs/*
+data/events/*
+data/plots/*
+
+# Cobertura/otros
+.coverage*
+
 # Jupyter Notebook
 .ipynb_checkpoints/
 
