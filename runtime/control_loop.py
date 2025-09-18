@@ -1,14 +1,14 @@
 from __future__ import annotations
-
-import argparse
-import os  # para leer TSC_MODE en --mode por defecto
-from dataclasses import replace
+import os
 import time
+import sqlite3
+import argparse
 import json
-from pathlib import Path
-from typing import Optional
 import math
-
+from dataclasses import replace
+from pathlib import Path
+from typing import Optional, Dict
+import logging
 from runtime.braking_v0 import BrakingConfig
 from runtime.braking_era import EraCurve
 from runtime.profiles import load_braking_profile, load_profile_extras
@@ -18,66 +18,192 @@ from storage.run_store_sqlite import RunStore
 from runtime.mode_guard import ModeGuard
 from runtime.actuators import scan_for_rd, send_to_rd, debug_trace, load_rd_from_spec
 
-
-# Intentar importar clases reales; si no existen, definir stubs mínimos
+# Fix: Añadir clases stub para evitar errores de imports
 try:
-    # Ajusta estos paths si tus módulos reales viven en otro sitio
     from runtime.event_stream import NonBlockingEventStream  # type: ignore
-except Exception:  # noqa: BLE001
+except ImportError:
     try:
         from ingestion.event_stream import NonBlockingEventStream  # type: ignore
-    except Exception:  # noqa: BLE001
-
-        class NonBlockingEventStream:  # type: ignore[override]
-            def __init__(self, *args, **kwargs) -> None:
+    except ImportError:
+        class NonBlockingEventStream:
+            def __init__(self, *args, **kwargs):
                 pass
-
-            def poll(self) -> object:
-                """Devuelve el siguiente evento o None."""
+            def poll(self):
                 return None
-
-            # Añadimos protocolo de iterador para que next(stream) sea válido para Pylance
             def __iter__(self):
                 return self
-
-            def __next__(self) -> object:  # puede lanzar StopIteration si no hay evento
-                ev = self.poll()
-                if ev is None:
-                    raise StopIteration
-                return ev
-
+            def __next__(self):
+                raise StopIteration
 
 try:
     from runtime.pid import SplitPID  # type: ignore
-except Exception:  # noqa: BLE001
-
-    class SplitPID:  # type: ignore[misc]
-        """Stub mínimo si no está disponible el PID real."""
-
-        def __init__(self, *args, **kwargs) -> None:
+except ImportError:
+    class SplitPID:
+        def __init__(self, *args, **kwargs):
             self.kp = kwargs.get("kp", 0.0)
             self.ki = kwargs.get("ki", 0.0)
             self.kd = kwargs.get("kd", 0.0)
             self._i = 0.0
             self._prev = None
-
         def update(self, error: float, dt: float) -> float:
             if dt <= 0:
                 return 0.0
             self._i += error * dt
-            d = 0.0
-            if self._prev is not None:
-                d = (error - self._prev) / dt
+            d = 0.0 if self._prev is None else (error - self._prev) / dt
             self._prev = error
             return self.kp * error + self.ki * self._i + self.kd * d
 
+# Fix: Variables globales para FSM
+_active_limit_kph: float | None = None
+_last_dist_next_m: float | None = None
 
-    # --- Estado persistente de límite activo (FSM) ---
-    # Variables a nivel de módulo que permiten mantener el "active limit" entre ejecuciones
-    _active_limit_kph: float | None = None
-    _last_dist_next_m: float | None = None
+class ControlLoop:
+    """Fix: Clase ControlLoop simplificada y corregida"""
+    def __init__(self, source: str, profile=None, hz=5, db_path=None, run_csv=None, **kwargs):
+        self.source = source
+        self.profile = profile
+        self.hz = hz
+        self.db_path = db_path
+        self.run_csv = run_csv
+        self.running = False
+        self.stale_data_threshold = 10.0
+        self.consecutive_failures = 0
+        self.max_failures_before_fallback = 5
+        self.logger = logging.getLogger(__name__)
+        if source not in ['sqlite', 'csv']:
+            raise ValueError(f"Invalid source: {source}")
+        if source == 'sqlite' and not db_path:
+            raise ValueError("db_path required for sqlite source")
+        if source == 'csv' and not run_csv:
+            raise ValueError("run_csv required for csv source")
 
+    def read_telemetry(self):
+        try:
+            if self.source == 'sqlite':
+                data = self._read_from_sqlite()
+                if data and self._is_data_fresh(data):
+                    self.consecutive_failures = 0
+                    return data
+                else:
+                    self.consecutive_failures += 1
+                    if self.consecutive_failures >= self.max_failures_before_fallback:
+                        self.logger.warning("Too many SQLite failures, switching to CSV")
+                        self.source = 'csv'
+                        return self._read_from_csv()
+            else:
+                return self._read_from_csv()
+        except Exception as e:
+            self.logger.error(f"Error reading telemetry: {e}")
+            self.consecutive_failures += 1
+            return None
 
+    def _read_from_sqlite(self):
+        if not self.db_path:
+            self.logger.error("db_path not defined")
+            return None
+        try:
+            with sqlite3.connect(self.db_path, timeout=5.0) as conn:
+                cursor = conn.cursor()
+                recent_threshold = time.time() - self.stale_data_threshold
+                cursor.execute("""
+                    SELECT * FROM telemetry 
+                    WHERE t_wall > ? 
+                    ORDER BY rowid DESC LIMIT 1
+                """, (recent_threshold,))
+                row = cursor.fetchone()
+                if row:
+                    return dict(zip([desc[0] for desc in cursor.description], row))
+                cursor.execute("SELECT * FROM telemetry ORDER BY rowid DESC LIMIT 1")
+                row = cursor.fetchone()
+                if row:
+                    data = dict(zip([desc[0] for desc in cursor.description], row))
+                    age = time.time() - float(data.get('t_wall', 0))
+                    self.logger.warning(f"Using stale data: {age:.1f}s old")
+                    return data
+        except sqlite3.OperationalError as e:
+            if 'database is locked' in str(e):
+                self.logger.warning(f"Database locked (attempt {self.consecutive_failures})")
+                return self._read_from_csv()
+            else:
+                self.logger.error(f"SQLite operational error: {e}")
+                raise
+        except Exception as e:
+            self.logger.error(f"Unexpected SQLite error: {e}")
+            raise
+        return None
+
+    def _read_from_csv(self):
+        if not self.run_csv:
+            self.logger.error("CSV path not set")
+            return None
+        path = self.run_csv if isinstance(self.run_csv, str) else str(self.run_csv)
+        if not os.path.exists(path):
+            self.logger.error(f"CSV file not found: {path}")
+            return None
+        try:
+            with open(path, 'r') as f:
+                lines = f.readlines()
+                if len(lines) < 2:
+                    self.logger.warning("CSV file has no data rows")
+                    return None
+                header = lines[0].strip().split(',')
+                last_line = lines[-1].strip().split(',')
+                if len(header) != len(last_line):
+                    self.logger.error("CSV header/data mismatch")
+                    return None
+                data: Dict[str, str] = dict(zip(header, last_line))
+                for key in ['t_wall', 'odom_m', 'speed_kph']:
+                    if key in data:
+                        try:
+                            # mantener strings para compatibilidad; conversiones posteriores harán float()
+                            data[key] = str(float(data[key]))
+                        except (ValueError, TypeError):
+                            self.logger.warning(f"Invalid numeric value for {key}: {data[key]}")
+                            data[key] = "0.0"
+                return data
+        except Exception as e:
+            self.logger.error(f"Error reading CSV: {e}")
+            return None
+
+    def _is_data_fresh(self, data) -> bool:
+        if not data or 't_wall' not in data:
+            return False
+        try:
+            age = time.time() - float(data['t_wall'])
+            return age < self.stale_data_threshold
+        except (ValueError, TypeError):
+            return False
+
+    def run(self):
+        self.logger.info(f"Starting control loop - Source: {self.source}, Hz: {self.hz}")
+        self.running = True
+        sleep_time = 1.0 / self.hz
+        try:
+            while self.running:
+                start_time = time.time()
+                data = self.read_telemetry()
+                if data:
+                    self._process_control_data(data)
+                else:
+                    self.logger.debug("No telemetry data available")
+                elapsed = time.time() - start_time
+                if elapsed < sleep_time:
+                    time.sleep(sleep_time - elapsed)
+        except KeyboardInterrupt:
+            self.logger.info("Control loop stopped by user")
+        except Exception as e:
+            self.logger.error(f"Control loop error: {e}")
+        finally:
+            self.running = False
+
+    def _process_control_data(self, data):
+        speed = data.get('speed_kph', 0)
+        odom = data.get('odom_m', 0)
+        timestamp = data.get('t_wall', time.time())
+        self.logger.debug(f"Processing: speed={speed} kph, odom={odom} m, t={timestamp}")
+
+    def stop(self):
+        self.running = False
 def tail_csv_last_row(path: Path, max_bytes: int = 1_000_000) -> dict | None:
     """
     Lee la última fila completa de un CSV sin bloquear.
@@ -314,6 +440,10 @@ def main() -> None:
     store = RunStore(args.db) if args.source == "sqlite" else None
     last_rowid = 0
     use_csv = args.source == "csv"
+    # Robustez: control de fallos y datos obsoletos
+    stale_data_threshold = 10.0  # segundos
+    consecutive_failures = 0
+    max_failures_before_fallback = 5
     # decidir si derivamos speed_kph cuando falta (flag y complemento)
     derive_speed = bool(args.derive_speed_if_missing)
     if getattr(args, "no_derive_speed", False):
@@ -384,15 +514,39 @@ def main() -> None:
 
         # 2) muestrear última fila de run.csv (fuente configurable)
         if store is not None and not use_csv:
-            latest = store.latest_since(last_rowid)
-            if latest is None:
-                # activa CSV inmediatamente si SQLite no tiene nada
-                if not args.no_csv_fallback:
+            # Robustez: leer con detección de datos obsoletos y fallback
+            try:
+                latest = store.latest_since(last_rowid)
+                if latest is None:
+                    consecutive_failures += 1
+                    if not args.no_csv_fallback and consecutive_failures >= max_failures_before_fallback:
+                        print("[control] Demasiados fallos en SQLite, cambiando a CSV.")
+                        use_csv = True
+                    time.sleep(0.05)
+                    continue
+                else:
+                    last_rowid, row = latest
+                    # Verificar frescura de los datos
+                    t_wall_val = _to_float_loose(row.get("t_wall", ""))
+                    age = time.time() - t_wall_val if t_wall_val else 9999
+                    if age > stale_data_threshold:
+                        consecutive_failures += 1
+                        print(f"[control] Datos obsoletos de SQLite: {age:.1f}s, fallo {consecutive_failures}")
+                        if not args.no_csv_fallback and consecutive_failures >= max_failures_before_fallback:
+                            print("[control] Cambiando a CSV por datos obsoletos.")
+                            use_csv = True
+                        time.sleep(0.05)
+                        continue
+                    else:
+                        consecutive_failures = 0
+            except Exception as e:
+                consecutive_failures += 1
+                print(f"[control] Error leyendo SQLite: {e}")
+                if not args.no_csv_fallback and consecutive_failures >= max_failures_before_fallback:
+                    print("[control] Cambiando a CSV por errores consecutivos.")
                     use_csv = True
                 time.sleep(0.05)
                 continue
-            else:
-                last_rowid, row = latest
         if use_csv:
             # Reanudar desde la última fila (solo si el CSV ya tiene contenido)
             if os.path.exists(run_path) and os.path.getsize(run_path) >= 128:

@@ -1,5 +1,7 @@
 from __future__ import annotations
-import argparse, importlib, inspect, os, sys
+import argparse
+import importlib
+import inspect
 from pathlib import Path
 from typing import Any, Optional, Tuple, List
 from runtime.actuators import METHODS_THROTTLE, METHODS_BRAKE
@@ -45,10 +47,12 @@ def best_candidate(extra_modules: List[str]) -> Tuple[Optional[str], str]:
     seen = set()
     for m in (extra_modules or []):
         if m and m not in seen:
-            modules.append(m); seen.add(m)
+            modules.append(m)
+            seen.add(m)
     for m in CANDIDATE_MODULES:
         if m not in seen:
-            modules.append(m); seen.add(m)
+            modules.append(m)
+            seen.add(m)
 
     # 1) Objetos existentes en módulos
     for mod_name in modules:

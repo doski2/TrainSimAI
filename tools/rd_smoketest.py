@@ -1,4 +1,6 @@
-import time, argparse, os
+import time
+import argparse
+import os
 from runtime.actuators import load_rd_from_spec, send_to_rd, debug_trace
 
 

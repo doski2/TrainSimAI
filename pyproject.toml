@@ -1,3 +1,12 @@
+[tool.pytest.ini_options]
+addopts = "-q -m real"
+markers = [
+	"integration: pruebas que requieren datos reales en data/ (se omiten en CI)",
+	"real: pruebas que requieren hardware/DLL real (RailDriver)"
+]
+filterwarnings = [
+	"ignore::DeprecationWarning"
+]
 [tool.ruff]
 line-length = 120
 

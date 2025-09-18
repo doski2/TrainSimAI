@@ -1,3 +1,5 @@
+psutil>=5.9.0
+watchdog>=3.0.0
 py-raildriver>=0.6
 typing-extensions>=4.9
 numpy>=1.26

@@ -146,12 +146,25 @@ def run(
 
         # ---- escritura ----
         csvlog.write_row(row)
-        if store is not None:
-            try:
-                store.insert_row(row)
-            except Exception:
-                # No bloquear el colector por errores en almacenamiento adicional
-                pass
+        # Robustez: SQLite con retry y fallback automático
+        fallback_mode = False
+        sqlite_retry_count = 3
+        sqlite_retry_delay = 0.1
+        error_count = 0
+        if store is not None and not fallback_mode:
+            for attempt in range(sqlite_retry_count):
+                try:
+                    store.insert_row(row)
+                    if attempt > 0:
+                        error_count = max(0, error_count - 1)
+                    break
+                except Exception as e:
+                    if attempt < sqlite_retry_count - 1:
+                        delay = sqlite_retry_delay * (2 ** attempt)
+                        time.sleep(delay)
+                    else:
+                        print(f"[collector] SQLite insert failed after {sqlite_retry_count} attempts: {e}")
+                        fallback_mode = True
         # Refresca heartbeat en cada tick (señal de vida del colector)
         try:
             with open(HB_PATH, "w", encoding="utf-8") as hb:

@@ -1,16 +1,7 @@
 # pyright: reportMissingImports=false
 import os
-from typing import Any, TYPE_CHECKING
-if TYPE_CHECKING:
-    import pytest
-else:
-    class _PytestShim:
-        def __getattr__(self, name):
-            def _decorator(*a, **k):
-                def _wrap(f): return f
-                return _wrap
-            return _decorator
-    pytest = _PytestShim()  # type: ignore
+from typing import Any
+import pytest
 
 RUN_LIVE = os.environ.get("RUN_RD_TESTS") == "1"
 
@@ -25,7 +16,9 @@ def test_rd_live_snapshot():
     rd: Any = RailDriver()
     rd.setRailSimConnected(True)
     rd.setRailDriverConnected(True)
-    li: Any = Listener(rd, interval=0.1)
+    li: Any = Listener()
+    li.set_source(rd)
+    li.set_interval(0.1)
     li.add("!LocoName")
     li.add("!Coordinates")
     snap = li.snapshot()
