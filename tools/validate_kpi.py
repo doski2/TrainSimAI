@@ -135,10 +135,16 @@ def main():
     p.add_argument("--window-m", type=float, default=50.0)
     p.add_argument("--monotonicity-bump-m", type=float, default=2.0)
     p.add_argument(
-        "--smooth-dist-window", type=int, default=1, help="Rolling-median de la distancia (1 = sin suavizado)"
+        "--smooth-dist-window",
+        type=int,
+        default=1,
+        help="Rolling-median de la distancia (1 = sin suavizado)",
     )
     p.add_argument(
-        "--bump-confirm-samples", type=int, default=1, help="Muestras consecutivas de subida para contar bump (>=1)"
+        "--bump-confirm-samples",
+        type=int,
+        default=1,
+        help="Muestras consecutivas de subida para contar bump (>=1)",
     )
     p.add_argument("--dump-bumps", default="", help="Ruta CSV para volcar ventanas alrededor de bumps (opcional)")
     # Umbrales de aceptación (puedes cambiarlos en CLI)
@@ -166,9 +172,13 @@ def main():
     )
     # Informe resumido
     print(
-        f"[KPI] arrivals={int(k['arrivals'])}  arrivals_ok={k['arrivals_ok']:.3f}  "
-        f"mean_margin_last50_kph={k['mean_margin_last50_kph']:.3f}  "
-        f"monotonicity_bumps={int(k['monotonicity_bumps'])}"
+        "[KPI] arrivals=%d arrivals_ok=%.3f mean_margin_last50_kph=%.3f monotonicity_bumps=%d"
+        % (
+            int(k["arrivals"]),
+            k["arrivals_ok"],
+            k["mean_margin_last50_kph"],
+            int(k["monotonicity_bumps"]),
+        )
     )
 
     ok = True
@@ -179,16 +189,19 @@ def main():
         print(f"[KPI][FAIL] monotonicity_bumps > {args.max_bumps}")
         ok = False
     if not (args.target_margin_min <= k["mean_margin_last50_kph"] <= args.target_margin_max):
-        print(
-            f"[KPI][WARN] mean_margin_last50_kph fuera del objetivo [{args.target_margin_min},{args.target_margin_max}] (no bloquea)"
+        # Split long message to satisfy line-length linters
+        msg = (
+            f"[KPI][WARN] mean_margin_last50_kph fuera del objetivo "
+            f"[{args.target_margin_min},{args.target_margin_max}] (no bloquea)"
         )
+        print(msg)
     # Dump opcional de bumps con ventanas +-5 filas
     if args.dump_bumps and isinstance(k.get("bump_locs"), list) and k["bump_locs"]:
         rows = []
         for loc in k["bump_locs"]:
             lo = max(0, int(loc) - 5)
             hi = min(len(df) - 1, int(loc) + 5)
-            tmp = df.iloc[lo : hi + 1].copy()
+            tmp = df.iloc[lo: hi + 1].copy()
             tmp["__bump_center__"] = (tmp.index == int(loc)).astype(int)
             tmp["__window_id__"] = int(loc)
             rows.append(tmp)

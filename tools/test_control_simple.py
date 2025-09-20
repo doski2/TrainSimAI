@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 
-def test_basic_functionality() -> bool:
+def test_basic_functionality() -> None:
     """Test básico sin dependencias complejas"""
     print("=== TEST BÁSICO CONTROL LOOP ===")
 
@@ -22,7 +22,7 @@ def test_basic_functionality() -> bool:
         print("✅ sqlite3 importado correctamente")
     except ImportError as e:
         print(f"❌ Error importando sqlite3: {e}")
-        return False
+        assert False, f"Error importando sqlite3: {e}"
 
     # Test 2: Verificar archivo DB
     db_path = Path("data/run.db")
@@ -32,7 +32,7 @@ def test_basic_functionality() -> bool:
         print(f"   Tamaño: {size_mb:.2f} MB")
     else:
         print(f"❌ Base de datos no encontrada: {db_path}")
-        return False
+        assert False, f"Base de datos no encontrada: {db_path}"
 
     # Test 3: Conexión básica a SQLite
     try:
@@ -43,9 +43,7 @@ def test_basic_functionality() -> bool:
             print(f"✅ Conexión SQLite exitosa: {count} filas")
     except Exception as e:
         print(f"❌ Error conectando a SQLite: {e}")
-        return False
-
-    return True
+        assert False, f"Error conectando a SQLite: {e}"
 
 
 def test_imports() -> None:
@@ -70,7 +68,7 @@ def test_imports() -> None:
             print(f"❌ {module_name} NO disponible")
 
 
-def test_simple_control_loop() -> bool:
+def test_simple_control_loop() -> None:
     """Test simplificado del control loop"""
     print("\n=== TEST CONTROL LOOP SIMPLIFICADO ===")
 
@@ -91,8 +89,8 @@ def test_simple_control_loop() -> bool:
                     with sqlite3.connect(self.db_path, timeout=2.0) as conn:
                         cursor = conn.cursor()
                         cursor.execute("""
-                            SELECT rowid, t_wall, odom_m, speed_kph 
-                            FROM telemetry 
+                            SELECT rowid, t_wall, odom_m, speed_kph
+                            FROM telemetry
                             ORDER BY rowid DESC LIMIT 1
                         """)
                         row = cursor.fetchone()
@@ -122,9 +120,7 @@ def test_simple_control_loop() -> bool:
 
     except Exception as e:
         print(f"❌ Error en test: {e}")
-        return False
-
-    return True
+        assert False, f"Error en test: {e}"
 
 
 def main() -> None:
@@ -136,11 +132,20 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO)
 
     # Ejecutar tests
-    basic_ok = test_basic_functionality()
+    basic_ok = True
+    try:
+        test_basic_functionality()
+    except AssertionError as e:
+        basic_ok = False
+        print(f"\n❌ Tests básicos fallaron: {e}")
+
     test_imports()
 
     if basic_ok:
-        test_simple_control_loop()
+        try:
+            test_simple_control_loop()
+        except AssertionError as e:
+            print(f"\n❌ Test simplificado falló: {e}")
     else:
         print("\n❌ Tests básicos fallaron - no se puede continuar")
 

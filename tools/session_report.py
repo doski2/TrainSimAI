@@ -65,7 +65,7 @@ def _segment_events(df: pd.DataFrame) -> pd.DataFrame:
         evs.append((start, len(df) - 1, cur_lim))
     rows = []
     for eid, (s, e, lim) in enumerate(evs, start=1):
-        seg = df.iloc[s : e + 1]
+        seg = df.iloc[s:e + 1]
         d_start = float(seg["dist_next_limit_m"].max())
         d_min = float(seg["dist_next_limit_m"].min())
         arrival = seg[seg["dist_next_limit_m"] <= 5]

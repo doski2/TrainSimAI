@@ -263,7 +263,10 @@ class RDClient:
             pass
 
         # Índices cacheados por nombre para lecturas directas cuando conviene
-        self.ctrl_index_by_name: Dict[str, int] = {name: idx for idx, name in self.rd.get_controller_list()}  # type: ignore[attr-defined]
+        self.ctrl_index_by_name: Dict[str, int] = {
+            name: idx
+            for idx, name in self.rd.get_controller_list()  # type: ignore[attr-defined]
+        }
 
         # Listener para cambios y snapshots unificados
         self.listener = Listener(self.rd, interval=self.poll_dt)  # type: ignore[call-arg]

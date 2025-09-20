@@ -18,7 +18,10 @@ def check_connect(db_path: str | Path, timeout: float = 5.0) -> Tuple[bool, str]
 
 
 def check_can_write(db_path: str | Path, timeout: float = 5.0) -> Tuple[bool, str]:
-    """Intenta realizar una transacción de escritura que se revierte (begin/rollback) para comprobar locks y permisos."""
+    """
+    Intenta realizar una transacción de escritura que se revierte
+    (begin/rollback) para comprobar locks y permisos.
+    """
     try:
         con = sqlite3.connect(str(db_path), timeout=timeout)
         try:

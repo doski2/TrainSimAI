@@ -74,7 +74,8 @@ class RunStore:
             # t_wall es obligatorio; evita insertar filas sin sello de tiempo
             raise ValueError("t_wall is required")
         self.con.execute(
-            "INSERT INTO telemetry(t_wall, odom_m, speed_kph, next_limit_kph, dist_next_limit_m, meta_json) VALUES(?,?,?,?,?,?)",
+            "INSERT INTO telemetry(t_wall, odom_m, speed_kph, next_limit_kph, "
+            "dist_next_limit_m, meta_json) VALUES(?,?,?,?,?,?)",
             (
                 float(t),
                 _f(row.get("odom_m")),

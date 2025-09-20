@@ -17,10 +17,11 @@ def parse_kpi(path: str):
     [KPI] arrivals=7  arrivals_ok=0.571  mean_margin_last50_kph=7.434  monotonicity_bumps=1
     """
     txt = open(path, "r", encoding="utf-8", errors="ignore").read()
-    m = re.search(
-        r"\[KPI\]\s*arrivals=(\d+)\s+arrivals_ok=([0-9.]+)\s+mean_margin_last50_kph=([\-0-9.]+)\s+monotonicity_bumps=(\d+)",
-        txt,
+    pattern = (
+        r"\[KPI\]\s*arrivals=(\d+)\s+arrivals_ok=([0-9.]+)\s+"
+        r"mean_margin_last50_kph=([\-0-9.]+)\s+monotonicity_bumps=(\d+)"
     )
+    m = re.search(pattern, txt)
     if not m:
         raise SystemExit("[autotune] No pude leer KPI de kpi_latest.txt")
     arrivals = int(m.group(1))
@@ -56,7 +57,10 @@ def main():
     args = ap.parse_args()
 
     arrivals, ok_rate, mean_margin, bumps = parse_kpi(args.kpi_file)
-    print(f"[autotune] KPI arrivals={arrivals} ok={ok_rate:.3f} mean_margin={mean_margin:.3f} bumps={bumps}")
+    print(
+        f"[autotune] KPI arrivals={arrivals} ok={ok_rate:.3f} "
+        f"mean_margin={mean_margin:.3f} bumps={bumps}"
+    )
 
     # Solo ajustamos con KPI verde para no aprender “ruido”
     if ok_rate < 0.90 or bumps > 0:
@@ -84,7 +88,8 @@ def main():
     os.makedirs("data", exist_ok=True)
     with open("data/autotune.log", "a", encoding="utf-8") as log:
         log.write(
-            f"{datetime.now().isoformat(timespec='seconds')} profile={args.profile} v_margin_kph {v:.2f} -> {new_v:.2f} (err={err:.2f}) bak={bak}\n"
+            f"{datetime.now().isoformat(timespec='seconds')} profile={args.profile} "
+            f"v_margin_kph {v:.2f} -> {new_v:.2f} (err={err:.2f}) bak={bak}\n"
         )
     print(f"[autotune] v_margin_kph: {v:.2f} -> {new_v:.2f} (err={err:.2f}). Backup: {bak}")
     return 0

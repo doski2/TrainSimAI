@@ -1172,7 +1172,8 @@ def main() -> None:
         if ctrl_debug:
             try:
                 print(
-                    f"[CTRL-DBG] t={now:.3f} err_kph={err_kph:.3f} desired_brake(before_ramp)={desired_brake:.3f} on={on}"
+                    f"[CTRL-DBG] t={now:.3f} err_kph={err_kph:.3f} "
+                    f"desired_brake(before_ramp)={desired_brake:.3f} on={on}"
                 )
             except Exception:
                 pass
@@ -1183,7 +1184,10 @@ def main() -> None:
             brake_cmd_local = max(0.0, brake_cmd_local + max(delta, -fall_per_s * dt_br))
         if ctrl_debug:
             try:
-                print(f"[CTRL-DBG] t={now:.3f} brake_cmd(after_ramp)={brake_cmd_local:.3f} dt_br={dt_br:.3f}")
+                print(
+                    f"[CTRL-DBG] t={now:.3f} brake_cmd(after_ramp)={brake_cmd_local:.3f} "
+                    f"dt_br={dt_br:.3f}"
+                )
             except Exception:
                 pass
         # Trazas compactas por ciclo para diagnóstico (JSONL en data/ctrl_cycle.log)
@@ -1230,7 +1234,8 @@ def main() -> None:
             if ctrl_debug:
                 try:
                     print(
-                        f"[CTRL-DBG] about to send_to_rd rd={rd_name} mode={mode_guard.mode} send(t={t_send},b={b_send})"
+                        f"[CTRL-DBG] about to send_to_rd rd={rd_name} mode={mode_guard.mode} "
+                        f"send(t={t_send},b={b_send})"
                     )
                 except Exception:
                     pass

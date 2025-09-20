@@ -38,7 +38,10 @@ def _all_objs(env: Dict[str, Any]):
 
 
 def scan_for_rd(locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]) -> Tuple[Optional[Any], str]:
-    """Busca el objeto RailDriver. Primero por alias comunes; luego escanea todo en busca de un objeto con método conocido."""
+    """
+    Busca el objeto RailDriver. Primero por alias comunes; luego escanea todo en
+    busca de un objeto con método conocido.
+    """
     for name in ("rd", "raildriver", "driver", "hw", "rd_client", "rdc"):
         obj = locals_dict.get(name) or globals_dict.get(name)
         if obj is not None:
