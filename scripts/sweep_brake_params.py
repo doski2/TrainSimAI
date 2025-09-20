@@ -1,7 +1,8 @@
 """Ejecuta un sweep de parámetros para `runtime.control_loop` y genera un CSV resumen.
 
 Resumen por ejecución:
-- rise_per_s, startup_gate_s, hold_s, fall_per_s, hz, duration, run_file, rd_zero_count, rd_intermediate_count, rd_full_count, rd_total
+- rise_per_s, startup_gate_s, hold_s, fall_per_s, hz, duration, run_file,
+  rd_zero_count, rd_intermediate_count, rd_full_count, rd_total
 
 Notas:
 - El script invoca `python -u -m runtime.control_loop --source csv --run <run>` con `TSC_RD_DEBUG=1`.
@@ -130,7 +131,9 @@ for r in rise_vals:
                     "--duration",
                     str(duration),
                     "--out",
-                    str(DATA.joinpath(f"run.ctrl_r{r}_s{s}_h{h}_f{fall}.csv")),
+                    str(
+                        DATA.joinpath(f"run.ctrl_r{r}_s{s}_h{h}_f{fall}.csv")
+                    ),
                     "--rise-per-s",
                     str(r),
                     "--fall-per-s",

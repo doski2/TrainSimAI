@@ -42,7 +42,8 @@ class RunStore:
     def insert_row(self, row: Dict[str, Any]) -> None:
         meta = row.get("meta") or {}
         self.con.execute(
-            "INSERT INTO telemetry(t_wall, odom_m, speed_kph, next_limit_kph, dist_next_limit_m, meta_json) VALUES(?,?,?,?,?,?)",
+            "INSERT INTO telemetry(t_wall, odom_m, speed_kph, next_limit_kph, "
+            "dist_next_limit_m, meta_json) VALUES(?,?,?,?,?,?)",
             (
                 _f(row.get("t_wall")),
                 _f(row.get("odom_m")),
@@ -55,7 +56,8 @@ class RunStore:
 
     def latest_since(self, last_rowid: int = 0) -> Optional[Tuple[int, Dict[str, Any]]]:
         cur = self.con.execute(
-            "SELECT rowid, t_wall, odom_m, speed_kph, next_limit_kph, dist_next_limit_m FROM telemetry WHERE rowid > ? ORDER BY rowid DESC LIMIT 1",
+            "SELECT rowid, t_wall, odom_m, speed_kph, next_limit_kph, dist_next_limit_m "
+            "FROM telemetry WHERE rowid > ? ORDER BY rowid DESC LIMIT 1",
             (int(last_rowid),),
         )
         r = cur.fetchone()

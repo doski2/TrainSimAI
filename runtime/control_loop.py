@@ -222,7 +222,9 @@ class ControlLoop:
         return False
 
     def run(self):
-        self.logger.info(f"Starting control loop - Source: {self.source}, Hz: {self.hz}")
+        self.logger.info(
+            "Starting control loop - Source: %s, Hz: %s" % (self.source, self.hz)
+        )
         self.running = True
         sleep_time = 1.0 / self.hz
         try:
@@ -235,7 +237,11 @@ class ControlLoop:
                         if self.is_data_stale(data):
                             age = time.time() - float(data.get("t_wall", time.time()))
                             self.logger.warning(
-                                f"stale-data detected: age={age:.1f}s > threshold={self.stale_data_threshold}s — skipping processing"
+                                (
+                                    "stale-data detected: age=%0.1fs > threshold=%ss - "
+                                    "skipping processing"
+                                )
+                                % (age, self.stale_data_threshold)
                             )
                             # aumentar contador de fallos y saltar procesamiento y envíos
                             self.consecutive_failures += 1
@@ -740,7 +746,8 @@ def main() -> None:
 
     # Informar al inicio sobre las opciones relevantes (útil para debugging)
     print(
-        f"[control] source={args.source} db={args.db} derive_speed_if_missing={derive_speed} no_csv_fallback={args.no_csv_fallback}"
+        f"[control] source={args.source} db={args.db} "
+        f"derive_speed_if_missing={derive_speed} no_csv_fallback={args.no_csv_fallback}"
     )
     # memoria para derivar velocidad si falta
     prev_t_wall: float | None = None

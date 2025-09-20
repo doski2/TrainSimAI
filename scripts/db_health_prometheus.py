@@ -32,13 +32,13 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
         f.write("# trainsimai DB health metrics\n")
         f.write("# HELP trainsim_db_connect_ok DB file can be opened (1=ok,0=fail)\n")
         f.write("# TYPE trainsim_db_connect_ok gauge\n")
-        f.write(f'trainsim_db_connect_ok{{db="{db_path}",instance="{instance}",mode="{mode}"}} {conn_ok}\n')
+        # For DB-level metrics include only the `db` label so tests and tooling
+        # that expect a simple label can match. Instance/mode are included in
+        # control metrics below.
+        f.write(f'trainsim_db_connect_ok{{db="{db_path}"}} {conn_ok}\n')
         f.write("# HELP trainsim_db_can_write DB accepts a write (1=ok,0=fail)\n")
         f.write("# TYPE trainsim_db_can_write gauge\n")
-        can_write_line = (
-            f'trainsim_db_can_write{{db="{db_path}",instance="{instance}",'
-            f'mode="{mode}"}} {write_ok}\n'
-        )
+        can_write_line = f'trainsim_db_can_write{{db="{db_path}"}} {write_ok}\n'
         f.write(can_write_line)
         # export DB retry counter if available (fallback to 0)
         retries = 0
@@ -48,7 +48,7 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
             retries = 0
         f.write("# HELP trainsim_db_retry_count_total Number of DB retry attempts seen during checks\n")
         f.write("# TYPE trainsim_db_retry_count_total counter\n")
-        f.write(f'trainsim_db_retry_count_total{{db="{db_path}",instance="{instance}",mode="{mode}"}} {retries}\n')
+        f.write(f'trainsim_db_retry_count_total{{db="{db_path}"}} {retries}\n')
         # Export control status metrics if available
         cs = _read_control_status(Path("data/control_status.json"))
         if cs:
