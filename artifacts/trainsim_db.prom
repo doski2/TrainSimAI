@@ -1,0 +1,16 @@
+# trainsimai DB health metrics
+# HELP trainsim_db_connect_ok DB file can be opened (1=ok,0=fail)
+# TYPE trainsim_db_connect_ok gauge
+trainsim_db_connect_ok{db="tmp_test_run.db"} 1
+# HELP trainsim_db_can_write DB accepts a write (1=ok,0=fail)
+# TYPE trainsim_db_can_write gauge
+trainsim_db_can_write{db="tmp_test_run.db"} 1
+# HELP trainsim_control_last_command_timestamp last command epoch timestamp (s)
+# TYPE trainsim_control_last_command_timestamp gauge
+trainsim_control_last_command_timestamp 1758404722.157147
+# HELP trainsim_control_last_ack_timestamp last ack epoch timestamp (s)
+# TYPE trainsim_control_last_ack_timestamp gauge
+trainsim_control_last_ack_timestamp 1758404722.157147
+# HELP trainsim_control_last_command_value last command value (0..1)
+# TYPE trainsim_control_last_command_value gauge
+trainsim_control_last_command_value 0.5

@@ -1,0 +1,12 @@
+[Unit]
+Description=TrainSimAI DB healthcheck (one-shot)
+After=network.target
+
+[Service]
+Type=oneshot
+User=trainsim
+Group=trainsim
+WorkingDirectory=/opt/TrainSimAI
+ExecStart=/usr/bin/env python /opt/TrainSimAI/scripts/db_health.py /var/lib/trainsimai/data/run.db --pretty
+Nice=10
+TimeoutStartSec=60

@@ -196,6 +196,55 @@ data/        # Artefactos locales (no versionar)
 - `LUA_BUS_PATH` → ruta de salida del bus (por defecto `data/lua_eventbus.jsonl`).
 - `TSC_FAKE_RD=1` → backend simulado para pruebas sin hardware.
 
+## Operaciones / Healthchecks (SQLite)
+
+Para entornos de producción o integración continua es útil controlar parámetros de SQLite y disponer de un healthcheck sencillo.
+
+- Variables de entorno para tunear SQLite (coleccionista / RunStore):
+	- `TSC_DB_BUSY_MS` — timeout en milisegundos que se pasa a `PRAGMA busy_timeout`. Ejemplo: `5000` (5s).
+	- `TSC_DB_SYNCHRONOUS` — valor de `PRAGMA synchronous` como entero (`0|1|2|3`) o texto (`OFF|NORMAL|FULL`). Ejemplo: `NORMAL` o `2`.
+
+	Estas variables se leen por `runtime.collector` y se pasan al constructor de `RunStore` si están definidas. Si no se definen, se usan los valores por defecto del código.
+
+- Script de comprobación de salud: `scripts/db_health.py`
+ 
+	Prometheus wrapper & systemd
+	----------------------------
+
+	Se proporcionan ejemplos de unidades `systemd` en `scripts/systemd/`:
+
+	- `db_health.service` / `db_health.timer`: ejecuta `scripts/db_health.py` periódicamente (ejemplo 1m).
+	- `prom_wrapper.service` / `prom_wrapper.timer`: ejecuta `scripts/db_health_prometheus.py` cada 15s y escribe `/var/lib/node_exporter/textfile_collector/trainsim_db.prom`.
+
+	Instalación (ejemplo Debian/Ubuntu):
+
+	```bash
+	sudo cp scripts/systemd/*.service /etc/systemd/system/
+	sudo cp scripts/systemd/*.timer /etc/systemd/system/
+	sudo mkdir -p /var/lib/node_exporter/textfile_collector
+	sudo chown -R prometheus:prometheus /var/lib/node_exporter/textfile_collector
+	sudo systemctl daemon-reload
+	sudo systemctl enable --now db-health.timer prom_wrapper.timer
+	```
+
+	Ajusta `User=`/`Group=` y `ExecStart=` en los ficheros si tu instalación difiere.
+
+	Uso rápido (PowerShell):
+
+	```powershell
+	# comprobar DB y obtener JSON resumen
+	python .\scripts\db_health.py data\run.db --pretty
+
+	# exit codes:
+	# 0 = OK (connect + write ok)
+	# 1 = warning (connect ok, write failed)
+	# 2 = error (connect failed)
+	```
+
+	Ejemplo en una tarea de monitorización (systemd/cron/checker): ejecutar el script y usar el exit code para alertas.
+
+Nota: `scripts/db_health.py` utiliza `storage.db_check.run_all_checks()` que devuelve pragmas informativos y comprueba si se puede adquirir un bloqueo de escritura (mediante `BEGIN IMMEDIATE` + rollback) para validar problemas de contención.
+
 ## Calidad
 ```powershell
 pytest -q

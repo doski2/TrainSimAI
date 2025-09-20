@@ -35,12 +35,32 @@ class RDStub:
         if _DEBUG:
             print(msg)
         _append_log("setTrainBrake", v)
+        # best-effort: write an ack file so external controllers can detect application
+        try:
+            p = Path("data/rd_ack.json")
+            p.parent.mkdir(parents=True, exist_ok=True)
+            entry = {"ts": datetime.utcnow().timestamp(), "value": float(v)}
+            tmp = p.with_suffix('.tmp')
+            tmp.write_text(json.dumps(entry), encoding='utf-8')
+            tmp.replace(p)
+        except Exception:
+            pass
 
     def set_brake(self, v: float) -> None:
         msg = f"[RDStub] set_brake({v})"
         if _DEBUG:
             print(msg)
         _append_log("set_brake", v)
+        # best-effort ack file for ControlLoop to observe
+        try:
+            p = Path("data/rd_ack.json")
+            p.parent.mkdir(parents=True, exist_ok=True)
+            entry = {"ts": datetime.utcnow().timestamp(), "value": float(v)}
+            tmp = p.with_suffix('.tmp')
+            tmp.write_text(json.dumps(entry), encoding='utf-8')
+            tmp.replace(p)
+        except Exception:
+            pass
 
     def set_throttle(self, v: float) -> None:
         msg = f"[RDStub] set_throttle({v})"

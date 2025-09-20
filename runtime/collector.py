@@ -99,7 +99,25 @@ def run(
     store = None
     if RunStore is not None and sqlite_db:
         try:
-            store = RunStore(sqlite_db)
+            # Permitir tunear busy_timeout y synchronous desde variables de entorno
+            rs_kwargs = {}
+            busy_env = os.environ.get("TSC_DB_BUSY_MS")
+            sync_env = os.environ.get("TSC_DB_SYNCHRONOUS")
+            if busy_env:
+                try:
+                    rs_kwargs["busy_timeout_ms"] = int(busy_env)
+                except Exception:
+                    pass
+            if sync_env:
+                # intentar parsear como entero, si falla mantener string
+                try:
+                    rs_kwargs["synchronous"] = int(sync_env)
+                except Exception:
+                    rs_kwargs["synchronous"] = sync_env
+            if rs_kwargs:
+                store = RunStore(sqlite_db, **rs_kwargs)
+            else:
+                store = RunStore(sqlite_db)
         except Exception as e:
             print(f"[collector] SQLite deshabilitado: {e}")
     # si bus_from_start=True => NO tail; leer desde el principio

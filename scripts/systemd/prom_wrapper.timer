@@ -1,0 +1,10 @@
+[Unit]
+Description=Run TrainSimAI Prometheus wrapper every 15s
+
+[Timer]
+OnBootSec=15s
+OnUnitActiveSec=15s
+AccuracySec=1s
+
+[Install]
+WantedBy=timers.target

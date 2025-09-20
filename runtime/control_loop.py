@@ -70,6 +70,15 @@ class ControlLoop:
         self.stale_data_threshold = float(kwargs.get("stale_data_threshold", 10.0))
         self.consecutive_failures = 0
         self.max_failures_before_fallback = 5
+        # watchdog / emergency stop
+        self.emergency = False
+        self.max_failures_before_emergency = int(kwargs.get("max_failures_before_emergency", 10))
+        # ack/heartbeat settings
+        self.ack_timeout_s = float(kwargs.get("ack_timeout_s", 2.0))
+        # bookkeeping for last command/ack (initialized when first used)
+        self.last_command_time = None
+        self.last_command_value = None
+        self.last_ack_time = None
         self.logger = logging.getLogger(__name__)
         if source not in ['sqlite', 'csv']:
             raise ValueError(f"Invalid source: {source}")
@@ -219,15 +228,37 @@ class ControlLoop:
                             # aumentar contador de fallos y saltar procesamiento y envíos
                             self.consecutive_failures += 1
                             # opcional: aquí podríamos emitir un evento al EVT_PATH o CSV
-                            # pero para mínima intrusión sólo registramos en logs
+                            # y activar el watchdog/emergency si es persistente
+                            if self.consecutive_failures >= self.max_failures_before_emergency:
+                                self.enter_emergency("stale-data")
+                        # monitor ack timeouts each cycle
+                        try:
+                            self.monitor_ack_timeout()
+                        except Exception:
+                            pass
                         else:
+                            if self.emergency:
+                                # recuperación automática si llega data fresca
+                                self.clear_emergency()
                             self.consecutive_failures = 0
                             self._process_control_data(data)
                     except Exception as e:
                         self.logger.error(f"Error during stale-data check: {e}")
                         # prevenir que un fallo en la comprobación detenga el loop
+                        self.consecutive_failures += 1
+                        if self.consecutive_failures >= self.max_failures_before_emergency:
+                            self.enter_emergency("exception-in-stale-check")
                 else:
                     self.logger.debug("No telemetry data available")
+                    # ausencia continua de datos puede desencadenar emergencia
+                    self.consecutive_failures += 1
+                    if self.consecutive_failures >= self.max_failures_before_emergency:
+                        self.enter_emergency("no-data")
+                # monitor ack timeouts even when no data
+                try:
+                    self.monitor_ack_timeout()
+                except Exception:
+                    pass
                 elapsed = time.time() - start_time
                 if elapsed < sleep_time:
                     time.sleep(sleep_time - elapsed)
@@ -243,6 +274,169 @@ class ControlLoop:
         odom = data.get('odom_m', 0)
         timestamp = data.get('t_wall', time.time())
         self.logger.debug(f"Processing: speed={speed} kph, odom={odom} m, t={timestamp}")
+        # Decision trace placeholder: controller modules compute a requested
+        # deceleration (a_req) and map it to a brake command in [0,1].
+        # For safety, ensure any command is clamped before sending.
+        try:
+            # If other control modules compute 'a_req' they can call
+            # `apply_brake_command(raw_brake)`; here we only log current state.
+            raw_brake = None
+            # Example: if upstream modules set data['a_req'], respect it
+            if 'a_req' in data:
+                raw_brake = _map_a_req_to_brake(data['a_req'], data.get('a_service', 1.0))
+            if raw_brake is not None:
+                sent = self.apply_brake_command(raw_brake)
+                self.logger.info(f"Decision: raw_brake={raw_brake:.3f}, sent_brake={sent:.3f}, t={timestamp}")
+            else:
+                # nothing to send; just trace
+                self.logger.debug(f"Decision: no brake command computed for t={timestamp}")
+        except Exception as e:
+            self.logger.error(f"Error computing/applying brake: {e}")
+
+    def enter_emergency(self, reason: str = "manual") -> None:
+        """Place the controller into emergency mode (max brake applied).
+
+        This sets `self.emergency` and logs the reason. In emergency mode the
+        controller should refrain from normal commands and instead ensure the
+        brake is set to 1.0 (full service/emergency brake).
+        """
+        if not self.emergency:
+            self.emergency = True
+            self.logger.critical(f"ENTER EMERGENCY: {reason}")
+        # enforce immediate full brake
+        self.apply_brake_command(1.0)
+
+    def monitor_ack_timeout(self) -> None:
+        """Check whether the last command has been acked within `ack_timeout_s`.
+
+        If a command was sent and no ack was received within the timeout,
+        trigger emergency. If an ack arrives that acknowledges the last
+        command, clear emergency.
+        """
+        try:
+            # Allow RD stub (or real actuator) to signal ack via an ack file
+            try:
+                p = Path("data/rd_ack.json")
+                if p.exists():
+                    cur = json.loads(p.read_text(encoding="utf-8"))
+                    rd_ts = float(cur.get("ts", 0))
+                    # if RD ack timestamp is newer/equal to our last command, treat as ack
+                    if self.last_command_time is not None and rd_ts >= float(self.last_command_time):
+                        # record as last ack and persist
+                        self.last_ack_time = rd_ts
+                        try:
+                            # persist ack into control_status.json for observability
+                            sp = Path("data/control_status.json")
+                            cur_s = {}
+                            if sp.exists():
+                                try:
+                                    cur_s = json.loads(sp.read_text(encoding="utf-8"))
+                                except Exception:
+                                    cur_s = {}
+                            cur_s["last_ack_time"] = self.last_ack_time
+                            tmp = sp.with_suffix('.tmp')
+                            tmp.write_text(json.dumps(cur_s), encoding="utf-8")
+                            tmp.replace(sp)
+                        except Exception:
+                            pass
+            except Exception:
+                # ignore ack-file parsing errors
+                pass
+
+            if self.last_command_time is None:
+                return
+            # if ack exists and is newer than last command, we're good
+            if self.last_ack_time is not None and self.last_ack_time >= self.last_command_time:
+                # clear emergency if any
+                if self.emergency:
+                    self.logger.info("Ack received for last command; clearing emergency")
+                    self.clear_emergency()
+                return
+            # if ack not received and timeout elapsed -> emergency
+            age = time.time() - self.last_command_time
+            if age >= self.ack_timeout_s:
+                self.logger.warning(f"Ack timeout: {age:.2f}s >= {self.ack_timeout_s}s")
+                self.enter_emergency("no-ack")
+        except Exception as e:
+            self.logger.debug(f"monitor_ack_timeout error: {e}")
+
+    def clear_emergency(self) -> None:
+        """Clear emergency mode if conditions allow (fresh telemetry).
+
+        This should be done cautiously; currently it is allowed when fresh
+        telemetry is observed in the loop.
+        """
+        if self.emergency:
+            self.emergency = False
+            self.logger.info("CLEAR EMERGENCY: fresh telemetry observed")
+
+    def _clamp_brake(self, val: float) -> float:
+        """Clamp brake command to [0.0, 1.0]."""
+        try:
+            v = float(val)
+        except Exception:
+            return 0.0
+        if v != v:  # NaN
+            return 0.0
+        if v < 0.0:
+            return 0.0
+        if v > 1.0:
+            return 1.0
+        return v
+
+    def apply_brake_command(self, raw_brake: float) -> float:
+        """Clamp and (optionally) send a brake command to the actuator.
+
+        Returns the clamped value that would be sent.
+        This method centralizes safety clamping and logging; actuators can be
+        invoked from here but by default we only log to avoid side-effects in tests.
+        """
+        sent = self._clamp_brake(raw_brake)
+        # If RD/actuator available and mode allows, we could call send_to_rd here.
+        # For safety in tests and minimal intrusion we only log the action.
+        self.logger.debug(f"apply_brake_command: raw={raw_brake}, clamped={sent}")
+        # update last command bookkeeping
+        try:
+            self.last_command_time = time.time()
+            self.last_command_value = sent
+            # persist a small status file for external monitors
+            status = {
+                "last_command_time": self.last_command_time,
+                "last_command_value": self.last_command_value,
+                "last_ack_time": getattr(self, "last_ack_time", None),
+            }
+            try:
+                p = Path("data/control_status.json")
+                p.parent.mkdir(parents=True, exist_ok=True)
+                tmp = p.with_suffix(".tmp")
+                tmp.write_text(json.dumps(status), encoding="utf-8")
+                tmp.replace(p)
+            except Exception:
+                # non-fatal: don't let file IO break control
+                self.logger.debug("Could not write control_status.json")
+        except Exception:
+            pass
+        return sent
+
+    def ack_command(self) -> None:
+        """Record an acknowledgement from the actuator that the last command was received/applied."""
+        self.last_ack_time = time.time()
+        # update persisted status file as well
+        try:
+            p = Path("data/control_status.json")
+            if p.exists():
+                try:
+                    cur = json.loads(p.read_text(encoding="utf-8"))
+                except Exception:
+                    cur = {}
+            else:
+                cur = {}
+            cur["last_ack_time"] = self.last_ack_time
+            tmp = p.with_suffix(".tmp")
+            tmp.write_text(json.dumps(cur), encoding="utf-8")
+            tmp.replace(p)
+        except Exception:
+            self.logger.debug("Could not update control_status.json with ack")
 
     def stop(self):
         self.running = False

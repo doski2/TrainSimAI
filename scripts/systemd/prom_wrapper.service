@@ -1,0 +1,12 @@
+[Unit]
+Description=TrainSimAI Prometheus textfile wrapper (one-shot)
+After=network.target
+
+[Service]
+Type=oneshot
+User=prometheus
+Group=prometheus
+WorkingDirectory=/opt/TrainSimAI
+ExecStart=/usr/bin/env python /opt/TrainSimAI/scripts/db_health_prometheus.py /var/lib/trainsimai/data/run.db --out /var/lib/node_exporter/textfile_collector/trainsim_db.prom
+Nice=10
+TimeoutStartSec=60
