@@ -46,7 +46,7 @@ def test_e2e_simple_flow():
     th.start()
 
     # run control loop one iteration using csv source
-    cl = ControlLoop(source='csv', run_csv='data/runs/run.csv', hz=20, ack_timeout_s=1.0)
+    cl = ControlLoop(source="csv", run_csv="data/runs/run.csv", hz=20, ack_timeout_s=1.0)
     # run only a short time in another thread to avoid blocking
     t = threading.Thread(target=cl.run, daemon=True)
     t.start()

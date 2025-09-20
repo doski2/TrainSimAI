@@ -6,13 +6,15 @@ from typing import Tuple, Dict, List, Any
 import pandas as pd
 import numpy as np
 
+
 def _choose_col(df: pd.DataFrame, candidates: List[str], name: str) -> str:
     """Elige la primera columna presente (case-insensitive)."""
     cols_map = {c.lower(): c for c in df.columns}
     for c in candidates:
         if c.lower() in cols_map:
             return cols_map[c.lower()]
-    raise SystemExit(f"[validate_kpi] No se encontró columna '{name}'. Prueba con --{name.replace('_','-')}-col")
+    raise SystemExit(f"[validate_kpi] No se encontró columna '{name}'. Prueba con --{name.replace('_', '-')}-col")
+
 
 def _segments_by_limit(df: pd.DataFrame, limit_col: str) -> List[Tuple[int, int]]:
     """Devuelve segmentos [i0,i1) donde el valor de 'limit_col' es constante y hay datos de distancia."""
@@ -47,11 +49,13 @@ def compute_kpis(
 ) -> Dict[str, Any]:
     # Column picking / coercion
     if not v_col or v_col not in df.columns:
-        v_col = _choose_col(df, ["v_kmh","v_kph","speed_kph","speed_kmh"], "v_col")
+        v_col = _choose_col(df, ["v_kmh", "v_kph", "speed_kph", "speed_kmh"], "v_col")
     if not limit_col or limit_col not in df.columns:
-        limit_col = _choose_col(df, ["next_limit_kph","limit_kph","limit_next_kph","next_limit"], "limit_col")
+        limit_col = _choose_col(df, ["next_limit_kph", "limit_kph", "limit_next_kph", "next_limit"], "limit_col")
     if not dist_col or dist_col not in df.columns:
-        dist_col = _choose_col(df, ["dist_next_limit_m","next_limit_dist_m","dist_next_limit","d_next_m"], "dist_col")
+        dist_col = _choose_col(
+            df, ["dist_next_limit_m", "next_limit_dist_m", "dist_next_limit", "d_next_m"], "dist_col"
+        )
     for c in (v_col, limit_col, dist_col):
         df[c] = pd.to_numeric(df[c], errors="coerce")
     df = df[[v_col, limit_col, dist_col]].dropna().copy()
@@ -96,7 +100,7 @@ def compute_kpis(
     v = df[v_col].to_numpy()
     lim = df[limit_col].to_numpy()
     for i in range(1, len(df)):
-        if dist[i-1] > arrival_dist_m >= dist[i]:
+        if dist[i - 1] > arrival_dist_m >= dist[i]:
             arrivals += 1
             # Ventana corta desde i hacia adelante mientras dist crece desde 0 hasta arrival_dist_m
             j = i
@@ -113,9 +117,12 @@ def compute_kpis(
         "arrivals": float(arrivals),
         "arrivals_ok": float(arrivals_ok) if arrivals_ok == arrivals_ok else float("nan"),
         "monotonicity_bumps": float(bumps),
-        "mean_margin_last50_kph": float(mean_margin_last50) if mean_margin_last50 == mean_margin_last50 else float("nan"),
+        "mean_margin_last50_kph": float(mean_margin_last50)
+        if mean_margin_last50 == mean_margin_last50
+        else float("nan"),
         "bump_locs": bump_locs,
     }
+
 
 def main():
     p = argparse.ArgumentParser(description="Validador KPI v0 para TrainSimAI")
@@ -127,8 +134,12 @@ def main():
     p.add_argument("--arrival-vmargin-kph", type=float, default=0.5)
     p.add_argument("--window-m", type=float, default=50.0)
     p.add_argument("--monotonicity-bump-m", type=float, default=2.0)
-    p.add_argument("--smooth-dist-window", type=int, default=1, help="Rolling-median de la distancia (1 = sin suavizado)")
-    p.add_argument("--bump-confirm-samples", type=int, default=1, help="Muestras consecutivas de subida para contar bump (>=1)")
+    p.add_argument(
+        "--smooth-dist-window", type=int, default=1, help="Rolling-median de la distancia (1 = sin suavizado)"
+    )
+    p.add_argument(
+        "--bump-confirm-samples", type=int, default=1, help="Muestras consecutivas de subida para contar bump (>=1)"
+    )
     p.add_argument("--dump-bumps", default="", help="Ruta CSV para volcar ventanas alrededor de bumps (opcional)")
     # Umbrales de aceptación (puedes cambiarlos en CLI)
     p.add_argument("--min-arrivals-ok", type=float, default=0.90)
@@ -154,9 +165,11 @@ def main():
         bump_confirm_samples=args.bump_confirm_samples,
     )
     # Informe resumido
-    print(f"[KPI] arrivals={int(k['arrivals'])}  arrivals_ok={k['arrivals_ok']:.3f}  "
-          f"mean_margin_last50_kph={k['mean_margin_last50_kph']:.3f}  "
-          f"monotonicity_bumps={int(k['monotonicity_bumps'])}")
+    print(
+        f"[KPI] arrivals={int(k['arrivals'])}  arrivals_ok={k['arrivals_ok']:.3f}  "
+        f"mean_margin_last50_kph={k['mean_margin_last50_kph']:.3f}  "
+        f"monotonicity_bumps={int(k['monotonicity_bumps'])}"
+    )
 
     ok = True
     if k["arrivals_ok"] < args.min_arrivals_ok:
@@ -166,14 +179,16 @@ def main():
         print(f"[KPI][FAIL] monotonicity_bumps > {args.max_bumps}")
         ok = False
     if not (args.target_margin_min <= k["mean_margin_last50_kph"] <= args.target_margin_max):
-        print(f"[KPI][WARN] mean_margin_last50_kph fuera del objetivo [{args.target_margin_min},{args.target_margin_max}] (no bloquea)")
+        print(
+            f"[KPI][WARN] mean_margin_last50_kph fuera del objetivo [{args.target_margin_min},{args.target_margin_max}] (no bloquea)"
+        )
     # Dump opcional de bumps con ventanas +-5 filas
     if args.dump_bumps and isinstance(k.get("bump_locs"), list) and k["bump_locs"]:
         rows = []
         for loc in k["bump_locs"]:
             lo = max(0, int(loc) - 5)
             hi = min(len(df) - 1, int(loc) + 5)
-            tmp = df.iloc[lo:hi + 1].copy()
+            tmp = df.iloc[lo : hi + 1].copy()
             tmp["__bump_center__"] = (tmp.index == int(loc)).astype(int)
             tmp["__window_id__"] = int(loc)
             rows.append(tmp)
@@ -183,6 +198,7 @@ def main():
             out.to_csv(args.dump_bumps, index=False)
             print(f"[KPI] bump windows -> {args.dump_bumps}")
     sys.exit(0 if ok else 2)
+
 
 if __name__ == "__main__":
     main()

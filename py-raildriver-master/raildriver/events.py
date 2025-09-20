@@ -8,16 +8,15 @@ from typing import Any, Callable, DefaultDict, Dict, List, Optional
 
 
 class Listener(object):
-
     # Campos especiales consultados en cada iteración
     special_fields: Dict[str, str] = {
-        '!Coordinates': 'get_current_coordinates',
-        '!FuelLevel': 'get_current_fuel_level',
-        '!Gradient': 'get_current_gradient',
-        '!Heading': 'get_current_heading',
-        '!IsInTunnel': 'get_current_is_in_tunnel',
-        '!LocoName': 'get_loco_name',
-        '!Time': 'get_current_time',
+        "!Coordinates": "get_current_coordinates",
+        "!FuelLevel": "get_current_fuel_level",
+        "!Gradient": "get_current_gradient",
+        "!Heading": "get_current_heading",
+        "!IsInTunnel": "get_current_is_in_tunnel",
+        "!LocoName": "get_loco_name",
+        "!Time": "get_current_time",
     }
 
     def __init__(self, raildriver: Any, interval: float = 0.5) -> None:
@@ -43,6 +42,7 @@ class Listener(object):
         # Asegura que "bindings" esté inicializado (útil para analizadores de tipos y seguridad)
         if self.bindings is None:
             import collections as _collections  # import local para evitar cambios a nivel superior
+
             self.bindings = _collections.defaultdict(list)
         return self.bindings[item].append
 
@@ -65,14 +65,14 @@ class Listener(object):
             else:
                 self.current_data[field_name] = current_value
                 if current_value != self.previous_data[field_name] and self.iteration > 1:
-                    binding_name = 'on_{}_change'.format(field_name.lower())
+                    binding_name = "on_{}_change".format(field_name.lower())
                     self._execute_bindings(binding_name, current_value, self.previous_data[field_name])
 
         for field_name, method_name in self.special_fields.items():
             current_value = getattr(self.raildriver, method_name)()
             self.current_data[field_name] = current_value
             if current_value != self.previous_data[field_name] and self.iteration > 1:
-                binding_name = 'on_{}_change'.format(field_name[1:].lower())
+                binding_name = "on_{}_change".format(field_name[1:].lower())
                 self._execute_bindings(binding_name, current_value, self.previous_data[field_name])
 
     def _main_loop(self) -> None:
@@ -123,5 +123,5 @@ class Listener(object):
         available_controls = dict(self.raildriver.get_controller_list()).values()
         for field in field_names:
             if field not in available_controls:
-                raise ValueError('Cannot subscribe to a missing controller {}'.format(field))
+                raise ValueError("Cannot subscribe to a missing controller {}".format(field))
         self.subscribed_fields = field_names

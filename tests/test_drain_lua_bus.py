@@ -51,10 +51,7 @@ def test_drain_incremental(tmp_path: Path):
 
     # escribir dos eventos al bus
     bus.write_text(
-        (
-            '{"type":"marker_pass","name":"m1","time":1}\n'
-            '{"type":"marker_pass","name":"m2","time":2}\n'
-        ),
+        ('{"type":"marker_pass","name":"m1","time":1}\n{"type":"marker_pass","name":"m2","time":2}\n'),
         encoding="utf-8",
     )
 

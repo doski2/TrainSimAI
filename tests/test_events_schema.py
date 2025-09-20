@@ -24,4 +24,3 @@ def test_events_min_schema():
             )
             ok += 1
     assert ok == total and total > 0, "Eventos válidos y no vacíos"
-

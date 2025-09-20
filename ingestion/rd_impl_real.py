@@ -118,4 +118,3 @@ class RDAdapter:
 def rd_impl() -> RDAdapter:
     """Fábrica esperada por el runtime."""
     return RDAdapter()
-

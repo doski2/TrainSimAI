@@ -39,4 +39,3 @@ def test_cli_override_wins(tmp_path: Path):
     # “Simula” que luego el CLI pone margen=5.0
     cfg2 = replace(cfg, margin_kph=5.0)
     assert cfg2.margin_kph == 5.0 and cfg.margin_kph == 2.0
-

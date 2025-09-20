@@ -25,19 +25,25 @@ except ImportError:
     try:
         from ingestion.event_stream import NonBlockingEventStream  # type: ignore
     except ImportError:
+
         class NonBlockingEventStream:
             def __init__(self, *args, **kwargs):
                 pass
+
             def poll(self):
                 return None
+
             def __iter__(self):
                 return self
+
             def __next__(self):
                 raise StopIteration
+
 
 try:
     from runtime.pid import SplitPID  # type: ignore
 except ImportError:
+
     class SplitPID:
         def __init__(self, *args, **kwargs):
             self.kp = kwargs.get("kp", 0.0)
@@ -45,6 +51,7 @@ except ImportError:
             self.kd = kwargs.get("kd", 0.0)
             self._i = 0.0
             self._prev = None
+
         def update(self, error: float, dt: float) -> float:
             if dt <= 0:
                 return 0.0
@@ -53,12 +60,15 @@ except ImportError:
             self._prev = error
             return self.kp * error + self.ki * self._i + self.kd * d
 
+
 # Fix: Variables globales para FSM
 _active_limit_kph: float | None = None
 _last_dist_next_m: float | None = None
 
+
 class ControlLoop:
     """Fix: Clase ControlLoop simplificada y corregida"""
+
     def __init__(self, source: str, profile=None, hz=5, db_path=None, run_csv=None, **kwargs):
         self.source = source
         self.profile = profile
@@ -80,16 +90,16 @@ class ControlLoop:
         self.last_command_value = None
         self.last_ack_time = None
         self.logger = logging.getLogger(__name__)
-        if source not in ['sqlite', 'csv']:
+        if source not in ["sqlite", "csv"]:
             raise ValueError(f"Invalid source: {source}")
-        if source == 'sqlite' and not db_path:
+        if source == "sqlite" and not db_path:
             raise ValueError("db_path required for sqlite source")
-        if source == 'csv' and not run_csv:
+        if source == "csv" and not run_csv:
             raise ValueError("run_csv required for csv source")
 
     def read_telemetry(self):
         try:
-            if self.source == 'sqlite':
+            if self.source == "sqlite":
                 data = self._read_from_sqlite()
                 if data and self._is_data_fresh(data):
                     self.consecutive_failures = 0
@@ -98,7 +108,7 @@ class ControlLoop:
                     self.consecutive_failures += 1
                     if self.consecutive_failures >= self.max_failures_before_fallback:
                         self.logger.warning("Too many SQLite failures, switching to CSV")
-                        self.source = 'csv'
+                        self.source = "csv"
                         return self._read_from_csv()
             else:
                 return self._read_from_csv()
@@ -115,11 +125,10 @@ class ControlLoop:
             with sqlite3.connect(self.db_path, timeout=5.0) as conn:
                 cursor = conn.cursor()
                 recent_threshold = time.time() - self.stale_data_threshold
-                cursor.execute("""
-                    SELECT * FROM telemetry 
-                    WHERE t_wall > ? 
-                    ORDER BY rowid DESC LIMIT 1
-                """, (recent_threshold,))
+                cursor.execute(
+                    "SELECT * FROM telemetry WHERE t_wall > ? ORDER BY rowid DESC LIMIT 1",
+                    (recent_threshold,),
+                )
                 row = cursor.fetchone()
                 if row:
                     return dict(zip([desc[0] for desc in cursor.description], row))
@@ -127,11 +136,12 @@ class ControlLoop:
                 row = cursor.fetchone()
                 if row:
                     data = dict(zip([desc[0] for desc in cursor.description], row))
-                    age = time.time() - float(data.get('t_wall', 0))
-                    self.logger.warning(f"Using stale data: {age:.1f}s old")
+                    age = time.time() - float(data.get("t_wall", 0))
+                    msg = f"Using stale data: {age:.1f}s old"
+                    self.logger.warning(msg)
                     return data
         except sqlite3.OperationalError as e:
-            if 'database is locked' in str(e):
+            if "database is locked" in str(e):
                 self.logger.warning(f"Database locked (attempt {self.consecutive_failures})")
                 return self._read_from_csv()
             else:
@@ -151,18 +161,18 @@ class ControlLoop:
             self.logger.error(f"CSV file not found: {path}")
             return None
         try:
-            with open(path, 'r') as f:
+            with open(path, "r") as f:
                 lines = f.readlines()
                 if len(lines) < 2:
                     self.logger.warning("CSV file has no data rows")
                     return None
-                header = lines[0].strip().split(',')
-                last_line = lines[-1].strip().split(',')
+                header = lines[0].strip().split(",")
+                last_line = lines[-1].strip().split(",")
                 if len(header) != len(last_line):
                     self.logger.error("CSV header/data mismatch")
                     return None
                 data: Dict[str, str] = dict(zip(header, last_line))
-                for key in ['t_wall', 'odom_m', 'speed_kph']:
+                for key in ["t_wall", "odom_m", "speed_kph"]:
                     if key in data:
                         try:
                             # mantener strings para compatibilidad; conversiones posteriores harán float()
@@ -176,10 +186,10 @@ class ControlLoop:
             return None
 
     def _is_data_fresh(self, data) -> bool:
-        if not data or 't_wall' not in data:
+        if not data or "t_wall" not in data:
             return False
         try:
-            age = time.time() - float(data['t_wall'])
+            age = time.time() - float(data["t_wall"])
             return age < self.stale_data_threshold
         except (ValueError, TypeError):
             return False
@@ -192,17 +202,17 @@ class ControlLoop:
         - la edad calculada (time.time() - t_wall) > stale_data_threshold, o
         - el dt desde la última lectura (si `self._last_t_seen`) excede 2×threshold (salto temporal).
         """
-        if not data or 't_wall' not in data:
+        if not data or "t_wall" not in data:
             return True
         try:
-            t = float(data['t_wall'])
+            t = float(data["t_wall"])
         except (ValueError, TypeError):
             return True
         age = time.time() - t
         if age > self.stale_data_threshold:
             return True
         # detectar saltos grandes si tenemos última marca
-        last = getattr(self, '_last_t_seen', None)
+        last = getattr(self, "_last_t_seen", None)
         if last is not None:
             dt = abs(t - last)
             if dt > (2.0 * self.stale_data_threshold):
@@ -224,7 +234,9 @@ class ControlLoop:
                     try:
                         if self.is_data_stale(data):
                             age = time.time() - float(data.get("t_wall", time.time()))
-                            self.logger.warning(f"stale-data detected: age={age:.1f}s > threshold={self.stale_data_threshold}s — skipping processing")
+                            self.logger.warning(
+                                f"stale-data detected: age={age:.1f}s > threshold={self.stale_data_threshold}s — skipping processing"
+                            )
                             # aumentar contador de fallos y saltar procesamiento y envíos
                             self.consecutive_failures += 1
                             # opcional: aquí podríamos emitir un evento al EVT_PATH o CSV
@@ -270,9 +282,9 @@ class ControlLoop:
             self.running = False
 
     def _process_control_data(self, data):
-        speed = data.get('speed_kph', 0)
-        odom = data.get('odom_m', 0)
-        timestamp = data.get('t_wall', time.time())
+        speed = data.get("speed_kph", 0)
+        odom = data.get("odom_m", 0)
+        timestamp = data.get("t_wall", time.time())
         self.logger.debug(f"Processing: speed={speed} kph, odom={odom} m, t={timestamp}")
         # Decision trace placeholder: controller modules compute a requested
         # deceleration (a_req) and map it to a brake command in [0,1].
@@ -282,8 +294,8 @@ class ControlLoop:
             # `apply_brake_command(raw_brake)`; here we only log current state.
             raw_brake = None
             # Example: if upstream modules set data['a_req'], respect it
-            if 'a_req' in data:
-                raw_brake = _map_a_req_to_brake(data['a_req'], data.get('a_service', 1.0))
+            if "a_req" in data:
+                raw_brake = _map_a_req_to_brake(data["a_req"], data.get("a_service", 1.0))
             if raw_brake is not None:
                 sent = self.apply_brake_command(raw_brake)
                 self.logger.info(f"Decision: raw_brake={raw_brake:.3f}, sent_brake={sent:.3f}, t={timestamp}")
@@ -334,7 +346,7 @@ class ControlLoop:
                                 except Exception:
                                     cur_s = {}
                             cur_s["last_ack_time"] = self.last_ack_time
-                            tmp = sp.with_suffix('.tmp')
+                            tmp = sp.with_suffix(".tmp")
                             tmp.write_text(json.dumps(cur_s), encoding="utf-8")
                             tmp.replace(sp)
                         except Exception:
@@ -440,6 +452,8 @@ class ControlLoop:
 
     def stop(self):
         self.running = False
+
+
 def tail_csv_last_row(path: Path, max_bytes: int = 1_000_000) -> dict | None:
     """
     Lee la última fila completa de un CSV sin bloquear.
@@ -544,9 +558,7 @@ def main() -> None:
     p = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
     p.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
     p.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
-    p.add_argument(
-        "--emit-active-limit", action="store_true", help="Incluye columna active_limit_kph en la salida CSV"
-    )
+    p.add_argument("--emit-active-limit", action="store_true", help="Incluye columna active_limit_kph en la salida CSV")
     p.add_argument(
         "--bus", default="data/lua_eventbus.jsonl", help="Event bus JSONL (fallback si events.jsonl no avanza)"
     )
@@ -556,7 +568,7 @@ def main() -> None:
         "--rd",
         default=os.environ.get("TSC_RD", ""),
         help="Proveedor RD en formato 'modulo:atributo' (p.ej. runtime.raildriver_stub:rd). "
-             "Si es callable, se invoca sin args y se usa el retorno.",
+        "Si es callable, se invoca sin args y se usa el retorno.",
     )
     p.add_argument("--db", default="data/run.db")
     p.add_argument("--source", choices=["sqlite", "csv"], default="sqlite")
@@ -577,16 +589,27 @@ def main() -> None:
     # Overrides CLI (opcionales)
     p.add_argument("--A", type=float, default=None)
     p.add_argument("--margin-kph", type=float, default=None)
-    p.add_argument("--rise-per-s", type=float, default=None, help="Velocidad de subida del freno (por defecto en código)")
-    p.add_argument("--fall-per-s", type=float, default=None, help="Velocidad de bajada del freno (por defecto en código)")
-    p.add_argument("--startup-gate-s", type=float, default=None, help="Segundos de compuerta de arranque (por defecto 4.0)")
-    p.add_argument("--hold-s", type=float, default=None, help="Segundos de retención mínima al encender freno (por defecto 0.5)")
+    p.add_argument(
+        "--rise-per-s", type=float, default=None, help="Velocidad de subida del freno (por defecto en código)"
+    )
+    p.add_argument(
+        "--fall-per-s", type=float, default=None, help="Velocidad de bajada del freno (por defecto en código)"
+    )
+    p.add_argument(
+        "--startup-gate-s", type=float, default=None, help="Segundos de compuerta de arranque (por defecto 4.0)"
+    )
+    p.add_argument(
+        "--hold-s", type=float, default=None, help="Segundos de retención mínima al encender freno (por defecto 0.5)"
+    )
     p.add_argument("--reaction", type=float, default=None)
     p.add_argument(
         "--mode",
         choices=["full", "brake", "advisory"],
         default=os.environ.get("TSC_MODE", "brake"),
-        help="Modo de actuación: full=acel+freno, brake=solo freno (tú aceleras), advisory=solo consejo (no envía comandos). Por defecto, TSC_MODE env var o 'brake'.",
+        help=(
+            "Modo de actuación: full=acel+freno, brake=solo freno (tú aceleras), "
+            "advisory=solo consejo (no envía comandos). Por defecto, TSC_MODE env var o 'brake'."
+        ),
     )
     args = p.parse_args()
     mode_guard = ModeGuard(args.mode)
@@ -898,7 +921,7 @@ def main() -> None:
                 t_next = time.perf_counter()
             continue
 
-    # 3) calcular dist_next_limit_m por odómetro
+        # 3) calcular dist_next_limit_m por odómetro
         if next_limit_kph is None or anchor_dist_m is None:
             dist_next_limit_m = None
         else:
@@ -982,7 +1005,9 @@ def main() -> None:
         else:
             # Distancia que necesitamos para llegar a target_next_kph con seguridad
             # Asegurar tipos válidos
-            v_use = float(v_for_control_kph if v_for_control_kph is not None else (speed_kph if speed_kph is not None else 0.0))
+            v_use = float(
+                v_for_control_kph if v_for_control_kph is not None else (speed_kph if speed_kph is not None else 0.0)
+            )
             tgt = float(target_next_kph if target_next_kph is not None else 0.0)
             d_need = _brake_distance_m(v_use, tgt, a_service, t_react) + margin_m
 
@@ -1027,7 +1052,9 @@ def main() -> None:
         # overspeed_guard comparará contra next_limit_kph si está disponible, o bien contra _active_limit_kph
         og = overspeed_guard(
             float(speed_kph) if speed_kph is not None else 0.0,
-            float(next_limit_kph) if next_limit_kph is not None else (_active_limit_kph if _active_limit_kph is not None else 0.0),
+            float(next_limit_kph)
+            if next_limit_kph is not None
+            else (_active_limit_kph if _active_limit_kph is not None else 0.0),
         )
 
         # 4.1) Guard FÍSICO por distancia (a_req > a_service -> pisar más freno)
@@ -1137,7 +1164,9 @@ def main() -> None:
         target_brake = desired_brake if on else 0.0
         if ctrl_debug:
             try:
-                print(f"[CTRL-DBG] t={now:.3f} err_kph={err_kph:.3f} desired_brake(before_ramp)={desired_brake:.3f} on={on}")
+                print(
+                    f"[CTRL-DBG] t={now:.3f} err_kph={err_kph:.3f} desired_brake(before_ramp)={desired_brake:.3f} on={on}"
+                )
             except Exception:
                 pass
         delta = target_brake - brake_cmd_local
@@ -1193,7 +1222,9 @@ def main() -> None:
         else:
             if ctrl_debug:
                 try:
-                    print(f"[CTRL-DBG] about to send_to_rd rd={rd_name} mode={mode_guard.mode} send(t={t_send},b={b_send})")
+                    print(
+                        f"[CTRL-DBG] about to send_to_rd rd={rd_name} mode={mode_guard.mode} send(t={t_send},b={b_send})"
+                    )
                 except Exception:
                     pass
             thr_ok, brk_ok, thr_m, brk_m = send_to_rd(rd_obj, t_send, b_send)
@@ -1201,7 +1232,7 @@ def main() -> None:
                 debug_on,
                 f"RD={rd_name} mode={mode_guard.mode} "
                 f"plan(t={throttle_cmd},b={brake_cmd}) send(t={t_send},b={b_send}) "
-                f"applied(thr={thr_ok}:{thr_m}, brk={brk_ok}:{brk_m})"
+                f"applied(thr={thr_ok}:{thr_m}, brk={brk_ok}:{brk_m})",
             )
         # log CSV (PLAN): se mantiene igual, independientemente del modo de envío
         writer.write_row(row_out)

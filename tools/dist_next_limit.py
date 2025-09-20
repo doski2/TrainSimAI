@@ -70,11 +70,7 @@ def dist_from_getdata_probes(df: pd.DataFrame, ev_path: Path) -> Optional[pd.Ser
             rows.append({"t_wall": float(t), "dist_m": float(dist)})
     if not rows:
         return None
-    probes = (
-        pd.DataFrame(rows)
-        .sort_values("t_wall")
-        .drop_duplicates(subset=["t_wall"], keep="last")
-    )
+    probes = pd.DataFrame(rows).sort_values("t_wall").drop_duplicates(subset=["t_wall"], keep="last")
     if "t_wall" not in df.columns or df["t_wall"].isna().all():
         return None
     # Alinear por tiempo real con merge_asof (sample&hold)
@@ -115,7 +111,7 @@ def ensure_odom(df: pd.DataFrame) -> pd.Series:
     if v_ms_series is None:
         v_kph = pick_series(df, "speed_kph", "kph", "speed_kmh")
         if v_kph is not None:
-            v_ms_series = (v_kph.astype(float) / 3.6)
+            v_ms_series = v_kph.astype(float) / 3.6
     if v_ms_series is None:
         raise ValueError("No hay odom_m ni velocidad para integrarla (esperaba speed_kph/v_ms).")
     v_arr = v_ms_series.astype(float).fillna(0.0).to_numpy()
@@ -264,7 +260,7 @@ def main() -> None:
         stem = run_path.name
         stem_no_csv = stem[:-4] if stem.lower().endswith(".csv") else stem
         root = re.sub(r"(?:\.dist\d*)+$", "", stem_no_csv, flags=re.IGNORECASE)
-        had_dist = (root != stem_no_csv)
+        had_dist = root != stem_no_csv
         target = root + (".dist2.csv" if (had_dist and args.no_overwrite) else ".dist.csv")
         out_path = run_path.with_name(target)
 

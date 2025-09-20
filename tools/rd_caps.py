@@ -31,9 +31,17 @@ def _locate_raildriver_dll() -> str | None:
     # Common Steam install paths
     common_bases = [
         Path(os.environ.get("PROGRAMFILES(X86)", r"C:\\Program Files (x86)"))
-        / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
+        / "Steam"
+        / "steamapps"
+        / "common"
+        / "RailWorks"
+        / "plugins",
         Path(os.environ.get("PROGRAMFILES", r"C:\\Program Files"))
-        / "Steam" / "steamapps" / "common" / "RailWorks" / "plugins",
+        / "Steam"
+        / "steamapps"
+        / "common"
+        / "RailWorks"
+        / "plugins",
     ]
     try:
         import winreg  # type: ignore
@@ -97,4 +105,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

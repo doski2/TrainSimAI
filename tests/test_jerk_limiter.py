@@ -1,6 +1,7 @@
 from __future__ import annotations
 from runtime.guards import JerkBrakeLimiter
 
+
 def test_jerk_limits_rate_and_output():
     jl = JerkBrakeLimiter(max_rate_per_s=1.0, max_jerk_per_s2=2.0)
     jl.reset(0.0)

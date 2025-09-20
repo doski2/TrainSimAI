@@ -45,6 +45,7 @@ class JerkBrakeLimiter:
       - Limita la **variación de la tasa** (jerk: max_jerk_per_s2).
     Integra internamente la salida.
     """
+
     def __init__(self, max_rate_per_s: float = 1.8, max_jerk_per_s2: float = 6.0):
         self.max_rate = float(max_rate_per_s)
         self.max_jerk = float(max_jerk_per_s2)

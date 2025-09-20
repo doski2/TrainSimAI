@@ -16,16 +16,16 @@ def check_trainsimai_processes() -> bool:
     print("=== PROCESOS TRAINSIMAI ===")
     found = False
 
-    for proc in psutil.process_iter(['pid', 'name', 'cmdline', 'create_time']):
+    for proc in psutil.process_iter(["pid", "name", "cmdline", "create_time"]):
         try:
-            cmdline = ' '.join(proc.info.get('cmdline') or [])
-            if any(keyword in cmdline.lower() for keyword in [
-                'collector', 'control_loop', 'getdata_bridge', 'trainsimai'
-            ]):
-                runtime = time.time() - (proc.info.get('create_time') or time.time())
+            cmdline = " ".join(proc.info.get("cmdline") or [])
+            if any(
+                keyword in cmdline.lower() for keyword in ["collector", "control_loop", "getdata_bridge", "trainsimai"]
+            ):
+                runtime = time.time() - (proc.info.get("create_time") or time.time())
                 print(f"PID {proc.info.get('pid')}: {proc.info.get('name')}")
                 print(f"  Comando: {cmdline}")
-                print(f"  Ejecutándose desde: {runtime/3600:.1f} horas")
+                print(f"  Ejecutándose desde: {runtime / 3600:.1f} horas")
                 found = True
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
@@ -63,8 +63,9 @@ def check_getdata_file() -> None:
     """Verificar el archivo GetData.txt de Train Simulator"""
     print("\n=== TRAIN SIMULATOR GETDATA ===")
 
-    getdata_path = os.environ.get('TSC_GETDATA_FILE',
-        r"C:\Program Files (x86)\Steam\steamapps\common\RailWorks\plugins\GetData.txt")
+    getdata_path = os.environ.get(
+        "TSC_GETDATA_FILE", r"C:\Program Files (x86)\Steam\steamapps\common\RailWorks\plugins\GetData.txt"
+    )
 
     if not getdata_path:
         print("❌ Variable TSC_GETDATA_FILE no definida")
@@ -79,7 +80,7 @@ def check_getdata_file() -> None:
 
         # Leer último contenido
         try:
-            with open(path, 'r', encoding='utf-8', errors='replace') as f:
+            with open(path, "r", encoding="utf-8", errors="replace") as f:
                 content = f.read()[-200:]  # Últimos 200 chars
             print(f"Contenido reciente: ...{content}")
         except Exception as e:
@@ -100,7 +101,7 @@ def check_collector_heartbeat() -> None:
         print(f"{status} Heartbeat: hace {age_seconds:.1f}s")
 
         try:
-            content = heartbeat_file.read_text(encoding='utf-8').strip()
+            content = heartbeat_file.read_text(encoding="utf-8").strip()
             print(f"Contenido: {content}")
         except Exception as e:
             print(f"Error leyendo heartbeat: {e}")

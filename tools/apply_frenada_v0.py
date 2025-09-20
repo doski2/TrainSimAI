@@ -86,8 +86,7 @@ def main() -> None:
 
     if dist is None:
         raise KeyError(
-            "No se encontró 'dist_next_limit_m' en el CSV de --dist. "
-            "Genera antes con tools/dist_next_limit.py"
+            "No se encontró 'dist_next_limit_m' en el CSV de --dist. Genera antes con tools/dist_next_limit.py"
         )
 
     dist_arr = np.asarray(dist, dtype=float)
@@ -164,4 +163,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

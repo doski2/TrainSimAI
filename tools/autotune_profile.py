@@ -6,8 +6,10 @@ import re
 import shutil
 from datetime import datetime
 
+
 def clamp(x: float, lo: float, hi: float) -> float:
     return max(lo, min(hi, x))
+
 
 def parse_kpi(path: str):
     """
@@ -17,7 +19,7 @@ def parse_kpi(path: str):
     txt = open(path, "r", encoding="utf-8", errors="ignore").read()
     m = re.search(
         r"\[KPI\]\s*arrivals=(\d+)\s+arrivals_ok=([0-9.]+)\s+mean_margin_last50_kph=([\-0-9.]+)\s+monotonicity_bumps=(\d+)",
-        txt
+        txt,
     )
     if not m:
         raise SystemExit("[autotune] No pude leer KPI de kpi_latest.txt")
@@ -27,9 +29,11 @@ def parse_kpi(path: str):
     bumps = int(m.group(4))
     return arrivals, ok_rate, mean_margin, bumps
 
+
 def load_profile(path: str):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
+
 
 def save_profile(path: str, data: dict):
     os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
@@ -39,6 +43,7 @@ def save_profile(path: str, data: dict):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2)
     return bak
+
 
 def main():
     ap = argparse.ArgumentParser()
@@ -78,9 +83,12 @@ def main():
 
     os.makedirs("data", exist_ok=True)
     with open("data/autotune.log", "a", encoding="utf-8") as log:
-        log.write(f"{datetime.now().isoformat(timespec='seconds')} profile={args.profile} v_margin_kph {v:.2f} -> {new_v:.2f} (err={err:.2f}) bak={bak}\n")
+        log.write(
+            f"{datetime.now().isoformat(timespec='seconds')} profile={args.profile} v_margin_kph {v:.2f} -> {new_v:.2f} (err={err:.2f}) bak={bak}\n"
+        )
     print(f"[autotune] v_margin_kph: {v:.2f} -> {new_v:.2f} (err={err:.2f}). Backup: {bak}")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

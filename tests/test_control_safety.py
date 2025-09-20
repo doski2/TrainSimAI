@@ -14,20 +14,20 @@ def test_map_a_req_to_brake_bounds():
 
 
 def test_apply_brake_clamps_and_returns():
-    cl = ControlLoop(source='csv', run_csv='data/runs/run.csv', hz=1)
+    cl = ControlLoop(source="csv", run_csv="data/runs/run.csv", hz=1)
     assert cl.apply_brake_command(0.5) == 0.5
     assert cl.apply_brake_command(1.5) == 1.0
-    assert cl.apply_brake_command(float('nan')) == 0.0
+    assert cl.apply_brake_command(float("nan")) == 0.0
     assert cl.apply_brake_command(-0.2) == 0.0
 
 
 def test_stale_data_detection():
-    cl = ControlLoop(source='csv', run_csv='data/runs/run.csv', hz=1, stale_data_threshold=0.5)
+    cl = ControlLoop(source="csv", run_csv="data/runs/run.csv", hz=1, stale_data_threshold=0.5)
     # data with missing t_wall -> stale
     assert cl.is_data_stale({}) is True
     # data with future t_wall -> fresh
-    future = {'t_wall': str(time.time() + 0.1)}
+    future = {"t_wall": str(time.time() + 0.1)}
     assert cl.is_data_stale(future) is False
     # data with old t_wall -> stale
-    old = {'t_wall': str(time.time() - 10)}
+    old = {"t_wall": str(time.time() - 10)}
     assert cl.is_data_stale(old) is True

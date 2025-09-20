@@ -18,5 +18,5 @@ def test_map_a_req_to_brake_small():
 
 @pytest.mark.real
 def test_map_a_req_invalid_inputs():
-    assert _map_a_req_to_brake(float('nan'), 0.7) == 0.0
-    assert _map_a_req_to_brake(0.5, float('nan')) == 0.0
+    assert _map_a_req_to_brake(float("nan"), 0.7) == 0.0
+    assert _map_a_req_to_brake(0.5, float("nan")) == 0.0

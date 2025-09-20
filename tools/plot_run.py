@@ -11,6 +11,7 @@ Uso:
   python tools/plot_run.py
   python tools/plot_run.py --run data/runs/run.csv --events data/events/events.jsonl --out plot_speed_vs_odom.png
 """
+
 from __future__ import annotations
 
 import argparse
@@ -22,6 +23,7 @@ import math
 from pathlib import Path
 
 import matplotlib
+
 matplotlib.use("Agg")  # sin GUI
 
 
@@ -53,17 +55,13 @@ def read_run_csv(path: str) -> Dict[str, List[Any]]:
                 H = float(row.get("time_ingame_h") or 0.0)
                 M = float(row.get("time_ingame_m") or 0.0)
                 S = float(row.get("time_ingame_s") or 0.0)
-                tg = H + M/60.0 + S/3600.0
+                tg = H + M / 60.0 + S / 3600.0
             except Exception:
                 tg = None
             t_ing.append(tg)
             # velocidad
             try:
-                vk = float(
-                    row.get("v_kmh")
-                    or (row.get("SpeedometerKPH") or 0.0)
-                    or (row.get("speed_kph") or 0.0)
-                )
+                vk = float(row.get("v_kmh") or (row.get("SpeedometerKPH") or 0.0) or (row.get("speed_kph") or 0.0))
             except Exception:
                 vk = None
             v_kmh.append(vk)
@@ -123,9 +121,7 @@ def nearest_idx(seq: Sequence[Optional[float]], val: float) -> int:
     return best_i
 
 
-def build_event_table(
-    events: List[Dict[str, Any]], run: Mapping[str, List[Optional[float]]]
-) -> List[Dict[str, Any]]:
+def build_event_table(events: List[Dict[str, Any]], run: Mapping[str, List[Optional[float]]]) -> List[Dict[str, Any]]:
     table = []
     for e in events:
         t = e.get("t_ingame") or e.get("time")
@@ -148,7 +144,8 @@ def build_event_table(
 
 
 def _clean_xy(
-    x_seq: Sequence[Optional[float]], y_seq: Sequence[Optional[float]],
+    x_seq: Sequence[Optional[float]],
+    y_seq: Sequence[Optional[float]],
 ) -> Tuple[List[float], List[float]]:
     """Filtra None/NaN y devuelve listas seguras para matplotlib."""
     xs: List[float] = []
@@ -168,16 +165,17 @@ def _clean_xy(
             continue
     return xs, ys
 
+
 def _ensure_parent_dir(path: str) -> str:
     """Crea el directorio padre del path si no existe y devuelve el path."""
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     return str(p)
 
-def plot_speed_vs_odom(
-    run: Mapping[str, List[Optional[float]]], evtable: List[Dict[str, Any]], out_path: str
-) -> None:
+
+def plot_speed_vs_odom(run: Mapping[str, List[Optional[float]]], evtable: List[Dict[str, Any]], out_path: str) -> None:
     import matplotlib.pyplot as plt
+
     xs, ys, idxs = [], [], []
     for i, om in enumerate(run["odom"]):
         if om is None or run["v_kmh"][i] is None:
@@ -198,10 +196,10 @@ def plot_speed_vs_odom(
         t = r.get("type")
         if t == "speed_limit_change":
             ax.axvline(x, linestyle="--", alpha=0.7)
-            ax.text(x, ymax*0.95, f"limit→{r.get('limit_next_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
+            ax.text(x, ymax * 0.95, f"limit→{r.get('limit_next_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
         elif t == "limit_reached":
             ax.axvline(x, linestyle=":", alpha=0.7)
-            ax.text(x, ymax*0.80, f"reached {r.get('limit_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
+            ax.text(x, ymax * 0.80, f"reached {r.get('limit_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
         elif t == "marker_pass":
             ax.axvline(x, linestyle="-.", alpha=0.5)
             ax.text(
@@ -218,7 +216,7 @@ def plot_speed_vs_odom(
     try:
         if any(run.get("phase", [])):
             for i in idxs:
-                ph = run.get("phase", [None]*len(run["odom"]))[i]
+                ph = run.get("phase", [None] * len(run["odom"]))[i]
                 if (ph or "").upper() == "BRAKE":
                     ax.axvline(run["odom"][i], color="red", alpha=0.08)
     except Exception:
@@ -233,8 +231,8 @@ def plot_speed_vs_odom(
         ctrl_x, th_y, br_y = [], [], []
         for i in idxs:
             ctrl_x.append(run["odom"][i])
-            th_y.append(run.get("throttle", [None]*len(run["odom"]))[i])
-            br_y.append(run.get("brake", [None]*len(run["odom"]))[i])
+            th_y.append(run.get("throttle", [None] * len(run["odom"]))[i])
+            br_y.append(run.get("brake", [None] * len(run["odom"]))[i])
         if has_th:
             ax2.plot(ctrl_x, th_y, label="throttle", color="tab:green", alpha=0.7)
         if has_br:
@@ -254,7 +252,7 @@ def plot_speed_vs_odom(
             for i, om in enumerate(run["odom"]):
                 if om is None:
                     continue
-                sf = run.get("speed_filt_kph", [None]*len(run["odom"]))[i]
+                sf = run.get("speed_filt_kph", [None] * len(run["odom"]))[i]
                 if sf is None:
                     continue
                 sf_x.append(om)
@@ -273,7 +271,7 @@ def plot_speed_vs_odom(
             for i, om in enumerate(run["odom"]):
                 if om is None:
                     continue
-                al = run.get("active_limit_kph", [None]*len(run["odom"]))[i]
+                al = run.get("active_limit_kph", [None] * len(run["odom"]))[i]
                 if al is None or al == "":
                     continue
                 al_x.append(om)
@@ -291,7 +289,7 @@ def plot_speed_vs_odom(
     # Sombreado (axvspan) para zonas donde approach_active=1
     if "approach_active" in run:
         try:
-            mask = [int(x) if x not in (None, "") else 0 for x in run.get("approach_active", [0]*len(run["odom"]))]
+            mask = [int(x) if x not in (None, "") else 0 for x in run.get("approach_active", [0] * len(run["odom"]))]
             s = None
             for i, m in enumerate(mask):
                 if m and s is None:

@@ -9,10 +9,21 @@ CSV_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.join("data", "runs", "r
 EVT_PATH = sys.argv[2] if len(sys.argv) > 2 else os.path.join("data", "events", "events.jsonl")
 
 MAIN_FIELDS = {
-    "provider", "product", "engine", "v_ms", "v_kmh", "t_wall", "odom_m",
-    "VirtualBrake", "TrainBrakeControl", "VirtualEngineBrakeControl", "Reverser",
-    "BrakePipePressureBAR", "TrainBrakeCylinderPressureBAR",
-    "heading", "gradient",
+    "provider",
+    "product",
+    "engine",
+    "v_ms",
+    "v_kmh",
+    "t_wall",
+    "odom_m",
+    "VirtualBrake",
+    "TrainBrakeControl",
+    "VirtualEngineBrakeControl",
+    "Reverser",
+    "BrakePipePressureBAR",
+    "TrainBrakeCylinderPressureBAR",
+    "heading",
+    "gradient",
 }
 REQUIRED_ANY = [
     {"SpeedometerKPH", "SpeedometerMPH"},
@@ -54,21 +65,23 @@ def analyze_csv(fields, rows):
     tw = [float(r["t_wall"]) for r in rows[-200:] if r.get("t_wall")]
     if len(tw) >= 2:
         dur = max(tw) - min(tw)
-        hz = (len(tw)-1)/dur if dur > 0 else 0.0
+        hz = (len(tw) - 1) / dur if dur > 0 else 0.0
         print(f"[CSV] Tasa de muestreo ~ {hz:.2f} Hz en últimas {len(tw)} filas")
     # muestra breve
     print("[CSV] Muestra (últimas 2 filas):")
     for r in rows[-2:]:
-        print({
-            k: r.get(k)
-            for k in (
-                "v_kmh",
-                "Regulator",
-                "VirtualBrake",
-                "VirtualEngineBrakeControl",
-                "BrakePipePressureBAR",
-            )
-        })
+        print(
+            {
+                k: r.get(k)
+                for k in (
+                    "v_kmh",
+                    "Regulator",
+                    "VirtualBrake",
+                    "VirtualEngineBrakeControl",
+                    "BrakePipePressureBAR",
+                )
+            }
+        )
 
 
 def analyze_events(path):

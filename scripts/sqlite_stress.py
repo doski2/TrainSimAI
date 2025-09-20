@@ -1,10 +1,14 @@
-"""Small SQLite stress tool to simulate concurrent writers and readers.
+"""
+Small SQLite stress tool to simulate concurrent writers and readers.
 
 Usage (local):
-    python -m scripts.sqlite_stress --db tmp_run.db --writers 4 --readers 2 --duration 5 --interval 0.01
+    python -m scripts.sqlite_stress \
+        --db tmp_run.db --writers 4 --readers 2 --duration 5 --interval 0.01
 
-It will write a simple telemetry row repeatedly and perform reads. Results are summarized to stdout and optionally written to an output JSON.
+It writes telemetry rows and performs reads; results are summarized to stdout and
+optionally written to an output JSON.
 """
+
 from __future__ import annotations
 import argparse
 import sqlite3
@@ -25,8 +29,10 @@ def writer_thread(db_path: str, stop_at: float, stats: dict, tid: int, interval:
         cur.execute("PRAGMA busy_timeout=5000")
     except Exception:
         pass
-    # ensure table
-    cur.execute("""CREATE TABLE IF NOT EXISTS telemetry (t_wall REAL, odom_m REAL, speed_kph REAL)""")
+    # ensure table (short SQL on one line but within limit)
+    cur.execute(
+        "CREATE TABLE IF NOT EXISTS telemetry (t_wall REAL, odom_m REAL, speed_kph REAL)"
+    )
     conn.commit()
     while time.time() < stop_at:
         try:
@@ -35,9 +41,9 @@ def writer_thread(db_path: str, stop_at: float, stats: dict, tid: int, interval:
             speed = random.random() * 120.0
             cur.execute("INSERT INTO telemetry (t_wall, odom_m, speed_kph) VALUES (?, ?, ?)", (ts, odom, speed))
             conn.commit()
-            stats['writes'] += 1
+            stats["writes"] += 1
         except Exception:
-            stats['write_errors'] += 1
+            stats["write_errors"] += 1
             time.sleep(0.001)
         time.sleep(interval)
     conn.close()
@@ -56,9 +62,9 @@ def reader_thread(db_path: str, stop_at: float, stats: dict, interval: float):
         try:
             cur.execute("SELECT count(*) FROM telemetry")
             _ = cur.fetchone()
-            stats['reads'] += 1
+            stats["reads"] += 1
         except Exception:
-            stats['read_errors'] += 1
+            stats["read_errors"] += 1
             time.sleep(0.001)
         time.sleep(interval)
     conn.close()
@@ -93,8 +99,9 @@ def main(argv=None):
     for th in ths:
         th.join(timeout=1)
     Path(args.out).parent.mkdir(parents=True, exist_ok=True)
-    Path(args.out).write_text(json.dumps(stats), encoding='utf-8')
+    Path(args.out).write_text(json.dumps(stats), encoding="utf-8")
     print(json.dumps(stats, indent=2))
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()

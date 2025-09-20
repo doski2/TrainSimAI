@@ -4,16 +4,16 @@ import pytest
 import pandas as pd
 
 
-@pytest.mark.skipif(
-    False, reason="always run; will skip internally if helper not present"
-)
+@pytest.mark.skipif(False, reason="always run; will skip internally if helper not present")
 def test_dist_from_getdata_probes_alignment(tmp_path: Path):
     # 1) DataFrame de ejemplo (como run.csv) con t_wall
-    df = pd.DataFrame({
-        "t_wall": [99.0, 100.0, 101.0, 105.0, 110.0],
-        "odom_m": [0, 10, 20, 30, 40],
-        "v_kmh": [0, 5, 10, 20, 25],
-    })
+    df = pd.DataFrame(
+        {
+            "t_wall": [99.0, 100.0, 101.0, 105.0, 110.0],
+            "odom_m": [0, 10, 20, 30, 40],
+            "v_kmh": [0, 5, 10, 20, 25],
+        }
+    )
 
     # 2) events.jsonl con eventos *normalizados* getdata_next_limit
     ev_path = tmp_path / "events.jsonl"

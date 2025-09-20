@@ -17,6 +17,6 @@ def test_render_prom_file(tmp_path: Path, monkeypatch):
     assert "trainsim_db_connect_ok" in text
     assert "trainsim_db_can_write" in text
     # connect ok -> value 1
-    assert "trainsim_db_connect_ok{db=\"/tmp/fake.db\"} 1" in text
+    assert 'trainsim_db_connect_ok{db="/tmp/fake.db"} 1' in text
     # write failed -> value 0
-    assert "trainsim_db_can_write{db=\"/tmp/fake.db\"} 0" in text
+    assert 'trainsim_db_can_write{db="/tmp/fake.db"} 0' in text

@@ -19,4 +19,3 @@ def test_overspeed_guard_monotonic():
     assert overspeed_guard(101.4, 100.0, delta_kph=1.5) == 0.0
     # sobrepasa
     assert overspeed_guard(105.0, 100.0, delta_kph=1.5) > 0.0
-

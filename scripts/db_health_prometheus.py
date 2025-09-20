@@ -6,6 +6,7 @@ from storage import db_check
 import json
 import os
 import socket
+import time
 
 
 def _read_control_status(path: str | Path) -> dict:
@@ -34,7 +35,20 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
         f.write(f'trainsim_db_connect_ok{{db="{db_path}",instance="{instance}",mode="{mode}"}} {conn_ok}\n')
         f.write("# HELP trainsim_db_can_write DB accepts a write (1=ok,0=fail)\n")
         f.write("# TYPE trainsim_db_can_write gauge\n")
-        f.write(f'trainsim_db_can_write{{db="{db_path}",instance="{instance}",mode="{mode}"}} {write_ok}\n')
+        can_write_line = (
+            f'trainsim_db_can_write{{db="{db_path}",instance="{instance}",'
+            f'mode="{mode}"}} {write_ok}\n'
+        )
+        f.write(can_write_line)
+        # export DB retry counter if available (fallback to 0)
+        retries = 0
+        try:
+            retries = int(res.get("retries", {}).get("count", 0))
+        except Exception:
+            retries = 0
+        f.write("# HELP trainsim_db_retry_count_total Number of DB retry attempts seen during checks\n")
+        f.write("# TYPE trainsim_db_retry_count_total counter\n")
+        f.write(f'trainsim_db_retry_count_total{{db="{db_path}",instance="{instance}",mode="{mode}"}} {retries}\n')
         # Export control status metrics if available
         cs = _read_control_status(Path("data/control_status.json"))
         if cs:
@@ -42,25 +56,91 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
             lct = cs.get("last_command_time")
             lat = cs.get("last_ack_time")
             lcv = cs.get("last_command_value")
-            f.write("# HELP trainsim_control_last_command_timestamp last command epoch timestamp (s)\n")
+            stale = cs.get("stale")
+            emergency = cs.get("emergency")
+            # telemetry age: prefer cs['last_telemetry_time'] if present
+            last_telemetry = cs.get("last_telemetry_time") or cs.get("last_telemetry")
+            now = time.time()
+            telem_age = None
+            try:
+                if last_telemetry is not None:
+                    telem_age = now - float(last_telemetry)
+            except Exception:
+                telem_age = None
+            f.write(
+                "# HELP trainsim_control_last_command_timestamp last command epoch timestamp (s)\n"
+            )
             f.write("# TYPE trainsim_control_last_command_timestamp gauge\n")
             try:
                 if lct is not None:
-                    f.write(f"trainsim_control_last_command_timestamp{{instance=\"{instance}\",mode=\"{mode}\"}} {float(lct)}\n")
+                    f.write(
+                        f'trainsim_control_last_command_timestamp{{instance="{instance}",mode="{mode}"}} {float(lct)}\n'
+                    )
             except Exception:
                 pass
-            f.write("# HELP trainsim_control_last_ack_timestamp last ack epoch timestamp (s)\n")
+            f.write(
+                "# HELP trainsim_control_last_ack_timestamp last ack epoch timestamp (s)\n"
+            )
             f.write("# TYPE trainsim_control_last_ack_timestamp gauge\n")
             try:
                 if lat is not None:
-                    f.write(f"trainsim_control_last_ack_timestamp{{instance=\"{instance}\",mode=\"{mode}\"}} {float(lat)}\n")
+                    ack_line = (
+                        f'trainsim_control_last_ack_timestamp{{instance="{instance}",mode="{mode}"}} '
+                        f"{float(lat)}\n"
+                    )
+                    f.write(ack_line)
+            except Exception:
+                pass
+            # command latency (time since last command)
+            f.write("# HELP trainsim_control_command_latency_seconds Time since last command was issued (s)\n")
+            f.write("# TYPE trainsim_control_command_latency_seconds gauge\n")
+            try:
+                if lct is not None:
+                    latency_val = now - float(lct)
+                    latency_line = (
+                        f'trainsim_control_command_latency_seconds{{instance="{instance}",mode="{mode}"}} '
+                        f"{latency_val}\n"
+                    )
+                    f.write(latency_line)
+            except Exception:
+                pass
+            # telemetry age
+            f.write("# HELP trainsim_control_telemetry_age_seconds Age of last telemetry sample (s)\n")
+            f.write("# TYPE trainsim_control_telemetry_age_seconds gauge\n")
+            try:
+                if telem_age is not None:
+                    telem_line = (
+                        f'trainsim_control_telemetry_age_seconds{{instance="{instance}",mode="{mode}"}} '
+                        f"{float(telem_age)}\n"
+                    )
+                    f.write(telem_line)
             except Exception:
                 pass
             f.write("# HELP trainsim_control_last_command_value last command value (0..1)\n")
             f.write("# TYPE trainsim_control_last_command_value gauge\n")
             try:
                 if lcv is not None:
-                    f.write(f"trainsim_control_last_command_value{{instance=\"{instance}\",mode=\"{mode}\"}} {float(lcv)}\n")
+                    lcv_line = (
+                        f'trainsim_control_last_command_value{{instance="{instance}",mode="{mode}"}} '
+                        f"{float(lcv)}\n"
+                    )
+                    f.write(lcv_line)
+            except Exception:
+                pass
+            # control status: 0=ok,1=stale,2=emergency
+            f.write("# HELP trainsim_control_status 0=ok,1=stale,2=emergency\n")
+            f.write("# TYPE trainsim_control_status gauge\n")
+            try:
+                status_val = 0
+                if emergency:
+                    status_val = 2
+                elif stale:
+                    status_val = 1
+                status_line = (
+                    f'trainsim_control_status{{instance="{instance}",mode="{mode}"}} '
+                    f"{int(status_val)}\n"
+                )
+                f.write(status_line)
             except Exception:
                 pass
 
@@ -68,7 +148,11 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
 def main(argv: list[str] | None = None) -> int:
     p = argparse.ArgumentParser(prog="db_health_prometheus")
     p.add_argument("db", nargs="?", default="data/run.db", help="SQLite DB path")
-    p.add_argument("--out", default="/var/lib/node_exporter/textfile_collector/trainsim_db.prom", help="Output file for Prometheus textfile collector")
+    p.add_argument(
+        "--out",
+        default="/var/lib/node_exporter/textfile_collector/trainsim_db.prom",
+        help="Output file for Prometheus textfile collector",
+    )
     args = p.parse_args(argv)
     render_prom_file(args.db, args.out)
     # exit code 0 always (metrics file reflects state)

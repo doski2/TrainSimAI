@@ -40,8 +40,8 @@ class RDStub:
             p = Path("data/rd_ack.json")
             p.parent.mkdir(parents=True, exist_ok=True)
             entry = {"ts": datetime.utcnow().timestamp(), "value": float(v)}
-            tmp = p.with_suffix('.tmp')
-            tmp.write_text(json.dumps(entry), encoding='utf-8')
+            tmp = p.with_suffix(".tmp")
+            tmp.write_text(json.dumps(entry), encoding="utf-8")
             tmp.replace(p)
         except Exception:
             pass
@@ -56,8 +56,8 @@ class RDStub:
             p = Path("data/rd_ack.json")
             p.parent.mkdir(parents=True, exist_ok=True)
             entry = {"ts": datetime.utcnow().timestamp(), "value": float(v)}
-            tmp = p.with_suffix('.tmp')
-            tmp.write_text(json.dumps(entry), encoding='utf-8')
+            tmp = p.with_suffix(".tmp")
+            tmp.write_text(json.dumps(entry), encoding="utf-8")
             tmp.replace(p)
         except Exception:
             pass

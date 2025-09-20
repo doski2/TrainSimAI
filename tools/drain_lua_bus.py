@@ -150,4 +150,3 @@ if __name__ == "__main__":  # pragma: no cover
 
     code = _main(Path.cwd())
     sys.exit(code)
-

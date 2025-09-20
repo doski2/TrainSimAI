@@ -193,17 +193,18 @@ class FakeListener:
     """
 
     special_fields: Dict[str, str] = {
-        '!Coordinates': 'get_current_coordinates',
-        '!FuelLevel': 'get_current_fuel_level',
-        '!Gradient': 'get_current_gradient',
-        '!Heading': 'get_current_heading',
-        '!IsInTunnel': 'get_current_is_in_tunnel',
-        '!LocoName': 'get_loco_name',
-        '!Time': 'get_current_time',
+        "!Coordinates": "get_current_coordinates",
+        "!FuelLevel": "get_current_fuel_level",
+        "!Gradient": "get_current_gradient",
+        "!Heading": "get_current_heading",
+        "!IsInTunnel": "get_current_is_in_tunnel",
+        "!LocoName": "get_loco_name",
+        "!Time": "get_current_time",
     }
 
     def __init__(self, raildriver: Any, interval: float = 0.5) -> None:
         import collections
+
         self.interval = float(interval)
         self.raildriver = raildriver
         self.current_data = collections.defaultdict(lambda: None)
@@ -220,6 +221,7 @@ class FakeListener:
 
     def _main_iteration(self) -> None:
         import copy
+
         self.iteration += 1
         self.previous_data = copy.copy(self.current_data)
         # Controles

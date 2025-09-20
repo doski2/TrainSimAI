@@ -45,6 +45,7 @@ class BrakingConfig:
     - coast_band_kph: banda muerta para mantener velocidad sin frenar [km/h].
     - min_target_kph: objetivo mínimo para evitar cero absoluto por ruido [km/h].
     """
+
     margin_kph: float = 3.0
     max_service_decel: float = 0.7
     reaction_time_s: float = 0.6

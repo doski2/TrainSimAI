@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Pequeño script para forzar llamadas al stub RD y verificar que se registran."""
+
 from __future__ import annotations
 
 import time
@@ -12,10 +13,10 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 
-
 def main():
     # Import the stub after ensuring repo root is on sys.path
     import importlib
+
     stub = importlib.import_module("runtime.raildriver_stub")
     rd = getattr(stub, "rd")
 
@@ -30,5 +31,5 @@ def main():
     print("Hecho")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

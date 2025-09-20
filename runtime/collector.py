@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
 import functools
 import json
@@ -21,7 +21,9 @@ from runtime.events_bus import normalize
 # Small, reusable retry decorator for transient failures.
 # Usage: decorate small IO functions that may fail transiently. Keeps defaults
 # conservative; tests override delays to be fast.
-def retry_on_exception(max_attempts: int = 3, base_delay: float = 0.1, max_delay: float = 2.0, exceptions: tuple = (Exception,)):
+def retry_on_exception(
+    max_attempts: int = 3, base_delay: float = 0.1, max_delay: float = 2.0, exceptions: tuple = (Exception,)
+):
     """Return a decorator that retries the wrapped callable on exception.
 
     - max_attempts: total attempts (including the first)
@@ -53,6 +55,7 @@ def retry_on_exception(max_attempts: int = 3, base_delay: float = 0.1, max_delay
         return wrapper
 
     return decorator
+
 
 # Archivos de salida
 CSV_PATH = os.environ.get("RUN_CSV_PATH", os.path.join("data", "runs", "run.csv"))
@@ -136,7 +139,7 @@ def run(
         R = 6371000.0
         dlat = radians(lat2 - lat1)
         dlon = radians(lon2 - lon1)
-        a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+        a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
         return 2 * R * asin(math.sqrt(max(0.0, a)))
 
     # Seguimiento de último anuncio de límite (snapshot crudo)
@@ -161,7 +164,13 @@ def run(
         odom_m = row.get("odom_m")
         speed_kph = row.get("speed_kph")
 
-        if isinstance(lat, (int, float)) and isinstance(lon, (int, float)) and prev_t is not None and prev_lat is not None and prev_lon is not None:
+        if (
+            isinstance(lat, (int, float))
+            and isinstance(lon, (int, float))
+            and prev_t is not None
+            and prev_lat is not None
+            and prev_lon is not None
+        ):
             dt = max(1e-3, t_wall - prev_t)
             d = _haversine_m(float(prev_lat), float(prev_lon), float(lat), float(lon))
             # descartar picos imposibles (>150 m en dt de 0.2 s ~ >2700 km/h)
@@ -216,7 +225,7 @@ def run(
                     break
                 except Exception as e:
                     if attempt < sqlite_retry_count - 1:
-                        delay = sqlite_retry_delay * (2 ** attempt)
+                        delay = sqlite_retry_delay * (2**attempt)
                         time.sleep(delay)
                     else:
                         print(f"[collector] SQLite insert failed after {sqlite_retry_count} attempts: {e}")

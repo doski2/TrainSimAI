@@ -19,11 +19,13 @@ CANDIDATE_MODULES = [
     "rd",
 ]
 
+
 def looks_like_rd(obj: Any) -> bool:
     try:
         return any(hasattr(obj, m) for m in (METHODS_THROTTLE + METHODS_BRAKE))
     except Exception:
         return False
+
 
 def score_name(name: str) -> int:
     n = name.lower()
@@ -35,17 +37,19 @@ def score_name(name: str) -> int:
         score += 2
     return score
 
+
 def try_import(mod_name: str):
     try:
         return importlib.import_module(mod_name)
     except Exception:
         return None
 
+
 def best_candidate(extra_modules: List[str]) -> Tuple[Optional[str], str]:
     specs: List[Tuple[int, str, str]] = []  # (score, spec, kind)
     modules = []
     seen = set()
-    for m in (extra_modules or []):
+    for m in extra_modules or []:
         if m and m not in seen:
             modules.append(m)
             seen.add(m)
@@ -83,15 +87,17 @@ def best_candidate(extra_modules: List[str]) -> Tuple[Optional[str], str]:
     _, spec, kind = specs[0]
     return spec, kind
 
+
 def write_rd_provider(spec: str, path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     content = (
-        '@echo off\n'
-        'REM Archivo generado por tools\\detect_rd.py\n'
+        "@echo off\n"
+        "REM Archivo generado por tools\\detect_rd.py\n"
         f'set "TSC_RD={spec}"\n'
-        'echo [rd_provider] TSC_RD=%TSC_RD%\n'
+        "echo [rd_provider] TSC_RD=%TSC_RD%\n"
     )
     path.write_text(content, encoding="utf-8")
+
 
 def main() -> int:
     ap = argparse.ArgumentParser(description="Detecta automaticamente el proveedor RailDriver (TSC_RD).")
@@ -101,15 +107,18 @@ def main() -> int:
 
     spec, kind = best_candidate(args.modules)
     if not spec:
-        print("[detect_rd] No se encontro ningun objeto/factory RD visible. Pasa --modules paquete.modulo si lo conoces.")
+        print(
+            "[detect_rd] No se encontro ningun objeto/factory RD visible. Pasa --modules paquete.modulo si lo conoces."
+        )
         return 2
 
-    print(f"[detect_rd] RECOMENDADO: set \"TSC_RD={spec}\"  ({kind})")
+    print(f'[detect_rd] RECOMENDADO: set "TSC_RD={spec}"  ({kind})')
     if args.write:
         out = Path("scripts") / "env" / "rd_provider.bat"
         write_rd_provider(spec, out)
         print(f"[detect_rd] Escrito {out}")
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())

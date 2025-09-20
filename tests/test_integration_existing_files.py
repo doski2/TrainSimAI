@@ -48,4 +48,3 @@ def test_run_dist_has_column_if_present():
     assert "dist_next_limit_m" in df.columns
     # Debe haber al menos un valor numérico
     assert df["dist_next_limit_m"].notna().any()
-

@@ -35,4 +35,3 @@ def test_reader_handles_semicolon_and_limits(tmp_path: Path):
         )
     fields, rows = vr.read_csv(str(p))
     assert "v_kmh" in (fields or []) and rows[-1]["Regulator"] == "0.1"
-

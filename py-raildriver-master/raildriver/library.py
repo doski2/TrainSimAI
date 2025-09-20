@@ -20,14 +20,13 @@ VALUE_MAX = 2
 
 
 class RailDriver(object):
-
     # ctypes.CDLL handle loaded from raildriver.dll; None until __init__ completes
     dll: Optional[Any] = None
 
     _restypes = {
-        'GetControllerList': ctypes.c_char_p,
-        'GetLocoName': ctypes.c_char_p,
-        'GetControllerValue': ctypes.c_float,
+        "GetControllerList": ctypes.c_char_p,
+        "GetLocoName": ctypes.c_char_p,
+        "GetControllerValue": ctypes.c_float,
     }
 
     def __init__(self, dll_location=None):
@@ -39,30 +38,30 @@ class RailDriver(object):
         """
         if not dll_location:
             if sys.platform != "win32" or winreg is None:
-                raise EnvironmentError('Automatic discovery of raildriver.dll requires Windows registry (win32).')
-            steam_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, 'Software\\Valve\\Steam')
-            steam_path = winreg.QueryValueEx(steam_key, 'SteamPath')[0]
-            railworks_path = os.path.join(steam_path, 'steamApps', 'common', 'railworks', 'plugins')
-            dll_location = os.path.join(railworks_path, 'raildriver.dll')
+                raise EnvironmentError("Automatic discovery of raildriver.dll requires Windows registry (win32).")
+            steam_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Software\\Valve\\Steam")
+            steam_path = winreg.QueryValueEx(steam_key, "SteamPath")[0]
+            railworks_path = os.path.join(steam_path, "steamApps", "common", "railworks", "plugins")
+            dll_location = os.path.join(railworks_path, "raildriver.dll")
             if not os.path.isfile(dll_location):
-                raise EnvironmentError('Unable to automatically locate raildriver.dll.')
+                raise EnvironmentError("Unable to automatically locate raildriver.dll.")
         self.dll = ctypes.cdll.LoadLibrary(dll_location)
         # Configure ctypes return types
         for function_name, restype in self._restypes.items():
             getattr(self._get_dll(), function_name).restype = restype
 
     def __repr__(self):
-        return 'raildriver.RailDriver: {}'.format(self.dll)
+        return "raildriver.RailDriver: {}".format(self.dll)
 
     def get_controller_index(self, name):
         for idx, n in self.get_controller_list():
             if n == name:
                 return idx
-        raise ValueError('Controller index not found for {}'.format(name))
+        raise ValueError("Controller index not found for {}".format(name))
 
     def _get_dll(self):
         if self.dll is None:
-            raise RuntimeError('RailDriver DLL is not loaded. Instantiate RailDriver correctly.')
+            raise RuntimeError("RailDriver DLL is not loaded. Instantiate RailDriver correctly.")
         return self.dll
 
     def get_controller_list(self):
@@ -80,7 +79,7 @@ class RailDriver(object):
         ret_str = self._get_dll().GetControllerList().decode()
         if not ret_str:
             return []
-        return enumerate(ret_str.split('::'))
+        return enumerate(ret_str.split("::"))
 
     def get_controller_value(self, index_or_name, value_type):
         """
@@ -169,7 +168,7 @@ class RailDriver(object):
         ret_str = self._get_dll().GetLocoName().decode()
         if not ret_str:
             return
-        return ret_str.split('.:.')
+        return ret_str.split(".:.")
 
     def get_max_controller_value(self, index_or_name):
         """

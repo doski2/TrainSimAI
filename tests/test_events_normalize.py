@@ -18,4 +18,3 @@ def test_normalize_stop():
     n = normalize({"type": "stop_begin", "station": "X", "time": 3.0})
     assert n["type"] in ("stop_begin", "stop_end")
     assert n["station"] == "X"
-

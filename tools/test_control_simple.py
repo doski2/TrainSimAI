@@ -18,6 +18,7 @@ def test_basic_functionality() -> bool:
     # Test 1: Imports básicos
     try:
         import sqlite3
+
         print("✅ sqlite3 importado correctamente")
     except ImportError as e:
         print(f"❌ Error importando sqlite3: {e}")
@@ -27,7 +28,7 @@ def test_basic_functionality() -> bool:
     db_path = Path("data/run.db")
     if db_path.exists():
         print(f"✅ Base de datos encontrada: {db_path}")
-        size_mb = db_path.stat().st_size / (1024*1024)
+        size_mb = db_path.stat().st_size / (1024 * 1024)
         print(f"   Tamaño: {size_mb:.2f} MB")
     else:
         print(f"❌ Base de datos no encontrada: {db_path}")
@@ -58,7 +59,7 @@ def test_imports() -> None:
         ("logging", "logging"),
         ("time", "time"),
         ("json", "json"),
-        ("argparse", "argparse")
+        ("argparse", "argparse"),
     ]
 
     for module_name, import_name in imports_to_test:
@@ -96,12 +97,7 @@ def test_simple_control_loop() -> bool:
                         """)
                         row = cursor.fetchone()
                         if row:
-                            return {
-                                'rowid': row[0],
-                                't_wall': row[1], 
-                                'odom_m': row[2],
-                                'speed_kph': row[3]
-                            }
+                            return {"rowid": row[0], "t_wall": row[1], "odom_m": row[2], "speed_kph": row[3]}
                 except Exception as e:
                     print(f"Error leyendo telemetría: {e}")
                 return None
@@ -113,10 +109,10 @@ def test_simple_control_loop() -> bool:
                 for i in range(iterations):
                     data = self.read_last_telemetry()
                     if data:
-                        age = time.time() - data['t_wall'] if data['t_wall'] else 9999
-                        print(f"  Iteración {i+1}: speed={data['speed_kph']} kph, age={age:.1f}s")
+                        age = time.time() - data["t_wall"] if data["t_wall"] else 9999
+                        print(f"  Iteración {i + 1}: speed={data['speed_kph']} kph, age={age:.1f}s")
                     else:
-                        print(f"  Iteración {i+1}: Sin datos")
+                        print(f"  Iteración {i + 1}: Sin datos")
                     time.sleep(1)
 
         # Ejecutar test

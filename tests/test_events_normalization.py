@@ -19,4 +19,3 @@ def test_normalize_getdata_next_limit_maps_meta():
     assert "meta" in out
     assert out["meta"]["to"] == pytest.approx(70.0)
     assert out["meta"]["dist_m"] == pytest.approx(3601.0)
-

@@ -4,7 +4,7 @@ from runtime.control_loop import ControlLoop
 
 
 def test_ack_timeout_triggers_emergency():
-    cl = ControlLoop(source='csv', run_csv='data/runs/run.csv', ack_timeout_s=0.05)
+    cl = ControlLoop(source="csv", run_csv="data/runs/run.csv", ack_timeout_s=0.05)
     # simulate sending a command
     cl.apply_brake_command(0.7)
     # immediately, no ack -> emergency should not yet be set

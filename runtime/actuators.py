@@ -7,16 +7,27 @@ import importlib
 from datetime import datetime
 
 METHODS_THROTTLE = (
-    "set_throttle", "write_throttle", "setThrottle",
-    "setCombinedThrottle", "setCombinedThrottleBrake",
-    "set_throttle_notch", "set_notch_throttle",
+    "set_throttle",
+    "write_throttle",
+    "setThrottle",
+    "setCombinedThrottle",
+    "setCombinedThrottleBrake",
+    "set_throttle_notch",
+    "set_notch_throttle",
 )
 METHODS_BRAKE = (
-    "set_brake", "write_brake", "setBrake",
-    "setTrainBrake", "setCombinedBrake", "setDynamicBrake",
-    "set_brake_notch", "set_notch_brake",
-    "applyBrake", "apply_brake",
+    "set_brake",
+    "write_brake",
+    "setBrake",
+    "setTrainBrake",
+    "setCombinedBrake",
+    "setDynamicBrake",
+    "set_brake_notch",
+    "set_notch_brake",
+    "applyBrake",
+    "apply_brake",
 )
+
 
 def _all_objs(env: Dict[str, Any]):
     for k, v in env.items():
@@ -24,6 +35,7 @@ def _all_objs(env: Dict[str, Any]):
         if inspect.ismodule(v) or inspect.isfunction(v) or inspect.isclass(v):
             continue
         yield k, v
+
 
 def scan_for_rd(locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]) -> Tuple[Optional[Any], str]:
     """Busca el objeto RailDriver. Primero por alias comunes; luego escanea todo en busca de un objeto con método conocido."""
@@ -41,6 +53,7 @@ def scan_for_rd(locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]) -> Tu
                 continue
     # Si no se encuentra nada, retornar explícitamente
     return None, ""
+
 
 def load_rd_from_spec(spec: Optional[str]) -> Tuple[Optional[Any], str]:
     """
@@ -61,7 +74,10 @@ def load_rd_from_spec(spec: Optional[str]) -> Tuple[Optional[Any], str]:
         # En cualquier error, devolvemos tupla nula y texto vacío
         return None, ""
 
-def get_plan(locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]) -> Tuple[Optional[float], Optional[float], str, str]:
+
+def get_plan(
+    locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]
+) -> Tuple[Optional[float], Optional[float], str, str]:
     """Recupera (throttle, brake) planificados sin referenciar nombres fijos, evitando F821."""
     cand_t = ("throttle_cmd", "throttle_plan", "cmd_throttle", "throttle")
     cand_b = ("brake_cmd", "brake_plan", "cmd_brake", "brake")
@@ -82,6 +98,7 @@ def get_plan(locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]) -> Tuple
         b_src = "locals"
     return t, b, t_src, b_src
 
+
 def _clamp01(x: Optional[float]) -> Optional[float]:
     if x is None:
         return None
@@ -93,6 +110,7 @@ def _clamp01(x: Optional[float]) -> Optional[float]:
         return float(x)
     except Exception:
         return None
+
 
 def send_to_rd(rd_obj: Any, throttle: Optional[float], brake: Optional[float]) -> Tuple[bool, bool, str, str]:
     """
@@ -112,7 +130,12 @@ def send_to_rd(rd_obj: Any, throttle: Optional[float], brake: Optional[float]) -
     if hasattr(rd_obj, "setCombinedThrottleBrake"):
         try:
             rd_obj.setCombinedThrottleBrake(thr if thr is not None else 0.0, brk if brk is not None else 0.0)
-            return True if thr is not None else False, True if brk is not None else False, "setCombinedThrottleBrake", "setCombinedThrottleBrake"
+            return (
+                True if thr is not None else False,
+                True if brk is not None else False,
+                "setCombinedThrottleBrake",
+                "setCombinedThrottleBrake",
+            )
         except Exception:
             pass
     # Throttle
@@ -136,6 +159,7 @@ def send_to_rd(rd_obj: Any, throttle: Optional[float], brake: Optional[float]) -
                 except Exception:
                     continue
     return thr_sent, brk_sent, thr_m, brk_m
+
 
 def debug_trace(enabled: bool, msg: str) -> None:
     if not enabled:

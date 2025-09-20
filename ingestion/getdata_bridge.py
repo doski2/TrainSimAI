@@ -1,4 +1,4 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 import os
 import time
 import json
@@ -83,7 +83,7 @@ def run(
 
         # Tiempos (opcional)
         sim_time = fnum(p.get("SimulationTime"))  # segundos
-        tod = fnum(p.get("TimeOfDay"))            # segundos desde medianoche
+        tod = fnum(p.get("TimeOfDay"))  # segundos desde medianoche
         t_game = sim_time if sim_time is not None else tod
 
         # 1) Cambio de límite actual → speed_limit_change
@@ -93,13 +93,15 @@ def run(
             if last_current_kph is None:
                 last_current_kph = cur_kph
             elif abs(cur_kph - last_current_kph) > 1e-3:
-                emit({
-                    "type": "speed_limit_change",
-                    "prev": last_current_kph,
-                    "next": cur_kph,
-                    "t_game": t_game,
-                    "source": "getdata_current",
-                })
+                emit(
+                    {
+                        "type": "speed_limit_change",
+                        "prev": last_current_kph,
+                        "next": cur_kph,
+                        "t_game": t_game,
+                        "source": "getdata_current",
+                    }
+                )
                 last_current_kph = cur_kph
 
         # 2) Próximo límite + distancia → getdata_next_limit (sondear cada ~2s)
@@ -115,13 +117,15 @@ def run(
                     or (last_next_dist is None or abs(nxt_dist - last_next_dist) >= 25)
                     or (now - last_probe_ts) > 1.0
                 ):
-                    emit({
-                        "type": "getdata_next_limit",
-                        "kph": nxt_kph,
-                        "dist_m": nxt_dist,
-                        "t_game": t_game,
-                        "source": "getdata_probe",
-                    })
+                    emit(
+                        {
+                            "type": "getdata_next_limit",
+                            "kph": nxt_kph,
+                            "dist_m": nxt_dist,
+                            "t_game": t_game,
+                            "source": "getdata_probe",
+                        }
+                    )
                     last_next_kph = nxt_kph
                     last_next_dist = nxt_dist
                     last_probe_ts = now

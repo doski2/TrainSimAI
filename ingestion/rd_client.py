@@ -506,6 +506,7 @@ def _make_rd():
     except Exception:
         # Sin RD real disponible -> cae al stub (solo log, no actúa en cabina)
         from runtime.raildriver_stub import rd as _stub  # type: ignore
+
         return _stub
 
     # Índices por nombre ya los tienes en RDClient

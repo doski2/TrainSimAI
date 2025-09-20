@@ -23,7 +23,7 @@ class CSVLogger:
     def __init__(
         self,
         path: str | os.PathLike,
-    delimiter: str = ";",
+        delimiter: str = ";",
         base_order: Optional[Iterable[str]] = None,
     ) -> None:
         self.path = Path(path).resolve()
