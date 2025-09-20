@@ -320,7 +320,7 @@ def main() -> None:
         "--mode",
         choices=["full", "brake", "advisory"],
         default=os.environ.get("TSC_MODE", "brake"),
-        help="Modo de actuación: full=acel+freno, brake=solo freno (tú aceleras), advisory=solo consejo (no envía comandos). Por defecto, %ENV:TSC_MODE% o 'brake'.",
+        help="Modo de actuación: full=acel+freno, brake=solo freno (tú aceleras), advisory=solo consejo (no envía comandos). Por defecto, TSC_MODE env var o 'brake'.",
     )
     args = p.parse_args()
     mode_guard = ModeGuard(args.mode)
