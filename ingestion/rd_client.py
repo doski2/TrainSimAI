@@ -13,14 +13,19 @@ import logging
 # Optional Prometheus metrics (do not hard-fail if library missing)
 try:
     from prometheus_client import Counter  # type: ignore
-
     RD_SET_CALLS = Counter("trainsim_rd_set_calls_total", "Number of RD set calls")
     RD_ERRORS = Counter("trainsim_rd_errors_total", "Number of RD errors")
     RD_MISSING = Counter("trainsim_rd_missing_control_total", "Number of attempts to set missing controls")
+    RD_ACKS = Counter("trainsim_rd_acks_total", "Number of RD acks observed")
+    RD_RETRIES = Counter("trainsim_rd_retries_total", "Number of RD retries due to missing ack or errors")
+    RD_EMERGENCY = Counter("trainsim_rd_emergencystops_total", "Number of emergency stops triggered")
 except Exception:
     RD_SET_CALLS = None  # type: ignore
     RD_ERRORS = None  # type: ignore
     RD_MISSING = None  # type: ignore
+    RD_ACKS = None  # type: ignore
+    RD_RETRIES = None  # type: ignore
+    RD_EMERGENCY = None  # type: ignore
 
 
 def _ensure_raildriver_on_path() -> None:
@@ -284,6 +289,33 @@ class RDClient:
             # Si cambia de locomotora y hay controles ausentes, se puede re-suscribir más tarde
             pass
 
+        # Safety runtime state
+        # per-control last send timestamp for rate limiting
+        self._last_send_ts: Dict[str, float] = {}
+        # per-control retry counts
+        self._retry_counts: Dict[str, int] = {}
+        # limits per control name (optional; fake driver exposes min/max)
+        self._limits: Dict[str, tuple[float, float]] = {}
+        # default rate limit (commands per second)
+        self._rate_limit_hz = float(os.getenv("TSC_RATE_LIMIT_HZ", "5"))
+        # ack/retry policy
+        self._ack_timeout = float(os.getenv("TSC_ACK_TIMEOUT", "0.5"))
+        self._max_retries = int(os.getenv("TSC_MAX_RETRIES", "3"))
+        # emergency flag
+        self._emergency_active = False
+
+        # Populate limits from driver if possible
+        try:
+            for name in self.ctrl_index_by_name:
+                try:
+                    mi = float(self.rd.get_min_controller_value(name))  # type: ignore[attr-defined]
+                    ma = float(self.rd.get_max_controller_value(name))  # type: ignore[attr-defined]
+                    self._limits[name] = (mi, ma)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
     # --- Lectura mediante iteración única del listener ---
     def _snapshot(self) -> Dict[str, Any]:
         """Fuerza una iteración del listener y devuelve una copia del estado actual."""
@@ -291,6 +323,70 @@ class RDClient:
         self.listener._main_iteration()  # type: ignore[attr-defined]
         cd = getattr(self.listener, "current_data", None)
         return dict(cd) if cd else {}
+
+    # --- Safety helpers ---
+    def clamp_command(self, name: str, value: float) -> float:
+        """Clamp a value using detected limits or default 0..1."""
+        limits = self._limits.get(name)
+        if limits:
+            lo, hi = limits
+            try:
+                return float(max(lo, min(hi, value)))
+            except Exception:
+                return float(value)
+        # fallback clamp to [0,1]
+        try:
+            return 0.0 if value <= 0.0 else (1.0 if value >= 1.0 else float(value))
+        except Exception:
+            return float(value)
+
+    def _allow_rate(self, name: str) -> bool:
+        """Simple rate limiter: allow at most _rate_limit_hz commands per second per control."""
+        now = time.time()
+        last = self._last_send_ts.get(name)
+        if last is None:
+            self._last_send_ts[name] = now
+            return True
+        if now - last < (1.0 / max(1.0, self._rate_limit_hz)):
+            return False
+        self._last_send_ts[name] = now
+        return True
+
+    def _record_retry(self, name: str) -> None:
+        self._retry_counts[name] = self._retry_counts.get(name, 0) + 1
+        if RD_RETRIES is not None:
+            RD_RETRIES.inc()
+
+    def emergency_stop(self, reason: str = "unknown") -> None:
+        """Trigger emergency stop: idempotent and records event."""
+        if self._emergency_active:
+            return
+        self._emergency_active = True
+        try:
+            # set maximum brake via any available brake control
+            for br in ("TrainBrakeControl", "TrainBrake", "VirtualBrake"):
+                idx = self.ctrl_index_by_name.get(br)
+                if idx is not None:
+                    try:
+                        self.rd.set_controller_value(idx, 1.0)  # type: ignore[attr-defined]
+                    except Exception:
+                        pass
+            # persist state to JSON for operator takeover
+            try:
+                import json
+
+                Path("data").mkdir(parents=True, exist_ok=True)
+                Path("data/control_status.json").write_text(
+                    json.dumps({"mode": "manual", "takeover": True, "reason": reason, "ts": time.time()}),
+                    encoding="utf-8",
+                )
+            except Exception:
+                pass
+            if RD_EMERGENCY is not None:
+                RD_EMERGENCY.inc()
+        except Exception:
+            if RD_ERRORS is not None:
+                RD_ERRORS.inc()
 
     # --- Lecturas puntuales ---
     def read_specials(self) -> Dict[str, Any]:
@@ -617,13 +713,62 @@ def _make_rd():
                 if RD_MISSING is not None:
                     RD_MISSING.inc()
                 return
+            name = next((n for n in brake_candidates if n in self.c.ctrl_index_by_name), None)
+            # rate limit (use fallback if client missing helper)
+            allow_rate_fn = getattr(self.c, "_allow_rate", None)
+            use_rate = allow_rate_fn is not None and hasattr(self.c, "_last_send_ts")
+            if name and use_rate and callable(allow_rate_fn):
+                try:
+                    if not allow_rate_fn(name):
+                        try:
+                            self.c.logger.debug("rate-limited brake command %s", name)
+                        except Exception:
+                            pass
+                        return
+                except Exception:
+                    # If the client method exists but is misconfigured, don't block commands
+                    pass
             try:
                 if RD_SET_CALLS is not None:
                     RD_SET_CALLS.inc()
-                self.c.rd.set_controller_value(brake_idx, _clamp01(v))  # type: ignore[attr-defined]
+                # Use client clamp_command only if the client has initialized runtime state
+                if hasattr(self.c, "_limits") and hasattr(self.c, "clamp_command"):
+                    clamp_fn = getattr(self.c, "clamp_command")
+                else:
+                    def _fallback_clamp(n, x):
+                        return _clamp01(x)
+
+                    clamp_fn = _fallback_clamp
+                val = clamp_fn(name or "VirtualBrake", v)
+                self.c.rd.set_controller_value(brake_idx, float(val))  # type: ignore[attr-defined]
+                # optimistic ack accounting (real ack detection not implemented)
+                if RD_ACKS is not None:
+                    RD_ACKS.inc()
             except Exception:
                 if RD_ERRORS is not None:
                     RD_ERRORS.inc()
+                # record retry and possibly escalate (use fallbacks)
+                # only call record_retry when the client initialized retry state
+                if hasattr(self.c, "_retry_counts") and hasattr(self.c, "_record_retry"):
+                    record_retry = getattr(self.c, "_record_retry")
+                else:
+                    def _fallback_record(n):
+                        return None
+
+                    record_retry = _fallback_record
+                record_retry(name or "brake")
+                retry_counts = getattr(self.c, "_retry_counts", {})
+                max_retries = getattr(self.c, "_max_retries", 3)
+                if retry_counts.get(name or "brake", 0) > max_retries:
+                    try:
+                        self.c.logger.error("max retries exceeded for brake %s -> emergency", name)
+                    except Exception:
+                        pass
+                    emergency_fn = getattr(self.c, "emergency_stop", lambda r: None)
+                    try:
+                        emergency_fn("max_retries_brake")
+                    except Exception:
+                        pass
                 pass
 
         def setThrottle(self, v: float) -> None:  # alias
@@ -634,13 +779,57 @@ def _make_rd():
                 if RD_MISSING is not None:
                     RD_MISSING.inc()
                 return
+            name = next((n for n in throttle_candidates if n in self.c.ctrl_index_by_name), None)
+            allow_rate_fn = getattr(self.c, "_allow_rate", None)
+            use_rate = allow_rate_fn is not None and hasattr(self.c, "_last_send_ts")
+            if name and use_rate and callable(allow_rate_fn):
+                try:
+                    if not allow_rate_fn(name):
+                        try:
+                            self.c.logger.debug("rate-limited throttle command %s", name)
+                        except Exception:
+                            pass
+                        return
+                except Exception:
+                    # If the client method exists but is misconfigured, don't block commands
+                    pass
             try:
                 if RD_SET_CALLS is not None:
                     RD_SET_CALLS.inc()
-                self.c.rd.set_controller_value(thr_idx, _clamp01(v))  # type: ignore[attr-defined]
+                if hasattr(self.c, "_limits") and hasattr(self.c, "clamp_command"):
+                    clamp_fn = getattr(self.c, "clamp_command")
+                else:
+                    def _fallback_clamp(n, x):
+                        return _clamp01(x)
+
+                    clamp_fn = _fallback_clamp
+                val = clamp_fn(name or "Throttle", v)
+                self.c.rd.set_controller_value(thr_idx, float(val))  # type: ignore[attr-defined]
+                if RD_ACKS is not None:
+                    RD_ACKS.inc()
             except Exception:
                 if RD_ERRORS is not None:
                     RD_ERRORS.inc()
+                if hasattr(self.c, "_retry_counts") and hasattr(self.c, "_record_retry"):
+                    record_retry = getattr(self.c, "_record_retry")
+                else:
+                    def _fallback_record(n):
+                        return None
+
+                    record_retry = _fallback_record
+                record_retry(name or "throttle")
+                retry_counts = getattr(self.c, "_retry_counts", {})
+                max_retries = getattr(self.c, "_max_retries", 3)
+                if retry_counts.get(name or "throttle", 0) > max_retries:
+                    try:
+                        self.c.logger.error("max retries exceeded for throttle %s -> emergency", name)
+                    except Exception:
+                        pass
+                    emergency_fn = getattr(self.c, "emergency_stop", lambda r: None)
+                    try:
+                        emergency_fn("max_retries_throttle")
+                    except Exception:
+                        pass
                 pass
 
     return RDShim(client)
