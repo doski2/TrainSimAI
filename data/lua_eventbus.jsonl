@@ -9877,3 +9877,4 @@
 {"type": "getdata_hello", "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RailWorks\\plugins\\GetData.txt"}
 {"type": "getdata_hello", "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RailWorks\\plugins\\GetData.txt"}
 {"type": "getdata_hello", "path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\RailWorks\\plugins\\GetData.txt"}
+{"kph":40,"dist_m":30,"type":"getdata_next_limit"}

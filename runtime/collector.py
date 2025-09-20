@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import functools
 import json
 import os
 import time
@@ -15,6 +16,43 @@ try:
 except Exception:
     RunStore = None  # type: ignore
 from runtime.events_bus import normalize
+
+
+# Small, reusable retry decorator for transient failures.
+# Usage: decorate small IO functions that may fail transiently. Keeps defaults
+# conservative; tests override delays to be fast.
+def retry_on_exception(max_attempts: int = 3, base_delay: float = 0.1, max_delay: float = 2.0, exceptions: tuple = (Exception,)):
+    """Return a decorator that retries the wrapped callable on exception.
+
+    - max_attempts: total attempts (including the first)
+    - base_delay: initial backoff in seconds
+    - max_delay: maximum backoff cap
+    - exceptions: tuple of exception classes that trigger a retry
+    """
+
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            attempt = 0
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except exceptions:
+                    attempt += 1
+                    if attempt >= max_attempts:
+                        # re-raise the last exception
+                        raise
+                    # exponential backoff (2^(attempt-1))
+                    delay = min(max_delay, base_delay * (2 ** (attempt - 1)))
+                    try:
+                        time.sleep(delay)
+                    except Exception:
+                        # if sleep is interrupted, continue to retry loop
+                        pass
+
+        return wrapper
+
+    return decorator
 
 # Archivos de salida
 CSV_PATH = os.environ.get("RUN_CSV_PATH", os.path.join("data", "runs", "run.csv"))

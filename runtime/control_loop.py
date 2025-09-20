@@ -66,7 +66,8 @@ class ControlLoop:
         self.db_path = db_path
         self.run_csv = run_csv
         self.running = False
-        self.stale_data_threshold = 10.0
+        # umbral en segundos para considerar la telemetría obsoleta
+        self.stale_data_threshold = float(kwargs.get("stale_data_threshold", 10.0))
         self.consecutive_failures = 0
         self.max_failures_before_fallback = 5
         self.logger = logging.getLogger(__name__)
@@ -174,6 +175,33 @@ class ControlLoop:
         except (ValueError, TypeError):
             return False
 
+    def is_data_stale(self, data) -> bool:
+        """Heurística para identificar telemetría obsoleta.
+
+        Devuelve True si:
+        - falta `t_wall` en `data`, o
+        - la edad calculada (time.time() - t_wall) > stale_data_threshold, o
+        - el dt desde la última lectura (si `self._last_t_seen`) excede 2×threshold (salto temporal).
+        """
+        if not data or 't_wall' not in data:
+            return True
+        try:
+            t = float(data['t_wall'])
+        except (ValueError, TypeError):
+            return True
+        age = time.time() - t
+        if age > self.stale_data_threshold:
+            return True
+        # detectar saltos grandes si tenemos última marca
+        last = getattr(self, '_last_t_seen', None)
+        if last is not None:
+            dt = abs(t - last)
+            if dt > (2.0 * self.stale_data_threshold):
+                return True
+        # actualizar marca
+        self._last_t_seen = t
+        return False
+
     def run(self):
         self.logger.info(f"Starting control loop - Source: {self.source}, Hz: {self.hz}")
         self.running = True
@@ -183,7 +211,21 @@ class ControlLoop:
                 start_time = time.time()
                 data = self.read_telemetry()
                 if data:
-                    self._process_control_data(data)
+                    # detectar datos obsoletos (stale-data)
+                    try:
+                        if self.is_data_stale(data):
+                            age = time.time() - float(data.get("t_wall", time.time()))
+                            self.logger.warning(f"stale-data detected: age={age:.1f}s > threshold={self.stale_data_threshold}s — skipping processing")
+                            # aumentar contador de fallos y saltar procesamiento y envíos
+                            self.consecutive_failures += 1
+                            # opcional: aquí podríamos emitir un evento al EVT_PATH o CSV
+                            # pero para mínima intrusión sólo registramos en logs
+                        else:
+                            self.consecutive_failures = 0
+                            self._process_control_data(data)
+                    except Exception as e:
+                        self.logger.error(f"Error during stale-data check: {e}")
+                        # prevenir que un fallo en la comprobación detenga el loop
                 else:
                     self.logger.debug("No telemetry data available")
                 elapsed = time.time() - start_time
@@ -231,10 +273,17 @@ def tail_csv_last_row(path: Path, max_bytes: int = 1_000_000) -> dict | None:
     lines = [ln for ln in chunk.splitlines() if ln.strip()]
     if len(lines) < 2:
         return None
-    # asumimos CSV con comas para cabecera simple
-    header = [h.strip().lower() for h in lines[0].split(",")]
+    # detectar delimitador en la cabecera: preferir coma, si no existe usar punto y coma
+    header_line = lines[0].strip()
+    if "," in header_line:
+        delim = ","
+    elif ";" in header_line:
+        delim = ";"
+    else:
+        delim = ","
+    header = [h.strip().lower() for h in header_line.split(delim)]
     for last in reversed(lines[1:]):
-        fields = [c.strip() for c in last.split(",")]
+        fields = [c.strip() for c in last.split(delim)]
         if len(fields) == len(header):
             return dict(zip(header, fields))
     return None
@@ -278,6 +327,25 @@ def _brake_distance_m(v_kph: float, v_target_kph: float, a_mps2: float, t_react_
     return d_react + d_brake
 
 
+def _map_a_req_to_brake(a_req: float, a_service: float) -> float:
+    """Mapea una aceleración requerida (a_req, m/s2) a un mando de freno en [0,1].
+
+    Se preserva la ganancia suave usada en el control: 0.4 + 0.9*(a_req / max(0.1,a_service)),
+    y se limita a [0,1]. Esta función facilita pruebas unitarias.
+    """
+    try:
+        a_req_v = float(a_req)
+        a_srv = max(0.1, float(a_service))
+    except Exception:
+        return 0.0
+    val = 0.4 + 0.9 * (a_req_v / a_srv)
+    if val < 0.0:
+        return 0.0
+    if val > 1.0:
+        return 1.0
+    return val
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
     p.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
@@ -315,6 +383,10 @@ def main() -> None:
     # Overrides CLI (opcionales)
     p.add_argument("--A", type=float, default=None)
     p.add_argument("--margin-kph", type=float, default=None)
+    p.add_argument("--rise-per-s", type=float, default=None, help="Velocidad de subida del freno (por defecto en código)")
+    p.add_argument("--fall-per-s", type=float, default=None, help="Velocidad de bajada del freno (por defecto en código)")
+    p.add_argument("--startup-gate-s", type=float, default=None, help="Segundos de compuerta de arranque (por defecto 4.0)")
+    p.add_argument("--hold-s", type=float, default=None, help="Segundos de retención mínima al encender freno (por defecto 0.5)")
     p.add_argument("--reaction", type=float, default=None)
     p.add_argument(
         "--mode",
@@ -462,6 +534,8 @@ def main() -> None:
     period = 1.0 / max(0.5, float(args.hz))
     t0 = time.perf_counter()
     t_next = t0
+    # Control debug guard (set TSC_CTRL_DEBUG=1 to enable per-cycle debug prints)
+    ctrl_debug = os.getenv("TSC_CTRL_DEBUG", "0") in ("1", "true", "True")
 
     # Puntero para tail del bus (empezar desde el final si se pidió --start-events-from-end)
     bus_pos = 0
@@ -686,7 +760,8 @@ def main() -> None:
         limits_valid = (active_limit_kph is not None and not math.isnan(float(active_limit_kph))) or (
             next_limit_kph is not None and dist_next_limit_m is not None
         )
-        startup_gate_s = 4.0  # ventana inicial durante la que el control se mantiene inactivo
+        # compuerta de arranque: puede sobreescribirse por CLI
+        startup_gate_s = float(args.startup_gate_s) if args.startup_gate_s is not None else 4.0
         control_ready = (t_since >= startup_gate_s) and bool(limits_valid)
 
         # 4) objetivo y PID (lógica 'approach' conservadora basada en distancia física)
@@ -772,7 +847,7 @@ def main() -> None:
                 if a_req > 0.70 * a_service:
                     phase = "BRAKE"
                     # mapear (a_req / a_service) a mando de freno (0..1), con ganancia suave
-                    br = max(br, min(1.0, 0.4 + 0.9 * (a_req / max(0.1, a_service))))
+                    br = max(br, _map_a_req_to_brake(a_req, a_service))
         except Exception:
             pass
         # decidir si hemos entrado en fase de frenada recientemente
@@ -823,14 +898,18 @@ def main() -> None:
         if desired_brake > 0.05:
             on = True
         # no frenar en crucero si no estamos en aproximación y vamos por debajo de cruise + 0.3
-        if not approach_active and float(v_for_control_kph) <= (float(cruise_kph) + 0.3):
+        # pero no cancelar el encendido si un guard físico/por distancia ya pide freno
+        if desired_brake <= 0.05 and (not approach_active and float(v_for_control_kph) <= (float(cruise_kph) + 0.3)):
             on = False
-        # compuerta de arranque: hasta que el control esté "ready", NUNCA frenes
-        if not bool(control_ready):
+        # compuerta de arranque: hasta que el control esté "ready" NO se permite
+        # frenar por control, pero si un guard físico/por distancia ya pide freno
+        # (desired_brake > 0.05) lo permitimos. Esto evita que la compuerta inicial
+        # suprima órdenes de emergencia o guardias físicos.
+        if not bool(control_ready) and desired_brake <= 0.05:
             on = False
 
         now = float(row_out["t_wall"])
-        hold_s = 0.5
+        hold_s = float(args.hold_s) if args.hold_s is not None else 0.5
         hold_until = _brake_hold_until
         if on:
             # al encender, garantizamos 0.5 s de retención mínima
@@ -842,16 +921,63 @@ def main() -> None:
 
         # rampa suave de mando hacia el objetivo (desired si on, 0 si off)
         brake_cmd_local = _brake_cmd
-        dt_br = max(1e-3, now - _last_t_for_brake)
+        # Proteger contra _last_t_for_brake no inicializado o mezcla de orígenes de tiempo
+        # Si _last_t_for_brake <= 0 (valor inicial) o la diferencia es irracionalmente grande,
+        # usamos el periodo de control como fallback para evitar saltos gigantes en la rampa.
+        try:
+            if _last_t_for_brake is None or _last_t_for_brake <= 0.0:
+                dt_br = period
+            else:
+                raw_dt = now - _last_t_for_brake
+                # Si raw_dt es <=0 (muestras fuera de orden) o excesivamente grande (>10s), clamp
+                if raw_dt <= 0.0 or raw_dt > 10.0:
+                    dt_br = period
+                else:
+                    dt_br = raw_dt
+        except Exception:
+            dt_br = period
+        dt_br = max(1e-3, float(dt_br))
         _last_t_for_brake = now
-        rise_per_s = 1.2   # velocidad de subida
-        fall_per_s = 2.0   # velocidad de bajada
+        rise_per_s = float(args.rise_per_s) if args.rise_per_s is not None else 1.2
+        fall_per_s = float(args.fall_per_s) if args.fall_per_s is not None else 2.0
         target_brake = desired_brake if on else 0.0
+        if ctrl_debug:
+            try:
+                print(f"[CTRL-DBG] t={now:.3f} err_kph={err_kph:.3f} desired_brake(before_ramp)={desired_brake:.3f} on={on}")
+            except Exception:
+                pass
         delta = target_brake - brake_cmd_local
         if delta >= 0.0:
             brake_cmd_local = min(1.0, brake_cmd_local + min(delta, rise_per_s * dt_br))
         else:
             brake_cmd_local = max(0.0, brake_cmd_local + max(delta, -fall_per_s * dt_br))
+        if ctrl_debug:
+            try:
+                print(f"[CTRL-DBG] t={now:.3f} brake_cmd(after_ramp)={brake_cmd_local:.3f} dt_br={dt_br:.3f}")
+            except Exception:
+                pass
+        # Trazas compactas por ciclo para diagnóstico (JSONL en data/ctrl_cycle.log)
+        if ctrl_debug:
+            try:
+                cycle = {
+                    "t_wall": now,
+                    "err_kph": float(err_kph),
+                    "desired_brake": float(desired_brake),
+                    "on": bool(on),
+                    "approach_active": bool(approach_active),
+                    "v_for_control_kph": float(v_for_control_kph),
+                    "cruise_kph": float(cruise_kph),
+                    "control_ready": bool(control_ready),
+                    "hold_until": float(_brake_hold_until),
+                    "last_t_for_brake": float(_last_t_for_brake),
+                    "dt_br": float(dt_br),
+                    "brake_cmd_after": float(brake_cmd_local),
+                }
+                Path("data").mkdir(parents=True, exist_ok=True)
+                with Path("data/ctrl_cycle.log").open("a", encoding="utf-8") as _f:
+                    _f.write(json.dumps(cycle) + "\n")
+            except Exception:
+                pass
         _brake_cmd = brake_cmd_local
 
         # aplicar en modo brake (la IA no toca throttle en brake/advisory)
@@ -871,6 +997,11 @@ def main() -> None:
         if rd_obj is None:
             debug_trace(debug_on, f"NO-RD mode={mode_guard.mode} t_plan={throttle_cmd} b_plan={brake_cmd}")
         else:
+            if ctrl_debug:
+                try:
+                    print(f"[CTRL-DBG] about to send_to_rd rd={rd_name} mode={mode_guard.mode} send(t={t_send},b={b_send})")
+                except Exception:
+                    pass
             thr_ok, brk_ok, thr_m, brk_m = send_to_rd(rd_obj, t_send, b_send)
             debug_trace(
                 debug_on,

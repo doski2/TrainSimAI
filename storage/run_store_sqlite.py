@@ -9,13 +9,46 @@ from typing import Optional, Dict, Any, Tuple
 class RunStore:
     """SQLite store para telemetría en vivo (WAL, 1 writer + N readers)."""
 
-    def __init__(self, db_path: str | Path = "data/run.db") -> None:
+    def __init__(
+        self,
+        db_path: str | Path = "data/run.db",
+        busy_timeout_ms: int = 5000,
+        synchronous: int | str = "NORMAL",
+    ) -> None:
         self.path = Path(db_path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
+        # abrir con check_same_thread=False para permitir accesos desde hilos diferentes
         self.con = sqlite3.connect(self.path.as_posix(), isolation_level=None, check_same_thread=False)
-        self.con.execute("PRAGMA journal_mode=WAL")
-        self.con.execute("PRAGMA synchronous=NORMAL")
+        # aplicar pragmas de robustez
+        # journal_mode: preferimos WAL para múltiples lectores concurrentes
+        try:
+            self.con.execute("PRAGMA journal_mode=WAL")
+        except Exception:
+            pass
+        # busy_timeout en milisegundos
+        try:
+            self.con.execute(f"PRAGMA busy_timeout={int(busy_timeout_ms)}")
+        except Exception:
+            pass
+        # synchronous puede ser int 0..3 o texto como NORMAL/EXTRA
+        try:
+            if isinstance(synchronous, int):
+                self.con.execute(f"PRAGMA synchronous={int(synchronous)}")
+            else:
+                self.con.execute(f"PRAGMA synchronous={str(synchronous)}")
+        except Exception:
+            pass
         self._ensure_schema()
+
+    def get_pragmas(self) -> Dict[str, Any]:
+        """Leer algunos pragmas de la conexión para pruebas/diagnóstico."""
+        cur = self.con.execute("PRAGMA journal_mode")
+        journal = cur.fetchone()[0] if cur is not None else None
+        cur = self.con.execute("PRAGMA synchronous")
+        sync = cur.fetchone()[0] if cur is not None else None
+        cur = self.con.execute("PRAGMA busy_timeout")
+        busy = cur.fetchone()[0] if cur is not None else None
+        return {"journal_mode": journal, "synchronous": sync, "busy_timeout": busy}
 
     def _ensure_schema(self) -> None:
         self.con.execute(
