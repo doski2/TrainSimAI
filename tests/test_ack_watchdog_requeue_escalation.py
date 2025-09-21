@@ -11,6 +11,7 @@ def test_ack_watchdog_retries_and_escalates(monkeypatch, tmp_path):
     """Ensure the ack watchdog requeues attempts, records retries and escalates to emergency
     when the fake driver never applies the value.
     """
+    # NOTE: test created to validate ack-watchdog behaviour (no-op comment to allow PR creation)
     monkeypatch.chdir(tmp_path)
 
     rd = FakeRailDriver()
