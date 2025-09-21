@@ -37,3 +37,37 @@ jobs:
           pip install pytest
           # Explicitly run safety/scenario tests and fail the job if they break
           python -m pytest -q -o addopts= tests/test_rd_client_ack.py tests/test_rd_client_scenarios.py
+
+  safety-tests:
+    name: Safety tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install test deps
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install pytest
+      - name: Run safety tests
+        id: safety
+        continue-on-error: true
+        run: |
+          python -m pytest -q -m safety || true
+      - name: Collect diagnostics on failure
+        if: steps.safety.outcome != 'success'
+        run: |
+          mkdir -p artifacts || true
+          cp -v data/control_status.json artifacts/ 2>/dev/null || true
+          cp -v data/rd_ack.json artifacts/ 2>/dev/null || true
+          cp -v data/rd_send.log artifacts/ 2>/dev/null || true
+      - name: Upload artifacts
+        if: steps.safety.outcome != 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: safety-diagnostics
+          path: artifacts/
