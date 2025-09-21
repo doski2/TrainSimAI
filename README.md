@@ -1,6 +1,7 @@
 # TrainSimAI (TSC)
 
 [![CI](https://github.com/doski2/TrainSimAI/actions/workflows/ci-mypy-safety.yml/badge.svg)](https://github.com/doski2/TrainSimAI/actions/workflows/ci-mypy-safety.yml)
+[![Not-real tests](https://github.com/doski2/TrainSimAI/actions/workflows/not-real.yml/badge.svg)](https://github.com/doski2/TrainSimAI/actions/workflows/not-real.yml)
 
 Autopiloto/analizador para **Train Simulator Classic** (Windows, Python 64-bit).
 Pipeline: **GetData → Bus LUA → Collector → Distancia próximo límite → Frenada v0 (offline/online)** con trazas y tests.
@@ -243,6 +244,8 @@ data/        # Artefactos locales (no versionar)
 Hemos añadido un pequeño helper para ejecutar los tests localmente con modos claros:
 
 - `scripts/run-tests.ps1` — PowerShell wrapper con modos `all`, `not-real` (por defecto) y `real`.
+
+Consulta `docs/REAL_RUNNER_SETUP.md` para instrucciones sobre cómo configurar un runner self-hosted para ejecutar los tests `real`.
 
 Uso (PowerShell):
 
