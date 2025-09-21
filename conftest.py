@@ -1,22 +1,22 @@
-#!/usr/bin/env python3
-"""Create a minimal SQLite `data/run.db` with a `telemetry` table and one row
-to allow tests that expect `data/run.db` to run in a fresh checkout.
-"""
-from __future__ import annotations
-
 import sqlite3
-from pathlib import Path
 import time
+from pathlib import Path
+import pytest
 
 
-def ensure_db(path: Path | str = "data/run.db") -> None:
-    p = Path(path)
+@pytest.fixture(autouse=True)
+def ensure_test_db():
+    """Ensure a minimal data/run.db exists for tests that expect it.
+
+    This fixture is autouse to avoid requiring tests to explicitly request it
+    (convenient for legacy tests that expect the file to be present).
+    """
+    p = Path("data/run.db")
     if p.exists():
         return
     p.parent.mkdir(parents=True, exist_ok=True)
     with sqlite3.connect(p) as conn:
         cur = conn.cursor()
-        # Minimal telemetry table used by tests
         cur.execute(
             """
             CREATE TABLE telemetry (
@@ -26,11 +26,6 @@ def ensure_db(path: Path | str = "data/run.db") -> None:
             )
             """
         )
-        # Insert a single recent row
         now = time.time()
         cur.execute("INSERT INTO telemetry (t_wall, odom_m, speed_kph) VALUES (?, ?, ?)", (now, 0.0, 0.0))
         conn.commit()
-
-
-if __name__ == "__main__":
-    ensure_db()

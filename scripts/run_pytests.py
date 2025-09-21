@@ -17,15 +17,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--pytest-args", nargs="*", help="Additional args passed to pytest")
     args = parser.parse_args(argv)
 
-    # Ensure minimal DB for tests that expect it when running not-real
-    if args.mode == "not-real":
-        try:
-            from scripts._ensure_test_db import ensure_db
-
-            ensure_db()
-        except Exception:
-            # best-effort; continue to pytest which may skip or fail
-            pass
+    # The test DB is created by an autouse fixture in conftest.py when needed.
 
     # Build pytest args
     py_args = []
