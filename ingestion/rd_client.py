@@ -368,6 +368,11 @@ class RDClient:
                     except Exception:
                         confirmed = False
                     if confirmed:
+                        # Clear retries and record metric
+                        try:
+                            self._clear_retries(name)
+                        except Exception:
+                            pass
                         if RD_ACKS is not None:
                             try:
                                 RD_ACKS.inc()
@@ -488,6 +493,15 @@ class RDClient:
         self._retry_counts[name] = self._retry_counts.get(name, 0) + 1
         if RD_RETRIES is not None:
             RD_RETRIES.inc()
+
+    def _clear_retries(self, name: str) -> None:
+        """Clear retry counter for a given control name (best-effort)."""
+        try:
+            if name in self._retry_counts:
+                # reset to zero (keep key for observability/debugging)
+                self._retry_counts[name] = 0
+        except Exception:
+            pass
 
     def emergency_stop(self, reason: str = "unknown") -> None:
         """Trigger emergency stop: idempotent and records event."""
@@ -759,6 +773,12 @@ class RDClient:
                         ok = False
 
                     if ok:
+                        # Clear retries and increment ack metric
+                        try:
+                            if name:
+                                outer._clear_retries(name)
+                        except Exception:
+                            pass
                         if RD_ACKS is not None:
                             RD_ACKS.inc()
                         return
@@ -815,9 +835,23 @@ class RDClient:
             from profiles import controls as _controls  # type: ignore
 
             out: List[str] = []
+            # First, include any aliases from the canonical mapping that exist on this loco
             for aliases in _controls.CONTROLS.values():
-                out.extend(aliases)
-            # Keep only aliases present in this locomotive's controller list
+                for a in aliases:
+                    if a in names:
+                        out.append(a)
+
+            # Also include any names that canonicalize to a known canonical control
+            # but may not be listed explicitly in CONTROLS (robustness for variants)
+            for n in names:
+                try:
+                    canon = _controls.canonicalize(n)
+                except Exception:
+                    canon = None
+                if canon is not None:
+                    # prefer the original name as present on the driver
+                    out.append(n)
+
             chosen = [n for n in out if n in names]
             if chosen:
                 return sorted(set(chosen))
