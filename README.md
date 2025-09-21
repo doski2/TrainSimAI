@@ -238,6 +238,31 @@ data/        # Artefactos locales (no versionar)
 
 ## Operaciones / Healthchecks (SQLite)
 
+## Tests (local)
+
+Hemos añadido un pequeño helper para ejecutar los tests localmente con modos claros:
+
+- `scripts/run-tests.ps1` — PowerShell wrapper con modos `all`, `not-real` (por defecto) y `real`.
+
+Uso (PowerShell):
+
+```powershell
+# ejecutar tests unitarios e integraciones que NO requieren hardware/DLL
+.\\\scripts\\run-tests.ps1
+
+# ejecutar explícitamente los tests que requieren RailDriver (asegúrate de
+# tener la DLL y variables de entorno configuradas: TSC_RD_DLL_DIR o RAILWORKS_PLUGINS)
+.\\\scripts\\run-tests.ps1 real
+
+# ejecutar toda la suite
+.\\\scripts\\run-tests.ps1 all
+```
+
+Notas:
+- `pytest.ini` en este repositorio establece por defecto `-m "real"` (histórico). El wrapper facilita ejecutar el modo más habitual local (`not-real`).
+- Si necesitas que adapte `tsc_sim.bat`/`tsc_real.bat` para invocar este wrapper o para documentar los requisitos del DLL, dímelo y lo añado.
+
+
 Para entornos de producción o integración continua es útil controlar parámetros de SQLite y disponer de un healthcheck sencillo.
 
 - Variables de entorno para tunear SQLite (coleccionista / RunStore):
