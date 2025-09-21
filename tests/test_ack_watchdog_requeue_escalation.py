@@ -16,10 +16,8 @@ def test_ack_watchdog_retries_and_escalates(monkeypatch, tmp_path):
 
     rd = FakeRailDriver()
     # short intervals and enabled watchdog for fast deterministic test
-    client = RDClient(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
-    # inject our fake driver and mapping
-    client.rd = rd
-    client.ctrl_index_by_name = {name: idx for idx, name in rd.get_controller_list()}
+    # inject fake RD to avoid instantiating the real RailDriver in CI
+    client = RDClient(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01, rd=rd)
 
     # make driver ignore sets (no ack)
     def _no_op(index_or_name, value):

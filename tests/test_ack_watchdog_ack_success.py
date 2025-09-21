@@ -12,9 +12,8 @@ def test_ack_watchdog_no_retry_on_ack(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
 
     rd = FakeRailDriver()
-    client = RDClient(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
-    client.rd = rd
-    client.ctrl_index_by_name = {name: idx for idx, name in rd.get_controller_list()}
+    # Inject fake RD to avoid real RailDriver discovery on CI
+    client = RDClient(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01, rd=rd)
 
     # normal set implementation: returns ack
     # shorten timeouts

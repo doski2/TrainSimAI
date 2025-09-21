@@ -11,10 +11,8 @@ def _make_client_with_fake(tmp_path) -> Tuple[RDClient, FakeRailDriver]:
     import os
 
     os.chdir(tmp_path)
-    client = RDClient(poll_dt=0.01, ack_watchdog=False)
     rd = FakeRailDriver()
-    client.rd = rd
-    client.ctrl_index_by_name = {name: idx for idx, name in rd.get_controller_list()}
+    client = RDClient(poll_dt=0.01, ack_watchdog=False, rd=rd)
     return client, rd
 
 

@@ -6,9 +6,8 @@ from ingestion.rd_client import RDClient
 def test_ack_recovery_before_max_retries(monkeypatch):
     """Driver delays applying value briefly; ack appears within retries and no emergency is triggered."""
     fake = FakeRailDriver()
-    client = RDClient(poll_dt=0.01)
-    client.rd = fake
-    client.ctrl_index_by_name = {name: idx for idx, name in fake.get_controller_list()}
+    client = RDClient(poll_dt=0.01, rd=fake)
+    # ctrl_index_by_name populated by attach_raildriver during construction
     client._ack_timeout = 0.05
     client._max_retries = 3
 
@@ -47,9 +46,8 @@ def test_ack_recovery_before_max_retries(monkeypatch):
 def test_transient_driver_errors_do_not_cause_emergency(monkeypatch):
     """Driver raises on first set then recovers; should not trigger emergency if within retries."""
     fake = FakeRailDriver()
-    client = RDClient(poll_dt=0.01)
-    client.rd = fake
-    client.ctrl_index_by_name = {name: idx for idx, name in fake.get_controller_list()}
+    client = RDClient(poll_dt=0.01, rd=fake)
+    # ctrl_index_by_name populated by attach_raildriver during construction
     client._ack_timeout = 0.05
     client._max_retries = 3
 

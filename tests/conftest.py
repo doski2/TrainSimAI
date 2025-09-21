@@ -1,3 +1,34 @@
+import pytest
+
+# Provide a small, safe fixture that returns the FakeRailDriver class from the
+# ingestion package. Tests can use `fake_rd` or `make_client` to obtain an
+# `RDClient` with the fake injected, preventing accidental construction of a
+# real RailDriver in CI.
+@pytest.fixture
+def fake_rd():
+    from ingestion.rd_fake import FakeRailDriver
+
+    return FakeRailDriver
+
+
+@pytest.fixture
+def make_client(fake_rd):
+    """Factory that constructs an RDClient with a FakeRailDriver instance.
+
+    Usage in tests:
+        client = make_client()
+        # or with custom args: client = make_client(poll_dt=0.1, ack_watchdog=True)
+    """
+
+    def _make(**kwargs):
+        from ingestion.rd_client import RDClient
+
+        rd_inst = fake_rd()
+        # ensure tests don't start the real exporter by default
+        kwargs.setdefault("ack_watchdog", False)
+        return RDClient(rd=rd_inst, **kwargs)
+
+    return _make
 import sys
 from pathlib import Path
 

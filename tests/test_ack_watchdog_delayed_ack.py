@@ -12,9 +12,7 @@ def test_ack_watchdog_clears_retries_when_ack_arrives(monkeypatch, tmp_path):
     monkeypatch.chdir(tmp_path)
 
     rd = FakeRailDriver()
-    client = RDClient(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
-    client.rd = rd
-    client.ctrl_index_by_name = {name: idx for idx, name in rd.get_controller_list()}
+    client = RDClient(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01, rd=rd)
 
     # Instead of modifying driver's set method, simulate that an external
     # process applies the requested value after a short delay (ACK arrival).

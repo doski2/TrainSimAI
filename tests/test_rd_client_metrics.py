@@ -6,9 +6,7 @@ from ingestion.rd_client import RDClient, RD_RETRIES, RD_EMERGENCY, RD_ACK_LATEN
 
 def test_metrics_presence_and_behavior(tmp_path):
     fake = FakeRailDriver()
-    client = RDClient(poll_dt=0.01)
-    client.rd = fake
-    client.ctrl_index_by_name = {name: idx for idx, name in fake.get_controller_list()}
+    client = RDClient(poll_dt=0.01, rd=fake)
     client._ack_timeout = 0.01
     client._max_retries = 1
 

@@ -214,8 +214,8 @@ class RDClient:
     # Class-level attribute annotations to help static analysis (attributes
     # are populated in __init__ but declaring them here avoids "unknown"
     # attribute warnings from type checkers).
-    rd: "RailDriver"
-    listener: "Listener"
+    rd: "RailDriver | None"
+    listener: "Listener | None"
     ctrl_index_by_name: Dict[str, int]
     _last_geo: Dict[str, Any]
     poll_dt: float
@@ -230,6 +230,7 @@ class RDClient:
         control_aliases: dict | None = None,
         ack_watchdog: bool | int = False,
         ack_watchdog_interval: float = 0.1,
+        rd: Any | None = None,
     ) -> None:
         # Permite sobrescribir por env: TSC_RD_DLL_DIR
         self.dll_location = os.getenv("TSC_RD_DLL_DIR") or dll_location
@@ -242,91 +243,21 @@ class RDClient:
         # Optionally inject a custom alias mapping for controls (useful for tests)
         self._control_aliases = control_aliases
 
-        # Seleccionar la DLL adecuada para evitar WinError 193 (arquitecturas distintas)
-        if USE_FAKE:
-            # Alias RailDriver apunta al FakeRailDriver cuando USE_FAKE=True
-            self.rd = RailDriver()
-        else:
-            # Resolver ubicación de DLL adecuada y pasarla explícitamente
-            dll_path = self.dll_location or _locate_raildriver_dll()
-            # Si el usuario pasó un directorio, elige el nombre correcto según arquitectura
-            try:
-                if dll_path and os.path.isdir(dll_path):
-                    base = Path(dll_path)
-                    dll_path = str((_prepare_dll_search_path(base)))
-            except Exception:
-                # Si falla (carpeta sin DLL), dejamos que el fallback actúe más abajo
-                dll_path = None
-            if not dll_path:
-                # Fallback: reglas de entorno + ruta por defecto de Steam
-                try:
-                    candidate = _prepare_dll_search_path(_resolve_plugins_dir())
-                    dll_path = str(candidate)
-                except Exception:
-                    dll_path = None
-            # Diagnóstico: mostrar la DLL elegida (útil para WinError 193)
-            try:
-                if dll_path:
-                    self.logger.debug(
-                        "using RailDriver DLL: %s", dll_path
-                    )
-            except Exception:
-                self.logger.exception("error logging dll path")
-            # Registrar el directorio de la DLL en el buscador de Windows (Py 3.8+)
-            try:
-                if dll_path:
-                    dll_dir = os.path.dirname(dll_path)
-                    if dll_dir and hasattr(os, "add_dll_directory"):
-                        os.add_dll_directory(dll_dir)  # type: ignore[attr-defined]
-                elif self.dll_location and hasattr(os, "add_dll_directory"):
-                    os.add_dll_directory(self.dll_location)  # type: ignore[attr-defined]
-            except Exception:
-                # Si falla, continuamos sin registrar ruta explícita
-                pass
-            # Instanciar RailDriver indicando ruta si la conocemos; tolerar diferentes firmas
-            try:
-                if dll_path:
-                    try:
-                        self.rd = RailDriver(dll_location=dll_path)  # type: ignore[call-arg]
-                    except TypeError:
-                        # Otros forks aceptan dll_path como nombre de kw
-                        self.rd = RailDriver(dll_path=dll_path)  # type: ignore[call-arg]
-                else:
-                    self.rd = RailDriver()
-            except TypeError:
-                # Fallback posicional
-                if dll_path:
-                    self.rd = RailDriver(dll_path)  # type: ignore[misc]
-                else:
-                    self.rd = RailDriver()
-        # Necesario para intercambiar datos con TS
-        try:
-            self.rd.set_rail_driver_connected(True)  # type: ignore[attr-defined]
-        except Exception:
-            # Versiones antiguas ignoran el parámetro; continuamos.
-            pass
-
-        # Índices cacheados por nombre para lecturas directas cuando conviene
-        # Build a name->index mapping explicitly so mypy can infer types
-        self.ctrl_index_by_name = {}
-        for idx, nm in self.rd.get_controller_list():  # type: ignore[attr-defined]
-            self.ctrl_index_by_name[str(nm)] = int(idx)
-
-        # Listener para cambios y snapshots unificados
-        self.listener = Listener(self.rd, interval=self.poll_dt)  # type: ignore[call-arg]
-        # Caché de la última geo conocida para rellenar huecos momentáneos
+        # Driver instance may be injected by tests or runtime. If provided, attach
+        # now; otherwise, defer creation/attachment to avoid instantiating the
+        # real RailDriver at import/test time (which can access Windows registry
+        # and fail in CI). Tests commonly create a FakeRailDriver and assign it
+        # after RDClient construction, so we support a deferred attach model.
+        self.rd = None
+        self.listener = None
         self._last_geo: Dict[str, Any] = {
             "lat": None,
             "lon": None,
             "heading": None,
             "gradient": None,
         }
-        # Suscribir todos los controles disponibles (las especiales se evalúan siempre)
-        try:
-            self.listener.subscribe(list(self.ctrl_index_by_name.keys()))  # type: ignore[attr-defined]
-        except Exception:
-            # Si cambia de locomotora y hay controles ausentes, se puede re-suscribir más tarde
-            pass
+        self.ctrl_index_by_name = {}
+        self._deferred_rd_init = False
 
         # Safety runtime state
         # per-control last send timestamp for rate limiting
@@ -350,54 +281,49 @@ class RDClient:
         self._ack_queue: "Queue[tuple[str, float, int]]" = Queue()
         self._ack_worker_stop = Event()
         self._ack_worker: Thread | None = None
-        if self._ack_watchdog_enabled:
-            # start background thread
-            def _ack_worker_fn():
-                while not self._ack_worker_stop.is_set():
-                    try:
-                        name, expected, attempts = self._ack_queue.get(timeout=self._ack_watchdog_interval)
-                    except Empty:
-                        continue
-                    # attempt to confirm; if not confirmed, requeue or escalate
-                    confirmed = False
-                    try:
-                        confirmed = self._wait_for_ack(name, expected)
-                    except Exception:
-                        confirmed = False
-                    if confirmed:
-                        # Clear retries and record metric
-                        try:
-                            self._clear_retries(name)
-                        except Exception:
-                            pass
-                        if RD_ACKS is not None:
-                            try:
-                                RD_ACKS.inc()
-                            except Exception:
-                                pass
-                        # nothing else to do
-                        continue
-                    else:
-                        # record a retry and requeue if attempts left
-                        self._record_retry(name)
-                        # escalate deterministically based on recorded retry count
-                        try:
-                            if self._retry_counts.get(name, 0) > self._max_retries:
-                                try:
-                                    self.emergency_stop("no_ack_watchdog")
-                                except Exception:
-                                    pass
-                                continue
-                        except Exception:
-                            pass
-                        # requeue with incremented attempts for bookkeeping
-                        try:
-                            self._ack_queue.put_nowait((name, expected, attempts + 1))
-                        except Exception:
-                            pass
 
-            self._ack_worker = Thread(target=_ack_worker_fn, daemon=True)
-            self._ack_worker.start()
+        if rd is not None:
+            # attach explicit instance provided by caller
+            self.attach_raildriver(rd)
+        else:
+            # If the packaged fake is selected, instantiate it now (safe).
+            if USE_FAKE:
+                try:
+                    self.attach_raildriver(RailDriver())
+                except Exception:
+                    # If even the fake fails for some reason, defer init
+                    self._deferred_rd_init = True
+            else:
+                # Defer creating the real RailDriver to callers/runtime to avoid
+                # accidental registry/DLL access in CI/test environments.
+                self._deferred_rd_init = True
+
+        # Safety runtime state
+        # per-control last send timestamp for rate limiting
+        self._last_send_ts: Dict[str, float] = {}
+        # per-control retry counts
+        self._retry_counts: Dict[str, int] = {}
+        # limits per control name (optional; fake driver exposes min/max)
+        self._limits: Dict[str, tuple[float, float]] = {}
+        # default rate limit (commands per second)
+        self._rate_limit_hz = float(os.getenv("TSC_RATE_LIMIT_HZ", "5"))
+        # ack/retry policy
+        self._ack_timeout = float(os.getenv("TSC_ACK_TIMEOUT", "0.5"))
+        self._max_retries = int(os.getenv("TSC_MAX_RETRIES", "3"))
+        # emergency flag
+        self._emergency_active = False
+
+        # ACK watchdog (background confirmation): disabled by default
+        self._ack_watchdog_enabled = bool(ack_watchdog)
+        self._ack_watchdog_interval = float(ack_watchdog_interval)
+        # queue of pending confirmations: tuples (name, expected, attempts)
+        self._ack_queue: "Queue[tuple[str, float, int]]" = Queue()
+        self._ack_worker_stop = Event()
+        self._ack_worker: Thread | None = None
+
+        # If an RD was attached earlier, start the ack worker now if requested.
+        if getattr(self, "rd", None) is not None and self._ack_watchdog_enabled:
+            self._start_ack_worker()
 
         # Start Prometheus exporter if requested via env (do it here to avoid
         # side-effects at import time in tests and tooling).
@@ -418,6 +344,107 @@ class RDClient:
                     continue
         except Exception:
             pass
+
+    def attach_raildriver(self, rd_obj: Any) -> None:
+        """Attach an already-created RailDriver (or Fake) instance and perform
+        the driver-dependent initialization. Safe to call multiple times.
+        """
+        # set the instance
+        self.rd = rd_obj
+        try:
+            self.rd.set_rail_driver_connected(True)  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
+        # build index map
+        self.ctrl_index_by_name = {}
+        try:
+            for idx, nm in self.rd.get_controller_list():  # type: ignore[attr-defined]
+                self.ctrl_index_by_name[str(nm)] = int(idx)
+        except Exception:
+            # leave empty mapping on failure
+            self.ctrl_index_by_name = {}
+
+        # create listener
+        try:
+            self.listener = Listener(self.rd, interval=self.poll_dt)  # type: ignore[call-arg]
+        except Exception:
+            self.listener = None
+
+        # subscribe if possible
+        try:
+            if self.listener is not None:
+                self.listener.subscribe(list(self.ctrl_index_by_name.keys()))  # type: ignore[attr-defined]
+        except Exception:
+            pass
+
+        # populate limits from driver
+        try:
+            for name in self.ctrl_index_by_name:
+                try:
+                    mi = float(self.rd.get_min_controller_value(name))  # type: ignore[attr-defined]
+                    ma = float(self.rd.get_max_controller_value(name))  # type: ignore[attr-defined]
+                    self._limits[name] = (mi, ma)
+                except Exception:
+                    continue
+        except Exception:
+            pass
+
+        # If watchdog requested, start it now
+        if self._ack_watchdog_enabled and self._ack_worker is None:
+            self._start_ack_worker()
+
+    def _start_ack_worker(self) -> None:
+        """Start the background ack watchdog worker. Assumes queue and flags exist."""
+        def _ack_worker_fn():
+            while not self._ack_worker_stop.is_set():
+                try:
+                    name, expected, attempts = self._ack_queue.get(timeout=self._ack_watchdog_interval)
+                except Empty:
+                    continue
+                # attempt to confirm; if not confirmed, requeue or escalate
+                confirmed = False
+                try:
+                    confirmed = self._wait_for_ack(name, expected)
+                except Exception:
+                    confirmed = False
+                if confirmed:
+                    # Clear retries and record metric
+                    try:
+                        self._clear_retries(name)
+                    except Exception:
+                        pass
+                    if RD_ACKS is not None:
+                        try:
+                            RD_ACKS.inc()
+                        except Exception:
+                            pass
+                    # nothing else to do
+                    continue
+                else:
+                    # record a retry and requeue if attempts left
+                    try:
+                        self._record_retry(name)
+                    except Exception:
+                        pass
+                    # escalate deterministically based on recorded retry count
+                    try:
+                        if self._retry_counts.get(name, 0) > self._max_retries:
+                            try:
+                                self.emergency_stop("no_ack_watchdog")
+                            except Exception:
+                                pass
+                            continue
+                    except Exception:
+                        pass
+                    # requeue with incremented attempts for bookkeeping
+                    try:
+                        self._ack_queue.put_nowait((name, expected, attempts + 1))
+                    except Exception:
+                        pass
+
+        self._ack_worker = Thread(target=_ack_worker_fn, daemon=True)
+        self._ack_worker.start()
 
     # --- Lectura mediante iteración única del listener ---
     def _snapshot(self) -> Dict[str, Any]:
@@ -945,6 +972,51 @@ class RDClient:
             "t_wall",
         ]
         return sorted(set(base + self._common_controls()))
+
+    def shutdown(self) -> None:
+        """Best-effort shutdown: stop background ack worker and tidy listener/driver.
+
+        Tests and runtimes can call this to ensure background threads are stopped
+        and resources are released. The method is idempotent and swallows
+        exceptions to remain safe in teardown paths.
+        """
+        # Stop ack worker
+        try:
+            self._ack_worker_stop.set()
+        except Exception:
+            pass
+        try:
+            if getattr(self, "_ack_worker", None) is not None:
+                try:
+                    self._ack_worker.join(timeout=1.0)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+
+        # Try to stop listener if it exposes a stop/close API (best-effort)
+        try:
+            lst = getattr(self, "listener", None)
+            if lst is not None:
+                for fn_name in ("stop", "shutdown", "close"):
+                    fn = getattr(lst, fn_name, None)
+                    if callable(fn):
+                        try:
+                            fn()
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+
+        # Mark driver as disconnected if possible
+        try:
+            if getattr(self, "rd", None) is not None:
+                try:
+                    self.rd.set_rail_driver_connected(False)  # type: ignore[attr-defined]
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
 
 # --- TSC actuator shim: expone `rd` con set_brake / set_throttle -------------

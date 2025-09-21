@@ -1,24 +1,11 @@
 haz test de todo ruff/flake
 corregir los fallos
-revisa el proyecto entero y dime si ves algo que cambiar y nos falta actualizar la documentacion siguiente paso
+revisa el proyecto entero y dime si ves algo que cambiar y nos falta actualizar la documentacion siguiente paso del proyecto
+
 
 podemos cerrar el tema frenado v0?-micro parches-probar session entera-
 revisar y borrar archivo cada uno por uno  algunos no se reinician se acumulan
 revisa lo que esta ignorado y dime si es correcto
-
-set TSC_PROFILE=profiles\BR146_ok4.json
-set TSC_RD=ingestion.rd_client:rd
-set TSC_RD_DEBUG=1
-set TSC_RD_LOG_RESET=1
-scripts\tsc_real.bat
-scripts\tsc_report.bat
-
-scripts\tsc_test.bat --rd-impl mi_paquete.mi_modulo:mi_objeto --save-rd-impl
-scripts\tsc_test.bat
-
-
-
-
 
 
     1.Nombres de controles no homogéneos.
