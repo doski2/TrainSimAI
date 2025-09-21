@@ -11,6 +11,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Validate runner (pre-check)
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\validate_real_runner.ps1
+        shell: powershell
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
