@@ -22,7 +22,10 @@ def test_ack_watchdog_retries_and_escalates(monkeypatch, tmp_path):
     client.ctrl_index_by_name = {name: idx for idx, name in rd.get_controller_list()}
 
     # make driver ignore sets (no ack)
-    rd.set_controller_value = lambda idx, v: None
+    def _no_op(index_or_name, value):
+        return None
+
+    rd.set_controller_value = _no_op
 
     # shorten timeouts for test speed
     client._ack_timeout = 0.02

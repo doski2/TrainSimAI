@@ -60,12 +60,9 @@ def _maybe_start_prometheus_exporter() -> None:
         # prometheus_client not available or import failed
         return
 
-# Start exporter eagerly when module imported so metrics become available.
-# This is opt-in only via TSC_PROMETHEUS_PORT and will silently no-op if
-# `prometheus_client` is not installed.
-
-
-_maybe_start_prometheus_exporter()
+# NOTE: Starting an HTTP exporter at module import can cause surprising side-effects
+# (server started on import). We prefer to start it explicitly when the runtime
+# is constructed (RDClient.__init__) so tests and importers aren't affected.
 
 
 def _ensure_raildriver_on_path() -> None:
@@ -402,6 +399,14 @@ class RDClient:
             self._ack_worker = Thread(target=_ack_worker_fn, daemon=True)
             self._ack_worker.start()
 
+        # Start Prometheus exporter if requested via env (do it here to avoid
+        # side-effects at import time in tests and tooling).
+        try:
+            _maybe_start_prometheus_exporter()
+        except Exception:
+            # don't fail __init__ if exporter fails
+            pass
+
         # Populate limits from driver if possible
         try:
             for name in self.ctrl_index_by_name:
@@ -527,10 +532,13 @@ class RDClient:
                 import json
 
                 Path("data").mkdir(parents=True, exist_ok=True)
-                Path("data/control_status.json").write_text(
+                # atomic write
+                tmp = Path("data") / f"control_status.json.tmp.{int(time.time())}"
+                tmp.write_text(
                     json.dumps({"mode": "manual", "takeover": True, "reason": reason, "ts": time.time()}),
                     encoding="utf-8",
                 )
+                tmp.replace(Path("data") / "control_status.json")
             except Exception:
                 pass
             if RD_EMERGENCY is not None:
@@ -798,8 +806,7 @@ class RDClient:
             row: Dict[str, Any] = self.read_specials()
             row.update(self.read_controls(common_ctrls))
             # Aliases and unified speedometer
-            if "Throttle" not in row and "Regulator" in row:
-                row["Throttle"] = row["Regulator"]
+            # Throttle alias already handled above; keep single mapping here.
             if "SpeedometerKPH" in row:
                 row["Speedometer"] = row["SpeedometerKPH"]
                 row["speed_unit"] = "kmh"
