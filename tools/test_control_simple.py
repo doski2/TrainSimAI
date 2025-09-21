@@ -24,8 +24,12 @@ def test_basic_functionality() -> None:
         print(f"❌ Error importando sqlite3: {e}")
         assert False, f"Error importando sqlite3: {e}"
 
-    # Test 2: Verificar archivo DB
-    db_path = Path("data/run.db")
+    # Test 2: Verificar archivo DB (resolver respecto a la raíz del repo para
+    # evitar fallos cuando pytest cambia el working dir durante la ejecución)
+    repo_root = Path(__file__).resolve().parent
+    # tools/ is at repo_root / 'tools', así que la raíz del repo es parent
+    repo_root = repo_root.parent
+    db_path = repo_root / "data" / "run.db"
     if db_path.exists():
         print(f"✅ Base de datos encontrada: {db_path}")
         size_mb = db_path.stat().st_size / (1024 * 1024)

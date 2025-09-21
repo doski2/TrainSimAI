@@ -60,12 +60,9 @@ def _maybe_start_prometheus_exporter() -> None:
         # prometheus_client not available or import failed
         return
 
-# Start exporter eagerly when module imported so metrics become available.
-# This is opt-in only via TSC_PROMETHEUS_PORT and will silently no-op if
-# `prometheus_client` is not installed.
-
-
-_maybe_start_prometheus_exporter()
+# NOTE: Starting an HTTP exporter at module import can cause surprising side-effects
+# (server started on import). We prefer to start it explicitly when the runtime
+# is constructed (RDClient.__init__) so tests and importers aren't affected.
 
 
 def _ensure_raildriver_on_path() -> None:
@@ -368,6 +365,11 @@ class RDClient:
                     except Exception:
                         confirmed = False
                     if confirmed:
+                        # Clear retries and record metric
+                        try:
+                            self._clear_retries(name)
+                        except Exception:
+                            pass
                         if RD_ACKS is not None:
                             try:
                                 RD_ACKS.inc()
@@ -396,6 +398,14 @@ class RDClient:
 
             self._ack_worker = Thread(target=_ack_worker_fn, daemon=True)
             self._ack_worker.start()
+
+        # Start Prometheus exporter if requested via env (do it here to avoid
+        # side-effects at import time in tests and tooling).
+        try:
+            _maybe_start_prometheus_exporter()
+        except Exception:
+            # don't fail __init__ if exporter fails
+            pass
 
         # Populate limits from driver if possible
         try:
@@ -489,6 +499,15 @@ class RDClient:
         if RD_RETRIES is not None:
             RD_RETRIES.inc()
 
+    def _clear_retries(self, name: str) -> None:
+        """Clear retry counter for a given control name (best-effort)."""
+        try:
+            if name in self._retry_counts:
+                # reset to zero (keep key for observability/debugging)
+                self._retry_counts[name] = 0
+        except Exception:
+            pass
+
     def emergency_stop(self, reason: str = "unknown") -> None:
         """Trigger emergency stop: idempotent and records event."""
         if self._emergency_active:
@@ -513,10 +532,13 @@ class RDClient:
                 import json
 
                 Path("data").mkdir(parents=True, exist_ok=True)
-                Path("data/control_status.json").write_text(
+                # atomic write
+                tmp = Path("data") / f"control_status.json.tmp.{int(time.time())}"
+                tmp.write_text(
                     json.dumps({"mode": "manual", "takeover": True, "reason": reason, "ts": time.time()}),
                     encoding="utf-8",
                 )
+                tmp.replace(Path("data") / "control_status.json")
             except Exception:
                 pass
             if RD_EMERGENCY is not None:
@@ -759,6 +781,12 @@ class RDClient:
                         ok = False
 
                     if ok:
+                        # Clear retries and increment ack metric
+                        try:
+                            if name:
+                                outer._clear_retries(name)
+                        except Exception:
+                            pass
                         if RD_ACKS is not None:
                             RD_ACKS.inc()
                         return
@@ -778,8 +806,7 @@ class RDClient:
             row: Dict[str, Any] = self.read_specials()
             row.update(self.read_controls(common_ctrls))
             # Aliases and unified speedometer
-            if "Throttle" not in row and "Regulator" in row:
-                row["Throttle"] = row["Regulator"]
+            # Throttle alias already handled above; keep single mapping here.
             if "SpeedometerKPH" in row:
                 row["Speedometer"] = row["SpeedometerKPH"]
                 row["speed_unit"] = "kmh"
@@ -815,9 +842,23 @@ class RDClient:
             from profiles import controls as _controls  # type: ignore
 
             out: List[str] = []
+            # First, include any aliases from the canonical mapping that exist on this loco
             for aliases in _controls.CONTROLS.values():
-                out.extend(aliases)
-            # Keep only aliases present in this locomotive's controller list
+                for a in aliases:
+                    if a in names:
+                        out.append(a)
+
+            # Also include any names that canonicalize to a known canonical control
+            # but may not be listed explicitly in CONTROLS (robustness for variants)
+            for n in names:
+                try:
+                    canon = _controls.canonicalize(n)
+                except Exception:
+                    canon = None
+                if canon is not None:
+                    # prefer the original name as present on the driver
+                    out.append(n)
+
             chosen = [n for n in out if n in names]
             if chosen:
                 return sorted(set(chosen))

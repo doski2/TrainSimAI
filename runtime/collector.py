@@ -270,7 +270,9 @@ def run(
                 continue
             last_sig = sig
             # Skip incomplete marker events lacking coordinates
-            if evt_dict.get("type") == "marker_pass" and (evt_dict.get("lat") in (None, "") or evt_dict.get("lon") in (None, "")):
+            missing_lat = evt_dict.get("lat") in (None, "")
+            missing_lon = evt_dict.get("lon") in (None, "")
+            if evt_dict.get("type") == "marker_pass" and (missing_lat or missing_lon):
                 drained += 1
                 continue
             # --- logica de alcance de limite (estimado)

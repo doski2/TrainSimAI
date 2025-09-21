@@ -6,6 +6,40 @@ Autopiloto/analizador para **Train Simulator Classic** (Windows, Python 64-bit).
 Pipeline: **GetData → Bus LUA → Collector → Distancia próximo límite → Frenada v0 (offline/online)** con trazas y tests.
 See `CONTRIBUTING.md` for developer setup, linters, and CI details.
 
+## Operación
+
+Sección rápida para ejecutar y diagnosticar la aplicación en entornos de desarrollo y staging.
+
+- Variables de entorno importantes:
+    - `TSC_RD` - dirección/endpoint del rail driver (p.ej. `tcp://127.0.0.1:5555`).
+    - `TSC_PROFILE` - perfil de vehículo a usar (nombre de archivo en `profiles/`).
+    - `TSC_PROMETHEUS_PORT` - si está definida, habilita un exporter Prometheus en el puerto indicado para exponer métricas internas (p.ej. `8000`).
+
+- Comandos útiles:
+    - Ejecutar la suite de tests completa:
+        - `python -m pytest -q`
+    - Ejecutar solo tests de seguridad `safety` (útil localmente antes de abrir PRs):
+        - `python -m pytest -q -m safety`
+    - Lanzar el lazo de control en modo simulación (usa RD fake en `ingestion/rd_fake.py`):
+        - `python -m runtime.control_loop`
+
+- Archivos y artefactos relevantes (carpeta `data/`):
+    - `data/control_status.json` - estado actual de los comandos de control y reintentos; útil para auditoría y debugging.
+    - `data/rd_ack.json` - últimos ACK recibidos del rail driver (si procede).
+    - `data/rd_send.log` - registro de intentos/sets enviados al rail driver.
+
+- Observability / métricas:
+    - Si `prometheus_client` está instalado y `TSC_PROMETHEUS_PORT` definido, el proceso expondrá métricas que incluyen contadores para ACKs, retries y eventos de emergencia. Estas métricas facilitan alerting y dashboards.
+
+- Depuración rápida en Windows PowerShell:
+    - Ejecutar linters y formateo:
+        - `python -m ruff check . --select F,E,W`
+        - `python -m black . --check`
+    - Ejecutar mypy para `ingestion` y `runtime`:
+        - `python -m mypy --ignore-missing-imports --follow-imports=silent ingestion runtime`
+
+Si necesitas más detalles operativos (runbook para emergencias, diagnóstico automatizado y procesos de recuperación), ver `docs/` donde se pondrá `EMERGENCY_RUNBOOK.md` pronto.
+
 If you want, actualizo `tsc_sim.bat` para que convenga explícitamente `--no-csv-fallback` o añadir logging más verboso al arranque del `control_loop`.
 
 
@@ -203,6 +237,31 @@ data/        # Artefactos locales (no versionar)
 - `TSC_FAKE_RD=1` → backend simulado para pruebas sin hardware.
 
 ## Operaciones / Healthchecks (SQLite)
+
+## Tests (local)
+
+Hemos añadido un pequeño helper para ejecutar los tests localmente con modos claros:
+
+- `scripts/run-tests.ps1` — PowerShell wrapper con modos `all`, `not-real` (por defecto) y `real`.
+
+Uso (PowerShell):
+
+```powershell
+# ejecutar tests unitarios e integraciones que NO requieren hardware/DLL
+.\\\scripts\\run-tests.ps1
+
+# ejecutar explícitamente los tests que requieren RailDriver (asegúrate de
+# tener la DLL y variables de entorno configuradas: TSC_RD_DLL_DIR o RAILWORKS_PLUGINS)
+.\\\scripts\\run-tests.ps1 real
+
+# ejecutar toda la suite
+.\\\scripts\\run-tests.ps1 all
+```
+
+Notas:
+- `pytest.ini` en este repositorio establece por defecto `-m "real"` (histórico). El wrapper facilita ejecutar el modo más habitual local (`not-real`).
+- Si necesitas que adapte `tsc_sim.bat`/`tsc_real.bat` para invocar este wrapper o para documentar los requisitos del DLL, dímelo y lo añado.
+
 
 Para entornos de producción o integración continua es útil controlar parámetros de SQLite y disponer de un healthcheck sencillo.
 
