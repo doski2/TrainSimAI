@@ -103,7 +103,7 @@ def run(
     if RunStore is not None and sqlite_db:
         try:
             # Permitir tunear busy_timeout y synchronous desde variables de entorno
-            rs_kwargs = {}
+            rs_kwargs: dict = {}
             busy_env = os.environ.get("TSC_DB_BUSY_MS")
             sync_env = os.environ.get("TSC_DB_SYNCHRONOUS")
             if busy_env:
@@ -143,7 +143,7 @@ def run(
         return 2 * R * asin(math.sqrt(max(0.0, a)))
 
     # Seguimiento de último anuncio de límite (snapshot crudo)
-    pending_limit = None  # dict con {"limit_next_kmh","odom_m","time","lat","lon"}
+    pending_limit: dict | None = None  # dict con {"limit_next_kmh","odom_m","time","lat","lon"}
 
     # Señal del último evento escrito para de-dup
     last_sig = None  # (type, marker_or_station, time)
@@ -178,7 +178,7 @@ def run(
                 odom_accum_m += d
                 if speed_kph in (None, "", 0, 0.0):
                     speed_kph = (d / dt) * 3.6
-        elif (speed_kph not in (None, "", 0, 0.0)) and prev_t is not None:
+        elif prev_t is not None and speed_kph is not None and speed_kph != "":
             # fallback: integrar por velocidad si no hay lat/lon
             try:
                 v = float(speed_kph) / 3.6
@@ -190,7 +190,7 @@ def run(
         # clamp y asignación a la fila si faltaban
         if odom_m in (None, "", 0, 0.0):
             row["odom_m"] = float(round(odom_accum_m, 3))
-        if speed_kph not in (None, ""):
+        if speed_kph is not None and speed_kph != "":
             try:
                 row["speed_kph"] = float(max(0.0, min(400.0, float(speed_kph))))
             except Exception:
@@ -244,38 +244,38 @@ def run(
             if not evt:
                 break
             # Enriquecer evento con telemetría del tick si faltan campos
-            e = dict(evt)
-            e["source"] = "collector"
-            if e.get("lat") in (None, "") and row.get("lat") is not None:
-                e["lat"] = float(row["lat"])  # type: ignore[arg-type]
-            if e.get("lon") in (None, "") and row.get("lon") is not None:
-                e["lon"] = float(row["lon"])  # type: ignore[arg-type]
-            if e.get("time") is None:
+            evt_dict = dict(evt)
+            evt_dict["source"] = "collector"
+            if evt_dict.get("lat") in (None, "") and row.get("lat") is not None:
+                evt_dict["lat"] = float(row["lat"])  # type: ignore[arg-type]
+            if evt_dict.get("lon") in (None, "") and row.get("lon") is not None:
+                evt_dict["lon"] = float(row["lon"])  # type: ignore[arg-type]
+            if evt_dict.get("time") is None:
                 try:
                     h = float(row.get("time_ingame_h") or 0)
                     m = float(row.get("time_ingame_m") or 0)
                     s = float(row.get("time_ingame_s") or 0)
-                    e["time"] = h + m / 60.0 + s / 3600.0
+                    evt_dict["time"] = h + m / 60.0 + s / 3600.0
                 except Exception:
                     pass
             # Sellos siempre presentes para downstream (normalizer/analizadores)
-            e["odom_m"] = odom_m
-            e["t_wall"] = now
+            evt_dict["odom_m"] = odom_m
+            evt_dict["t_wall"] = now
 
             # De-dup básico: mismo tipo+identificador+tiempo ⇒ no reescribir
-            ident = e.get("marker") or e.get("name") or e.get("station") or e.get("payload")
-            sig = (e.get("type"), ident, e.get("time"))
+            ident = evt_dict.get("marker") or evt_dict.get("name") or evt_dict.get("station") or evt_dict.get("payload")
+            sig = (evt_dict.get("type"), ident, evt_dict.get("time"))
             if sig == last_sig:
                 drained += 1
                 continue
             last_sig = sig
             # Skip incomplete marker events lacking coordinates
-            if e.get("type") == "marker_pass" and (e.get("lat") in (None, "") or e.get("lon") in (None, "")):
+            if evt_dict.get("type") == "marker_pass" and (evt_dict.get("lat") in (None, "") or evt_dict.get("lon") in (None, "")):
                 drained += 1
                 continue
             # --- logica de alcance de limite (estimado)
             # Normaliza SIEMPRE el evento actual antes de ramificar
-            nrm = normalize(e)
+            nrm = normalize(evt_dict)
             # Sello de seguridad: si algún evento viene sin t_wall, estampar ahora
             if nrm.get("t_wall") is None:
                 nrm["t_wall"] = now
@@ -288,16 +288,16 @@ def run(
                     reach = {
                         "type": "limit_reached",
                         "limit_kmh": prev["limit_next_kmh"],
-                        "time": e.get("time"),
-                        "lat": e.get("lat"),
-                        "lon": e.get("lon"),
+                        "time": evt_dict.get("time"),
+                        "lat": evt_dict.get("lat"),
+                        "lon": evt_dict.get("lon"),
                         "odom_m": odom_m,
                         "dist_m_travelled": dist,
                     }
                     # Distancia geodésica (Haversine) si hay coordenadas
                     try:
                         plat, plon = prev.get("lat"), prev.get("lon")  # type: ignore[assignment]
-                        clat, clon = e.get("lat"), e.get("lon")
+                        clat, clon = evt_dict.get("lat"), evt_dict.get("lon")
                         if (plat is not None) and (plon is not None) and (clat is not None) and (clon is not None):
                             R = 6371000.0
                             p1, p2 = math.radians(float(plat)), math.radians(float(clat))
@@ -318,15 +318,15 @@ def run(
                 pending_limit = {
                     "limit_next_kmh": nrm["limit_next_kmh"],
                     "odom_m": odom_m,
-                    "time": e.get("time"),
-                    "lat": e.get("lat"),
-                    "lon": e.get("lon"),
+                    "time": evt_dict.get("time"),
+                    "lat": evt_dict.get("lat"),
+                    "lon": evt_dict.get("lon"),
                 }
             else:
                 # nrm ya calculado arriba
                 pass
-            with open(EVT_PATH, "a", encoding="utf-8") as f:
-                f.write(json.dumps(nrm, ensure_ascii=False) + "\n")
+                with open(EVT_PATH, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(nrm, ensure_ascii=False) + "\n")
             drained += 1
 
 

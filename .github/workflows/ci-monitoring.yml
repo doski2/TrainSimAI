@@ -1,4 +1,4 @@
-name: CI
+name: CI Monitoring
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
     branches: [ main ]
 
 jobs:
-  lint-and-test:
+  lint-test-monitor:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -27,13 +27,15 @@ jobs:
         run: |
           pip install flake8
           flake8 .
-      - name: Run tests
+      - name: Mypy (optional)
+        if: false # enable manually by changing to true or via PR change
+        run: |
+          pip install mypy
+          mypy .
+      - name: Validate monitoring alerts (YAML syntax)
+        run: |
+          python -c "import yaml,sys; yaml.safe_load(open('monitoring/alerts.yml','r')); print('alerts.yml OK')"
+      - name: Run critical tests
         run: |
           pip install pytest
-          # Run the full test suite (override pytest.ini addopts to include unmarked tests)
-          python -m pytest -q -o addopts=
-      - name: Run security scenario tests
-        run: |
-          pip install pytest
-          # Explicitly run safety/scenario tests and fail the job if they break
-          python -m pytest -q -o addopts= tests/test_rd_client_ack.py tests/test_rd_client_scenarios.py
+          python -m pytest -q -o addopts= tests/test_rd_client_ack.py tests/test_rd_client_scenarios.py tests/test_rd_client_watchdog.py

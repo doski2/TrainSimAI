@@ -36,6 +36,48 @@ CONTROLS: Dict[str, List[str]] = {
         "Throttle",
     ],
     "speed_setpoint": ["speed_setpoint", "target_speed", "v_set"],
+
+    # Safety systems and driver vigilance
+    "sifa": [
+        "sifa",
+        "Sifa",
+        "SIFA",
+        "SifaReset",
+        "SifaLight",
+        "SifaAlarm",
+        "VigilEnable",
+    ],
+
+    # PZB/inductive train protection variants (with/without Hz suffixes)
+    "pzb": [
+        "PZB_1000Hz",
+        "PZB_1000",
+        "PZB_500Hz",
+        "PZB_500",
+        "PZB_85",
+        "PZB_70",
+        "PZB_55",
+        "PZB_40",
+        "PZB_B40",
+        "PZB_Warning",
+        "PZB_Emergency",
+        "PZB_Restriction",
+    ],
+
+    # Engine/locomotive brake variants
+    "engine_brake": [
+        "VirtualEngineBrakeControl",
+        "LocoBrakeControl",
+        "EngineBrake",
+        "DynamicBrake",
+    ],
+
+    # Speedometer / odometry readings
+    "speedometer": [
+        "SpeedometerKPH",
+        "SpeedometerMPH",
+        "Speedometer",
+    ],
 }
 
 

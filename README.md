@@ -1,7 +1,13 @@
 # TrainSimAI (TSC)
 
+[![CI](https://github.com/doski2/TrainSimAI/actions/workflows/ci-mypy-safety.yml/badge.svg)](https://github.com/doski2/TrainSimAI/actions/workflows/ci-mypy-safety.yml)
+
 Autopiloto/analizador para **Train Simulator Classic** (Windows, Python 64-bit).
 Pipeline: **GetData → Bus LUA → Collector → Distancia próximo límite → Frenada v0 (offline/online)** con trazas y tests.
+See `CONTRIBUTING.md` for developer setup, linters, and CI details.
+
+If you want, actualizo `tsc_sim.bat` para que convenga explícitamente `--no-csv-fallback` o añadir logging más verboso al arranque del `control_loop`.
+
 
 ## TL;DR (rápido)
 
@@ -44,24 +50,24 @@ Ejemplo de ejecución en tiempo real (el control intentará leer desde SQLite y,
 ```bash
 # tiempo real (con fallback a CSV automático)
 python -m runtime.control_loop --source sqlite --db data/run.db \
-	--events data/events.jsonl --profile profiles/BR146.json \
-	--hz 5 --start-events-from-end --out data/ctrl_live.csv
+    --events data/events.jsonl --profile profiles/BR146.json \
+    --hz 5 --start-events-from-end --out data/ctrl_live.csv
 ```
 
 Explicación de flags relevantes:
 
 - `--source {sqlite,csv}`
-	- `sqlite`: el control leerá la última telemetría desde la base de datos SQLite indicada con `--db` (método preferido; usa `RunStore`).
-	- `csv`: fuerza la lectura desde el CSV de salida (`--out`), útil para entornos simples o debugging.
+    - `sqlite`: el control leerá la última telemetría desde la base de datos SQLite indicada con `--db` (método preferido; usa `RunStore`).
+    - `csv`: fuerza la lectura desde el CSV de salida (`--out`), útil para entornos simples o debugging.
 
 - `--db <path>`
-	- Ruta al fichero SQLite (por ejemplo `data/run.db`). Usado solo cuando `--source sqlite`.
+    - Ruta al fichero SQLite (por ejemplo `data/run.db`). Usado solo cuando `--source sqlite`.
 
 - `--start-events-from-end`
-	- Inicia la lectura del fichero de eventos (`--events`) desde el final en lugar de procesar todo el historial. Muy útil para retomar una sesión en tiempo real y evitar reprocesar todo el historial.
+    - Inicia la lectura del fichero de eventos (`--events`) desde el final en lugar de procesar todo el historial. Muy útil para retomar una sesión en tiempo real y evitar reprocesar todo el historial.
 
 - `--derive-speed-if-missing` (por defecto: ON)
-	- Si la muestra entrante no trae `speed_kph`, el control intentará derivar la velocidad a partir de la diferencia del odómetro entre muestras sucesivas. Esto está activado por defecto; puede desactivarse con `--no-derive-speed`.
+    - Si la muestra entrante no trae `speed_kph`, el control intentará derivar la velocidad a partir de la diferencia del odómetro entre muestras sucesivas. Esto está activado por defecto; puede desactivarse con `--no-derive-speed`.
 
 Fallback a CSV
 - Por compatibilidad y robustez en arranques, si `--source sqlite` está seleccionado pero la base de datos está vacía o inaccesible, el control puede caer automáticamente al modo CSV (leer la última línea del CSV `--out`). Este comportamiento se puede desactivar con la opción `--no-csv-fallback` si se desea un fallo explícito en ausencia de datos en la base.
@@ -157,16 +163,16 @@ Si necesitas ayuda para depurar procesos en Windows (identificar qué proceso es
 Dentro de `scripts/` hay atajos para arrancar la pila en Windows. Resumen del comportamiento y cómo usarlos:
 
 - `scripts\tsc_sim.bat` (modo simulado)
-	- Variables por defecto: `TSC_FAKE_RD=1`, `RUN_CSV=data\runs\run.csv`, `EVENTS=data\events.jsonl`, `PROFILE=profiles\BR146.json`, `OUT=data\ctrl_live.csv`.
-	- Orden de ventanas/procesos lanzados:
-		1. `collector` (simulado) — normaliza telemetría y escribe CSV + SQLite.
-		2. `tools.db_check` — chequeo rápido de `data\run.db` antes de arrancar control (impide arrancar control vacio si DB está a 0 filas).
-		3. `control_loop` — en modo `--source sqlite --db data/run.db` con `--start-events-from-end`.
-		4. `tail` de `data\ctrl_live.csv` en una ventana PowerShell (Get-Content -Tail -Wait).
+    - Variables por defecto: `TSC_FAKE_RD=1`, `RUN_CSV=data\runs\run.csv`, `EVENTS=data\events.jsonl`, `PROFILE=profiles\BR146.json`, `OUT=data\ctrl_live.csv`.
+    - Orden de ventanas/procesos lanzados:
+        1. `collector` (simulado) — normaliza telemetría y escribe CSV + SQLite.
+        2. `tools.db_check` — chequeo rápido de `data\run.db` antes de arrancar control (impide arrancar control vacio si DB está a 0 filas).
+        3. `control_loop` — en modo `--source sqlite --db data/run.db` con `--start-events-from-end`.
+        4. `tail` de `data\ctrl_live.csv` en una ventana PowerShell (Get-Content -Tail -Wait).
 
 - `scripts\tsc_real.bat` (con juego / GetData)
-	- Similar a `tsc_sim.bat` pero además arranca `ingestion.getdata_bridge` para leer `GetData.txt` del juego.
-	- No establece `TSC_FAKE_RD` (usa el backend real RDClient). Asegúrate de ajustar `TSC_GETDATA_FILE` en el script si tu ruta es distinta.
+    - Similar a `tsc_sim.bat` pero además arranca `ingestion.getdata_bridge` para leer `GetData.txt` del juego.
+    - No establece `TSC_FAKE_RD` (usa el backend real RDClient). Asegúrate de ajustar `TSC_GETDATA_FILE` en el script si tu ruta es distinta.
 
 Detalles y notas:
 - `TSC_FAKE_RD=1` (en `tsc_sim.bat`) obliga a usar el backend simulado para pruebas sin hardware; útil para debugging y CI locales.
@@ -201,47 +207,47 @@ data/        # Artefactos locales (no versionar)
 Para entornos de producción o integración continua es útil controlar parámetros de SQLite y disponer de un healthcheck sencillo.
 
 - Variables de entorno para tunear SQLite (coleccionista / RunStore):
-	- `TSC_DB_BUSY_MS` — timeout en milisegundos que se pasa a `PRAGMA busy_timeout`. Ejemplo: `5000` (5s).
-	- `TSC_DB_SYNCHRONOUS` — valor de `PRAGMA synchronous` como entero (`0|1|2|3`) o texto (`OFF|NORMAL|FULL`). Ejemplo: `NORMAL` o `2`.
+    - `TSC_DB_BUSY_MS` — timeout en milisegundos que se pasa a `PRAGMA busy_timeout`. Ejemplo: `5000` (5s).
+    - `TSC_DB_SYNCHRONOUS` — valor de `PRAGMA synchronous` como entero (`0|1|2|3`) o texto (`OFF|NORMAL|FULL`). Ejemplo: `NORMAL` o `2`.
 
-	Estas variables se leen por `runtime.collector` y se pasan al constructor de `RunStore` si están definidas. Si no se definen, se usan los valores por defecto del código.
+    Estas variables se leen por `runtime.collector` y se pasan al constructor de `RunStore` si están definidas. Si no se definen, se usan los valores por defecto del código.
 
 - Script de comprobación de salud: `scripts/db_health.py`
  
-	Prometheus wrapper & systemd
-	----------------------------
 
-	Se proporcionan ejemplos de unidades `systemd` en `scripts/systemd/`:
+## Prometheus wrapper & systemd
 
-	- `db_health.service` / `db_health.timer`: ejecuta `scripts/db_health.py` periódicamente (ejemplo 1m).
-	- `prom_wrapper.service` / `prom_wrapper.timer`: ejecuta `scripts/db_health_prometheus.py` cada 15s y escribe `/var/lib/node_exporter/textfile_collector/trainsim_db.prom`.
+Se proporcionan ejemplos de unidades `systemd` en `scripts/systemd/`:
 
-	Instalación (ejemplo Debian/Ubuntu):
+- `db_health.service` / `db_health.timer`: ejecuta `scripts/db_health.py` periódicamente (ejemplo 1m).
+- `prom_wrapper.service` / `prom_wrapper.timer`: ejecuta `scripts/db_health_prometheus.py` cada 15s y escribe `/var/lib/node_exporter/textfile_collector/trainsim_db.prom`.
 
-	```bash
-	sudo cp scripts/systemd/*.service /etc/systemd/system/
-	sudo cp scripts/systemd/*.timer /etc/systemd/system/
-	sudo mkdir -p /var/lib/node_exporter/textfile_collector
-	sudo chown -R prometheus:prometheus /var/lib/node_exporter/textfile_collector
-	sudo systemctl daemon-reload
-	sudo systemctl enable --now db-health.timer prom_wrapper.timer
-	```
+Instalación (ejemplo Debian/Ubuntu):
 
-	Ajusta `User=`/`Group=` y `ExecStart=` en los ficheros si tu instalación difiere.
+```bash
+sudo cp scripts/systemd/*.service /etc/systemd/system/
+sudo cp scripts/systemd/*.timer /etc/systemd/system/
+sudo mkdir -p /var/lib/node_exporter/textfile_collector
+sudo chown -R prometheus:prometheus /var/lib/node_exporter/textfile_collector
+sudo systemctl daemon-reload
+sudo systemctl enable --now db-health.timer prom_wrapper.timer
+```
 
-	Uso rápido (PowerShell):
+Ajusta `User=`/`Group=` y `ExecStart=` en los ficheros si tu instalación difiere.
 
-	```powershell
-	# comprobar DB y obtener JSON resumen
-	python .\scripts\db_health.py data\run.db --pretty
+    Uso rápido (PowerShell):
 
-	# exit codes:
-	# 0 = OK (connect + write ok)
-	# 1 = warning (connect ok, write failed)
-	# 2 = error (connect failed)
-	```
+    ```powershell
+    # comprobar DB y obtener JSON resumen
+    python .\scripts\db_health.py data\run.db --pretty
 
-	Ejemplo en una tarea de monitorización (systemd/cron/checker): ejecutar el script y usar el exit code para alertas.
+    # exit codes:
+    # 0 = OK (connect + write ok)
+    # 1 = warning (connect ok, write failed)
+    # 2 = error (connect failed)
+    ```
+
+    Ejemplo en una tarea de monitorización (systemd/cron/checker): ejecutar el script y usar el exit code para alertas.
 
 Nota: `scripts/db_health.py` utiliza `storage.db_check.run_all_checks()` que devuelve pragmas informativos y comprueba si se puede adquirir un bloqueo de escritura (mediante `BEGIN IMMEDIATE` + rollback) para validar problemas de contención.
 
@@ -261,4 +267,3 @@ mypy runtime tools --strict
 ## Contribuciones (patches mínimos)
 > Propón cambios **pequeños** y enfocados, con tests. Evita reescrituras masivas.
 Incluye diffs por archivo (`*** Begin Patch …`) y separa archivos nuevos.
-

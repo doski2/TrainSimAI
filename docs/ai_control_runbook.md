@@ -54,6 +54,29 @@ El modo actual por defecto es `manual`. Antes de permitir `ai_autonomous` debe e
 - Alertas sugeridas:
   - Missing ACKs > 5 en 1 minute -> alert on-call
   - Emergency stops > 0 -> pager
+
+## Thresholds y reglas recomendadas
+
+Se proponen las siguientes reglas iniciales (implementadas en `monitoring/alerts.yml`):
+
+- `TrainsimEmergencyStop`: `trainsim_rd_emergencystops_total > 0` durante 1m -> pager
+- `TrainsimHighRetryRate`: `increase(trainsim_rd_retries_total[5m]) > 10` -> warn
+- `TrainsimMissingAcks`: si hay sets pero no acks en 5m -> warn
+
+El repositorio incluye un panel Grafana de ejemplo en `monitoring/grafana_simple.json`.
+
+### Habilitar HTTP exporter de Prometheus
+
+  `ingestion/rd_client.py` incluye soporte opt-in para arrancar un endpoint HTTP que expone las métricas de `prometheus_client`.
+
+  Para habilitarlo en entorno local o en despliegue, define la variable de entorno `TSC_PROMETHEUS_PORT` con el puerto donde quieres que escuche (ej. `9188`). Ejemplo en PowerShell:
+
+  ```powershell
+  $env:TSC_PROMETHEUS_PORT = "9188";
+  python -m your_service_entrypoint
+  ```
+
+  El exporter no fallará si `prometheus_client` no está instalado; simplemente no expondrá métricas. Si el exporter arranca, `ingestion.rd_client` registrará un `info` con el puerto.
   - Command rate > X -> alert
 
 ## 8. Roles y permisos

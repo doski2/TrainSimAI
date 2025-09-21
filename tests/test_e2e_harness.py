@@ -18,7 +18,7 @@ def _write_run_csv(row: dict):
 
 def actuator_watcher(stop_event: threading.Event):
     """Thread that watches control_status.json and invokes rd_stub when new command appears."""
-    last_cmd_ts = 0
+    last_cmd_ts: float = 0.0
     while not stop_event.is_set():
         p = Path("data/control_status.json")
         if p.exists():

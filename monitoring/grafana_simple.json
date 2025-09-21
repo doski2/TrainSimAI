@@ -1,0 +1,34 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "TrainSimAI RD Overview (example)",
+    "panels": [
+      {
+        "type": "graph",
+        "title": "RD Set Calls vs ACKs",
+        "targets": [
+          {"expr": "rate(trainsim_rd_set_calls_total[1m])", "legendFormat": "set_calls/s"},
+          {"expr": "rate(trainsim_rd_acks_total[1m])", "legendFormat": "acks/s"}
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "type": "graph",
+        "title": "RD Retries",
+        "targets": [
+          {"expr": "rate(trainsim_rd_retries_total[1m])", "legendFormat": "retries/s"}
+        ],
+        "gridPos": {"h": 4, "w": 12, "x": 0, "y": 8}
+      },
+      {
+        "type": "stat",
+        "title": "Emergency State",
+        "targets": [
+          {"expr": "trainsim_rd_emergency_state"}
+        ],
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 0}
+      }
+    ],
+    "schemaVersion": 16
+  }
+}

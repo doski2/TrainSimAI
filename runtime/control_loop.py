@@ -7,7 +7,7 @@ import json
 import math
 from dataclasses import replace
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional, Dict, TYPE_CHECKING
 import logging
 from runtime.braking_v0 import BrakingConfig
 from runtime.braking_era import EraCurve
@@ -18,47 +18,55 @@ from storage.run_store_sqlite import RunStore
 from runtime.mode_guard import ModeGuard
 from runtime.actuators import scan_for_rd, send_to_rd, debug_trace, load_rd_from_spec
 
-# Fix: Añadir clases stub para evitar errores de imports
-try:
+# Avoid redefining names during type-checking: import for types only and
+# provide runtime fallbacks when the modules are not available.
+if TYPE_CHECKING:
+    # For static type checking, import the real types if available
     from runtime.event_stream import NonBlockingEventStream  # type: ignore
-except ImportError:
+else:
     try:
-        from ingestion.event_stream import NonBlockingEventStream  # type: ignore
-    except ImportError:
+        from runtime.event_stream import NonBlockingEventStream  # type: ignore
+    except Exception:
+        try:
+            from ingestion.event_stream import NonBlockingEventStream  # type: ignore
+        except Exception:
 
-        class NonBlockingEventStream:
-            def __init__(self, *args, **kwargs):
-                pass
+            class NonBlockingEventStream:
+                def __init__(self, *args, **kwargs):
+                    pass
 
-            def poll(self):
-                return None
+                def poll(self):
+                    return None
 
-            def __iter__(self):
-                return self
+                def __iter__(self):
+                    return self
 
-            def __next__(self):
-                raise StopIteration
+                def __next__(self):
+                    raise StopIteration
 
 
-try:
+if TYPE_CHECKING:
     from runtime.pid import SplitPID  # type: ignore
-except ImportError:
+else:
+    try:
+        from runtime.pid import SplitPID  # type: ignore
+    except Exception:
 
-    class SplitPID:
-        def __init__(self, *args, **kwargs):
-            self.kp = kwargs.get("kp", 0.0)
-            self.ki = kwargs.get("ki", 0.0)
-            self.kd = kwargs.get("kd", 0.0)
-            self._i = 0.0
-            self._prev = None
+        class SplitPID:
+            def __init__(self, *args, **kwargs):
+                self.kp = kwargs.get("kp", 0.0)
+                self.ki = kwargs.get("ki", 0.0)
+                self.kd = kwargs.get("kd", 0.0)
+                self._i = 0.0
+                self._prev = None
 
-        def update(self, error: float, dt: float) -> float:
-            if dt <= 0:
-                return 0.0
-            self._i += error * dt
-            d = 0.0 if self._prev is None else (error - self._prev) / dt
-            self._prev = error
-            return self.kp * error + self.ki * self._i + self.kd * d
+            def update(self, error: float, dt: float) -> float:
+                if dt <= 0:
+                    return 0.0
+                self._i += error * dt
+                d = 0.0 if self._prev is None else (error - self._prev) / dt
+                self._prev = error
+                return self.kp * error + self.ki * self._i + self.kd * d
 
 
 # Fix: Variables globales para FSM
@@ -86,9 +94,9 @@ class ControlLoop:
         # ack/heartbeat settings
         self.ack_timeout_s = float(kwargs.get("ack_timeout_s", 2.0))
         # bookkeeping for last command/ack (initialized when first used)
-        self.last_command_time = None
-        self.last_command_value = None
-        self.last_ack_time = None
+        self.last_command_time: Optional[float] = None
+        self.last_command_value: Optional[float] = None
+        self.last_ack_time: Optional[float] = None
         self.logger = logging.getLogger(__name__)
         if source not in ["sqlite", "csv"]:
             raise ValueError(f"Invalid source: {source}")
@@ -460,7 +468,7 @@ class ControlLoop:
         self.running = False
 
 
-def tail_csv_last_row(path: Path, max_bytes: int = 1_000_000) -> dict | None:
+def tail_csv_last_row(path: Path, max_bytes: int = 1_000_000) -> Optional[Dict[str, object]]:
     """
     Lee la última fila completa de un CSV sin bloquear.
     Devuelve dict(header->valor) o None si el archivo está vacío/incompleto.
@@ -734,6 +742,8 @@ def main() -> None:
     # Fuente de datos opcional: SQLite
     store = RunStore(args.db) if args.source == "sqlite" else None
     last_rowid = 0
+    # fila actual leída (puede venir de SQLite o CSV). Tipada para mypy.
+    row: Optional[Dict[str, object]] = None
     use_csv = args.source == "csv"
     # Robustez: control de fallos y datos obsoletos
     stale_data_threshold = 10.0  # segundos

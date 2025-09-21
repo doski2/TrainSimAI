@@ -1,0 +1,29 @@
+groups:
+  - name: trainsim_alerts
+    rules:
+      - alert: TrainsimEmergencyStop
+        expr: trainsim_rd_emergencystops_total > 0
+        for: 1m
+        labels:
+          severity: page
+        annotations:
+          summary: "Emergency stop detected in TrainSimAI"
+          description: "An emergency_stop was triggered ({{ $value }}). Check operator takeover and runbook."
+
+      - alert: TrainsimHighRetryRate
+        expr: increase(trainsim_rd_retries_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warn
+        annotations:
+          summary: "High RD retry rate"
+          description: "RD retries increased by more than 10 in the last 5m. Investigate RD stability and network/driver issues."
+
+      - alert: TrainsimMissingAcks
+        expr: increase(trainsim_rd_acks_total[5m]) == 0 and increase(trainsim_rd_set_calls_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warn
+        annotations:
+          summary: "No ACKs observed despite set calls"
+          description: "set calls were made but no acks observed in the last 5 minutes. Check driver and listener snapshots."

@@ -207,8 +207,10 @@ class FakeListener:
 
         self.interval = float(interval)
         self.raildriver = raildriver
-        self.current_data = collections.defaultdict(lambda: None)
-        self.previous_data = collections.defaultdict(lambda: None)
+
+        # Typing: mapping from field name to last-known value
+        self.current_data: Dict[str, Any] = collections.defaultdict(lambda: None)
+        self.previous_data: Dict[str, Any] = collections.defaultdict(lambda: None)
         self.subscribed_fields: List[str] = []
         self.iteration = 0
 

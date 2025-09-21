@@ -21,7 +21,7 @@ def _segments_by_limit(df: pd.DataFrame, limit_col: str) -> List[Tuple[int, int]
     idx = df.index[df[limit_col].notna()].to_list()
     if not idx:
         return []
-    segs = []
+    segs: List[Tuple[int, int]] = []
     start = idx[0]
     prev_lim = df.loc[start, limit_col]
     for i in idx[1:]:

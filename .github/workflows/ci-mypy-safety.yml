@@ -1,0 +1,92 @@
+name: CI - lint, tests, mypy (limited)
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Cache mypy
+        uses: actions/cache@v4
+        with:
+          path: .mypy_cache
+          key: ${{ runner.os }}-mypy-${{ hashFiles('**/*.py') }}
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt -r requirements.txt
+
+      - name: Ruff (auto-fix check)
+        run: ruff check .
+
+      - name: Flake8
+        run: flake8 .
+
+      - name: Run tests
+        run: python -m pytest -q -o addopts=
+
+      - name: Run mypy (ingestion + runtime + tests)
+        run: |
+          python -m pip install mypy
+          mypy --config-file mypy.ini ingestion runtime tests
+
+      - name: Run stricter mypy on ingestion
+        run: |
+          # Run a stricter check on ingestion (bodies checked). Fail the job if issues found.
+          python -m pip install mypy
+          mypy --config-file mypy.ini --check-untyped-defs ingestion
+
+      - name: Run stricter mypy on runtime
+        run: |
+          # Run a stricter check on runtime (bodies checked). Fail the job if issues found.
+          python -m pip install mypy
+          mypy --config-file mypy.ini --check-untyped-defs runtime
+
+  safety-tests:
+    name: Safety tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements*.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt -r requirements.txt
+
+      - name: Run safety tests
+        run: |
+          # run only tests marked with @pytest.mark.safety; fails job if any fail
+          python -m pytest -q -m safety
+

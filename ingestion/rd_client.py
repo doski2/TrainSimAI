@@ -4,6 +4,8 @@ import os
 import sys
 import time
 from typing import Any, Dict, Iterable, Iterator, List
+from queue import Queue, Empty
+from threading import Thread, Event
 import platform
 import struct
 from pathlib import Path
@@ -12,13 +14,15 @@ import logging
 
 # Optional Prometheus metrics (do not hard-fail if library missing)
 try:
-    from prometheus_client import Counter  # type: ignore
+    from prometheus_client import Counter, Histogram, Gauge  # type: ignore
     RD_SET_CALLS = Counter("trainsim_rd_set_calls_total", "Number of RD set calls")
     RD_ERRORS = Counter("trainsim_rd_errors_total", "Number of RD errors")
     RD_MISSING = Counter("trainsim_rd_missing_control_total", "Number of attempts to set missing controls")
     RD_ACKS = Counter("trainsim_rd_acks_total", "Number of RD acks observed")
     RD_RETRIES = Counter("trainsim_rd_retries_total", "Number of RD retries due to missing ack or errors")
     RD_EMERGENCY = Counter("trainsim_rd_emergencystops_total", "Number of emergency stops triggered")
+    RD_ACK_LATENCY = Histogram("trainsim_rd_ack_latency_seconds", "Ack latency in seconds")
+    RD_EMERGENCY_GAUGE = Gauge("trainsim_rd_emergency_state", "Current emergency state (0/1)")
 except Exception:
     RD_SET_CALLS = None  # type: ignore
     RD_ERRORS = None  # type: ignore
@@ -26,6 +30,42 @@ except Exception:
     RD_ACKS = None  # type: ignore
     RD_RETRIES = None  # type: ignore
     RD_EMERGENCY = None  # type: ignore
+    RD_ACK_LATENCY = None  # type: ignore
+    RD_EMERGENCY_GAUGE = None  # type: ignore
+
+
+# Optionally start an HTTP exporter if user enables via env var
+
+def _maybe_start_prometheus_exporter() -> None:
+    port = os.getenv("TSC_PROMETHEUS_PORT")
+    if not port:
+        return
+    try:
+        from prometheus_client import start_http_server  # type: ignore
+
+        try:
+            p = int(port)
+        except Exception:
+            # allow service name or invalid int -> ignore
+            try:
+                p = int(os.getenv("TSC_PROMETHEUS_PORT", "0"))
+            except Exception:
+                return
+        try:
+            start_http_server(p)
+            logging.getLogger("ingestion.rd_client").info("Prometheus exporter started on port %s", p)
+        except Exception:
+            logging.getLogger("ingestion.rd_client").exception("Failed to start Prometheus exporter on %s", p)
+    except Exception:
+        # prometheus_client not available or import failed
+        return
+
+# Start exporter eagerly when module imported so metrics become available.
+# This is opt-in only via TSC_PROMETHEUS_PORT and will silently no-op if
+# `prometheus_client` is not installed.
+
+
+_maybe_start_prometheus_exporter()
 
 
 def _ensure_raildriver_on_path() -> None:
@@ -191,6 +231,8 @@ class RDClient:
         poll_hz: float | None = None,
         dll_location: str | None = None,
         control_aliases: dict | None = None,
+        ack_watchdog: bool | int = False,
+        ack_watchdog_interval: float = 0.1,
     ) -> None:
         # Permite sobrescribir por env: TSC_RD_DLL_DIR
         self.dll_location = os.getenv("TSC_RD_DLL_DIR") or dll_location
@@ -268,10 +310,10 @@ class RDClient:
             pass
 
         # Índices cacheados por nombre para lecturas directas cuando conviene
-        self.ctrl_index_by_name: Dict[str, int] = {
-            name: idx
-            for idx, name in self.rd.get_controller_list()  # type: ignore[attr-defined]
-        }
+        # Build a name->index mapping explicitly so mypy can infer types
+        self.ctrl_index_by_name = {}
+        for idx, nm in self.rd.get_controller_list():  # type: ignore[attr-defined]
+            self.ctrl_index_by_name[str(nm)] = int(idx)
 
         # Listener para cambios y snapshots unificados
         self.listener = Listener(self.rd, interval=self.poll_dt)  # type: ignore[call-arg]
@@ -303,6 +345,57 @@ class RDClient:
         self._max_retries = int(os.getenv("TSC_MAX_RETRIES", "3"))
         # emergency flag
         self._emergency_active = False
+
+        # ACK watchdog (background confirmation): disabled by default
+        self._ack_watchdog_enabled = bool(ack_watchdog)
+        self._ack_watchdog_interval = float(ack_watchdog_interval)
+        # queue of pending confirmations: tuples (name, expected, attempts)
+        self._ack_queue: "Queue[tuple[str, float, int]]" = Queue()
+        self._ack_worker_stop = Event()
+        self._ack_worker: Thread | None = None
+        if self._ack_watchdog_enabled:
+            # start background thread
+            def _ack_worker_fn():
+                while not self._ack_worker_stop.is_set():
+                    try:
+                        name, expected, attempts = self._ack_queue.get(timeout=self._ack_watchdog_interval)
+                    except Empty:
+                        continue
+                    # attempt to confirm; if not confirmed, requeue or escalate
+                    confirmed = False
+                    try:
+                        confirmed = self._wait_for_ack(name, expected)
+                    except Exception:
+                        confirmed = False
+                    if confirmed:
+                        if RD_ACKS is not None:
+                            try:
+                                RD_ACKS.inc()
+                            except Exception:
+                                pass
+                        # nothing else to do
+                        continue
+                    else:
+                        # record a retry and requeue if attempts left
+                        self._record_retry(name)
+                        # escalate deterministically based on recorded retry count
+                        try:
+                            if self._retry_counts.get(name, 0) > self._max_retries:
+                                try:
+                                    self.emergency_stop("no_ack_watchdog")
+                                except Exception:
+                                    pass
+                                continue
+                        except Exception:
+                            pass
+                        # requeue with incremented attempts for bookkeeping
+                        try:
+                            self._ack_queue.put_nowait((name, expected, attempts + 1))
+                        except Exception:
+                            pass
+
+            self._ack_worker = Thread(target=_ack_worker_fn, daemon=True)
+            self._ack_worker.start()
 
         # Populate limits from driver if possible
         try:
@@ -352,6 +445,45 @@ class RDClient:
         self._last_send_ts[name] = now
         return True
 
+    def _wait_for_ack(self, name: str, expected: float) -> bool:
+        """Wait up to _ack_timeout for the controller to reflect the expected value.
+        Uses direct index read when possible, falls back to snapshot. Returns True on confirmation.
+        """
+        start = time.time()
+        timer = None
+        if RD_ACK_LATENCY is not None:
+            timer = RD_ACK_LATENCY.time()
+        idx = self.ctrl_index_by_name.get(name)
+        while time.time() - start <= self._ack_timeout:
+            try:
+                if idx is not None:
+                    val = float(self.rd.get_current_controller_value(idx))  # type: ignore[attr-defined]
+                else:
+                    snap = self._snapshot()
+                    val = float(snap.get(name, float('nan')))
+                # Consider confirmation if value is close enough
+                if abs(val - expected) <= 1e-3:
+                    if timer is not None:
+                        try:
+                            timer.observe(time.time() - start)
+                        except Exception:
+                            # if Histogram.time() returned a context manager, close it
+                            try:
+                                timer.__exit__(None, None, None)  # type: ignore[attr-defined]
+                            except Exception:
+                                pass
+                    return True
+            except Exception:
+                # ignore transient read errors and retry until timeout
+                pass
+            time.sleep(0.01)
+        if timer is not None:
+            try:
+                timer.__exit__(None, None, None)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+        return False
+
     def _record_retry(self, name: str) -> None:
         self._retry_counts[name] = self._retry_counts.get(name, 0) + 1
         if RD_RETRIES is not None:
@@ -362,6 +494,11 @@ class RDClient:
         if self._emergency_active:
             return
         self._emergency_active = True
+        if RD_EMERGENCY_GAUGE is not None:
+            try:
+                RD_EMERGENCY_GAUGE.set(1)
+            except Exception:
+                pass
         try:
             # set maximum brake via any available brake control
             for br in ("TrainBrakeControl", "TrainBrake", "VirtualBrake"):
@@ -387,6 +524,13 @@ class RDClient:
         except Exception:
             if RD_ERRORS is not None:
                 RD_ERRORS.inc()
+        finally:
+            # ensure emergency gauge remains set (if metric exists)
+            if RD_EMERGENCY_GAUGE is not None:
+                try:
+                    RD_EMERGENCY_GAUGE.set(1 if self._emergency_active else 0)
+                except Exception:
+                    pass
 
     # --- Lecturas puntuales ---
     def read_specials(self) -> Dict[str, Any]:
@@ -505,6 +649,128 @@ class RDClient:
                     pass
         return res
 
+    # --- RD shim factory with safe set/confirm semantics ---
+    def _make_rd(self):
+        """Return a thin wrapper around self.rd that implements safe set semantics.
+
+        The wrapper exposes `set_controller_value(name_or_index, value)` when called
+        with a name, we canonicalize and find the index; then we send, wait for ack,
+        retry up to _max_retries, and escalate to emergency_stop if confirmation fails.
+        """
+
+        client = self.rd
+
+        class RDShim:
+            def __init__(self, outer: "RDClient"):
+                self._outer = outer
+
+            def set_controller_value(self, who, value):
+                """Accept either index or name. If name, find index and proceed.
+                Implements rate limiting, clamping, ack wait, retries, and metrics.
+                """
+                outer = self._outer
+                # If emergency already active, reject silently
+                if getattr(outer, "_emergency_active", False):
+                    return
+
+                # Determine index
+                if isinstance(who, int):
+                    idx: int | None = who
+                    name = None
+                else:
+                    name = str(who)
+                    # Allow aliases
+                    try:
+                        can = name
+                        if outer._control_aliases and name in outer._control_aliases:
+                            can = outer._control_aliases[name]
+                        idx = outer.ctrl_index_by_name.get(can)
+                    except Exception:
+                        idx = outer.ctrl_index_by_name.get(name)
+
+                # Rate limiting by name if available
+                if name and not outer._allow_rate(name):
+                    return
+
+                # Clamp value
+                try:
+                    if name:
+                        v = outer.clamp_command(name, float(value))
+                    else:
+                        v = float(value)
+                except Exception:
+                    v = float(value)
+
+                # Perform set and confirm with retries
+                attempts = 0
+                while attempts <= outer._max_retries:
+                    attempts += 1
+                    try:
+                        # If index known, prefer calling driver by index
+                        if isinstance(idx, int):
+                            client.set_controller_value(idx, v)  # type: ignore[attr-defined]
+                        else:
+                            # We only support index-based driver calls here; if we don't
+                            # have an integer index, escalate to driver error to trigger
+                            # retry/emergency logic upstream.
+                            raise RuntimeError("no integer controller index available")
+                        if RD_SET_CALLS is not None:
+                            RD_SET_CALLS.inc()
+                    except Exception:
+                        outer._record_retry(name or f"idx_{idx}")
+                        if RD_ERRORS is not None:
+                            RD_ERRORS.inc()
+                        # On driver error, try again up to max_retries
+                        if attempts > outer._max_retries:
+                            outer.emergency_stop("driver_error")
+                            return
+                        time.sleep(0.05)
+                        continue
+
+                    # Wait for ack/confirmation
+                    # If ACK watchdog is enabled we enqueue and return optimistically.
+                    # The background worker will confirm and escalate if necessary.
+                    if getattr(outer, "_ack_watchdog_enabled", False) and name:
+                        try:
+                            outer._ack_queue.put_nowait((name, v, attempts))
+                        except Exception:
+                            # If queuing fails, fall back to blocking wait
+                            pass
+                        # optimistic return: caller assumes set applied
+                        if RD_ACKS is not None:
+                            try:
+                                RD_ACKS.inc()
+                            except Exception:
+                                pass
+                        return
+
+                    ok = False
+                    try:
+                        if name:
+                            ok = outer._wait_for_ack(name, v)
+                        elif isinstance(idx, int):
+                            # read back by index when name not available
+                            try:
+                                val = float(client.get_current_controller_value(idx))  # type: ignore[attr-defined]
+                                ok = abs(val - v) <= 1e-3
+                            except Exception:
+                                ok = False
+                    except Exception:
+                        ok = False
+
+                    if ok:
+                        if RD_ACKS is not None:
+                            RD_ACKS.inc()
+                        return
+                    else:
+                        outer._record_retry(name or f"idx_{idx}")
+                        if attempts > outer._max_retries:
+                            outer.emergency_stop("no_ack")
+                            return
+                        time.sleep(0.02)
+
+        return RDShim(self)
+
     def stream(self) -> Iterator[Dict[str, Any]]:
         """Genera dicts con specials + subset de controles comunes."""
         common_ctrls = self._common_controls()
@@ -612,8 +878,8 @@ class RDClient:
             r"^(PZB_|Sifa|AFB|LZB_|BrakePipe|TrainBrake|VirtualBrake|VirtualEngineBrake|Headlights|CabLight|Doors)",
             re.I,
         )
-        chosen = {n for n in names if (n in preferred or rx.match(n))}
-        return sorted(chosen)
+        chosen_set = {n for n in names if (n in preferred or rx.match(n))}
+        return sorted(list(chosen_set))
 
     # -------- Superset de campos para “comprimir” el CSV ----------------------
     def schema(self) -> List[str]:
@@ -660,8 +926,8 @@ def _make_rd():
     idx = client.ctrl_index_by_name
 
     # Resuelve nombres usando aliases inyectados por pruebas/entorno si están disponibles
-    brake_candidates = None
-    throttle_candidates = None
+    brake_candidates: list[str] | None = None
+    throttle_candidates: list[str] | None = None
     injected = getattr(client, "_control_aliases", None)
     if isinstance(injected, dict):
         # esperamos la misma forma que profiles.controls.CONTROLS: canon -> [aliases]
@@ -696,8 +962,15 @@ def _make_rd():
                 throttle_candidates = ["Throttle", "Regulator", "CombinedThrottleBrake"]
 
     # Resuelve el primer control que exista para cada función
-    brake_idx = next((idx[n] for n in brake_candidates if n in idx), None)
-    thr_idx = next((idx[n] for n in throttle_candidates if n in idx), None)
+    # ensure candidates are iterable lists (definitive lists for downstream closures)
+    bc: list[str] = list(brake_candidates or [])
+    tc: list[str] = list(throttle_candidates or [])
+    # assign back to names so inner functions see a concrete list type
+    brake_candidates = bc
+    throttle_candidates = tc
+
+    brake_idx = next((idx[n] for n in bc if n in idx), None)
+    thr_idx = next((idx[n] for n in tc if n in idx), None)
 
     class RDShim:
         """Interfaz mínima que espera el lazo (solo setters)."""
@@ -713,7 +986,7 @@ def _make_rd():
                 if RD_MISSING is not None:
                     RD_MISSING.inc()
                 return
-            name = next((n for n in brake_candidates if n in self.c.ctrl_index_by_name), None)
+            name = next((n for n in bc if n in self.c.ctrl_index_by_name), None)
             # rate limit (use fallback if client missing helper)
             allow_rate_fn = getattr(self.c, "_allow_rate", None)
             use_rate = allow_rate_fn is not None and hasattr(self.c, "_last_send_ts")
@@ -779,7 +1052,7 @@ def _make_rd():
                 if RD_MISSING is not None:
                     RD_MISSING.inc()
                 return
-            name = next((n for n in throttle_candidates if n in self.c.ctrl_index_by_name), None)
+            name = next((n for n in tc if n in self.c.ctrl_index_by_name), None)
             allow_rate_fn = getattr(self.c, "_allow_rate", None)
             use_rate = allow_rate_fn is not None and hasattr(self.c, "_last_send_ts")
             if name and use_rate and callable(allow_rate_fn):
