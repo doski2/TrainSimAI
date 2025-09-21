@@ -262,6 +262,23 @@ Notas:
 - `pytest.ini` en este repositorio establece por defecto `-m "real"` (histórico). El wrapper facilita ejecutar el modo más habitual local (`not-real`).
 - Si necesitas que adapte `tsc_sim.bat`/`tsc_real.bat` para invocar este wrapper o para documentar los requisitos del DLL, dímelo y lo añado.
 
+### Ejecutar tests `real` (self-hosted)
+
+Los tests marcados `real` requieren acceso al entorno RailDriver/Train Simulator y a bibliotecas nativas (DLL). No se ejecutan en runners hospedados por GitHub sin configuración adicional.
+
+- Hemos añadido un workflow manual: `.github/workflows/real.yml`. Usa `workflow_dispatch` y espera un runner Windows self-hosted etiquetado `real`.
+- Requisitos del runner:
+    - Windows x64 con Python 3.11 y dependencias de `requirements.txt`.
+    - RailDriver / Train Simulator DLLs instaladas y accesibles. Configure `TSC_RD_DLL_DIR` o `RAILWORKS_PLUGINS` como variable de entorno en el runner si hace falta.
+    - Opcionalmente, configure `TSC_RD` si su setup expone un endpoint TCP para el bridge.
+
+Para ejecutar localmente (si tiene hardware/DLLs configurados):
+
+```powershell
+# ejecutar tests reales localmente (asegúrese de setear las variables de entorno necesarias)
+.\scripts\run-tests.ps1 real
+```
+
 
 Para entornos de producción o integración continua es útil controlar parámetros de SQLite y disponer de un healthcheck sencillo.
 
