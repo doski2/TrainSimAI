@@ -24,8 +24,11 @@ CONTROLS: Dict[str, List[str]] = {
         "brake_demand",
         "BrakeCmd",
         "TrainBrake",
+        "train_brake",
         "TrainBrakeControl",
         "VirtualBrake",
+        "braking",
+        "braking_v0",
     ],
     "throttle": [
         "throttle",
@@ -69,6 +72,7 @@ CONTROLS: Dict[str, List[str]] = {
         "VirtualEngineBrakeControl",
         "LocoBrakeControl",
         "EngineBrake",
+        "loco_brake",
         "DynamicBrake",
     ],
 
@@ -77,6 +81,23 @@ CONTROLS: Dict[str, List[str]] = {
         "SpeedometerKPH",
         "SpeedometerMPH",
         "Speedometer",
+        "speed",
+        "speed_kph",
+    ],
+    # Misc useful mapped aliases
+    "electrical": [
+        "Ammeter",
+        "ammeter",
+    ],
+    "lighting": [
+        "Headlights",
+        "headlights",
+        "cab_light",
+    ],
+    "brake_pipe_pressure": [
+        "BrakePipePressureBAR",
+        "brake_pipe_bar",
+        "train_bc_bar",
     ],
 }
 
