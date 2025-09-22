@@ -176,3 +176,6 @@ stdout*.txt
 
 # CI artifacts
 artifacts/
+
+# CI artifacts
+artifacts/
