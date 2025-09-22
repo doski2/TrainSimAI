@@ -1,3 +1,45 @@
+name: CI - real tests
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - ci/**
+
+jobs:
+  real-tests:
+    name: Run real tests on self-hosted Windows runners
+    runs-on: [self-hosted, windows]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Validate runner environment
+        run: pwsh -File .\scripts\validate_real_runner.ps1
+
+      - name: Run real tests
+        run: |
+          python -m pytest -q -m real --junitxml=pytest-results-real.xml | Tee-Object -FilePath pytest-real.log
+
+      - name: Upload pytest results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-real-report
+          path: |
+            pytest-results-real.xml
+            pytest-real.log
 name: CI - real tests (manual)
 
 on:

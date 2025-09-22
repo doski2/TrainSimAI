@@ -61,6 +61,9 @@ pre-commit install
 pre-commit run --all-files
 ```
 
+Nota: después de instalar, es habitual que `pre-commit` modifique archivos (por ejemplo `ruff --fix` o `black`). Revise los cambios con `git status` y haga un commit adicional si el hook aplica correcciones automáticas.
+
+
 Observabilidad (Prometheus)
 ---------------------------
 - El cliente RD (`ingestion/rd_client.py`) puede exponer métricas Prometheus opcionalmente.
