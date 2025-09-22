@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import os
 from pathlib import Path
-from typing import Optional, Iterable, Dict, Any, List
+from typing import Any, Dict, Iterable, List, Optional
 
 
 class CSVLogger:
@@ -29,7 +29,9 @@ class CSVLogger:
         self.path = Path(path).resolve()
         self.delimiter = delimiter
         self.fieldnames: List[str] | None = None
-        self._base_order: List[str] = list(dict.fromkeys([str(x) for x in (base_order or [])]))
+        self._base_order: List[str] = list(
+            dict.fromkeys([str(x) for x in (base_order or [])])
+        )
         # prepare dir
         if self.path.parent:
             os.makedirs(self.path.parent, exist_ok=True)
@@ -47,7 +49,12 @@ class CSVLogger:
             fieldnames = self.fieldnames
             assert fieldnames is not None
             with self.path.open("a", newline="", encoding="utf-8") as f:
-                w = csv.DictWriter(f, fieldnames=fieldnames, delimiter=self.delimiter, extrasaction="ignore")
+                w = csv.DictWriter(
+                    f,
+                    fieldnames=fieldnames,
+                    delimiter=self.delimiter,
+                    extrasaction="ignore",
+                )
                 w.writeheader()
 
     def write_row(self, row: Dict[str, Any]) -> None:
@@ -63,14 +70,24 @@ class CSVLogger:
                 fieldnames = self.fieldnames
                 assert fieldnames is not None
                 with self.path.open("a", newline="", encoding="utf-8") as f:
-                    w = csv.DictWriter(f, fieldnames=fieldnames, delimiter=self.delimiter, extrasaction="ignore")
+                    w = csv.DictWriter(
+                        f,
+                        fieldnames=fieldnames,
+                        delimiter=self.delimiter,
+                        extrasaction="ignore",
+                    )
                     w.writeheader()
 
         # Open in append mode and write row mapping only known fields
         assert self.fieldnames is not None
         fieldnames = self.fieldnames
         with self.path.open("a", newline="", encoding="utf-8") as f:
-            w = csv.DictWriter(f, fieldnames=fieldnames, delimiter=self.delimiter, extrasaction="ignore")
+            w = csv.DictWriter(
+                f,
+                fieldnames=fieldnames,
+                delimiter=self.delimiter,
+                extrasaction="ignore",
+            )
             out = {k: row.get(k, "") for k in self.fieldnames}
             w.writerow(out)
 

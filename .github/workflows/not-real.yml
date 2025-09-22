@@ -1,15 +1,143 @@
 name: CI - not-real tests
 
 on:
-  pull_request:
   push:
     branches:
       - main
-      - ci/**
+      - 'ci/**'
+  pull_request:
 
 jobs:
-  test-not-real:
+  precommit-check:
     runs-on: windows-latest
+    env:
+      PYTHONIOENCODING: 'utf-8'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure Git does not auto-convert line endings on runner
+        shell: pwsh
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install pre-commit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pre-commit
+
+      - name: Run pre-commit checks
+        shell: pwsh
+        run: |
+          pre-commit run --all-files --show-diff-on-failure
+
+  test-not-real:
+    needs: precommit-check
+    runs-on: windows-latest
+    env:
+      PYTHONIOENCODING: 'utf-8'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install ruff==0.12.1
+
+      - name: Run tests (not-real)
+        shell: pwsh
+        run: |
+          ruff check .
+          python -m pip install pytest
+          python -m pytest -q -m "not real" --junitxml=pytest-results.xml | Tee-Object -FilePath pytest.log
+
+      - name: Upload pytest results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-not-real-report
+          path: |
+            pytest-results.xml
+            pytest.log
+name: CI - not-real tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'ci/**'
+  pull_request:
+
+jobs:
+  precommit-check:
+    runs-on: windows-latest
+    env:
+      PYTHONIOENCODING: 'utf-8'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+name: CI - not-real tests
+
+on:
+  push:
+    branches:
+      - main
+      - 'ci/**'
+  pull_request:
+
+jobs:
+  precommit-check:
+    runs-on: windows-latest
+    env:
+      PYTHONIOENCODING: 'utf-8'
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Ensure Git does not auto-convert line endings on runner
+        shell: pwsh
+        run: |
+          git config --global core.autocrlf false
+          git config --global core.eol lf
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install pre-commit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pre-commit
+
+      - name: Run pre-commit checks
+        shell: pwsh
+        run: |
+          # Fail the job if any hook reports problems or would change files
+          pre-commit run --all-files --show-diff-on-failure
+
+  test-not-real:
+    needs: precommit-check
+    runs-on: windows-latest
+    env:
+      PYTHONIOENCODING: 'utf-8'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -45,3 +173,6 @@ jobs:
           path: |
             pytest-results.xml
             pytest.log
+      - name: Checkout
+
+        uses: actions/checkout@v4

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import functools
 import json
+import math
 import os
 import time
+from math import asin, cos, radians, sin
 
-from ingestion.rd_client import RDClient
-import math
 from ingestion.lua_eventbus import LuaEventBus
+from ingestion.rd_client import RDClient
 from runtime.csv_logger import CSVLogger
-from math import radians, sin, cos, asin
 
 try:
     from storage.run_store_sqlite import RunStore
@@ -22,7 +22,10 @@ from runtime.events_bus import normalize
 # Usage: decorate small IO functions that may fail transiently. Keeps defaults
 # conservative; tests override delays to be fast.
 def retry_on_exception(
-    max_attempts: int = 3, base_delay: float = 0.1, max_delay: float = 2.0, exceptions: tuple = (Exception,)
+    max_attempts: int = 3,
+    base_delay: float = 0.1,
+    max_delay: float = 2.0,
+    exceptions: tuple = (Exception,),
 ):
     """Return a decorator that retries the wrapped callable on exception.
 
@@ -59,8 +62,12 @@ def retry_on_exception(
 
 # Archivos de salida
 CSV_PATH = os.environ.get("RUN_CSV_PATH", os.path.join("data", "runs", "run.csv"))
-EVT_PATH = os.environ.get("RUN_EVT_PATH", os.path.join("data", "events", "events.jsonl"))
-HB_PATH = os.environ.get("RUN_HB_PATH", os.path.join("data", "events", ".collector_heartbeat"))
+EVT_PATH = os.environ.get(
+    "RUN_EVT_PATH", os.path.join("data", "events", "events.jsonl")
+)
+HB_PATH = os.environ.get(
+    "RUN_HB_PATH", os.path.join("data", "events", ".collector_heartbeat")
+)
 
 # Dónde leer los eventos que emite el LUA:
 #  - Si existe la variable de entorno LUA_BUS_PATH → úsala
@@ -139,11 +146,16 @@ def run(
         R = 6371000.0
         dlat = radians(lat2 - lat1)
         dlon = radians(lon2 - lon1)
-        a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+        a = (
+            sin(dlat / 2) ** 2
+            + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
+        )
         return 2 * R * asin(math.sqrt(max(0.0, a)))
 
     # Seguimiento de último anuncio de límite (snapshot crudo)
-    pending_limit: dict | None = None  # dict con {"limit_next_kmh","odom_m","time","lat","lon"}
+    pending_limit: dict | None = (
+        None  # dict con {"limit_next_kmh","odom_m","time","lat","lon"}
+    )
 
     # Señal del último evento escrito para de-dup
     last_sig = None  # (type, marker_or_station, time)
@@ -158,8 +170,18 @@ def run(
         # ---- enriquecer: odómetro/velocidad si faltan ----
         # Preferencias de keys de posición: lat/lon en grados si existen (fila o meta)
         meta = row.get("meta") or {}
-        lat = row.get("lat") or row.get("lat_deg") or meta.get("lat") or meta.get("lat_deg")
-        lon = row.get("lon") or row.get("lon_deg") or meta.get("lon") or meta.get("lon_deg")
+        lat = (
+            row.get("lat")
+            or row.get("lat_deg")
+            or meta.get("lat")
+            or meta.get("lat_deg")
+        )
+        lon = (
+            row.get("lon")
+            or row.get("lon_deg")
+            or meta.get("lon")
+            or meta.get("lon_deg")
+        )
         t_wall = float(row.get("t_wall") or 0.0)
         odom_m = row.get("odom_m")
         speed_kph = row.get("speed_kph")
@@ -204,7 +226,9 @@ def run(
         # log de salud (cada ~1 s)
         if time.time() >= debug_next_log_t:
             try:
-                print(f"[collector] t={t_wall:.3f} odom={row.get('odom_m')} speed={row.get('speed_kph')}")
+                print(
+                    f"[collector] t={t_wall:.3f} odom={row.get('odom_m')} speed={row.get('speed_kph')}"
+                )
             except Exception:
                 pass
             debug_next_log_t = time.time() + 1.0
@@ -228,7 +252,9 @@ def run(
                         delay = sqlite_retry_delay * (2**attempt)
                         time.sleep(delay)
                     else:
-                        print(f"[collector] SQLite insert failed after {sqlite_retry_count} attempts: {e}")
+                        print(
+                            f"[collector] SQLite insert failed after {sqlite_retry_count} attempts: {e}"
+                        )
                         fallback_mode = True
         # Refresca heartbeat en cada tick (señal de vida del colector)
         try:
@@ -263,7 +289,12 @@ def run(
             evt_dict["t_wall"] = now
 
             # De-dup básico: mismo tipo+identificador+tiempo ⇒ no reescribir
-            ident = evt_dict.get("marker") or evt_dict.get("name") or evt_dict.get("station") or evt_dict.get("payload")
+            ident = (
+                evt_dict.get("marker")
+                or evt_dict.get("name")
+                or evt_dict.get("station")
+                or evt_dict.get("payload")
+            )
             sig = (evt_dict.get("type"), ident, evt_dict.get("time"))
             if sig == last_sig:
                 drained += 1
@@ -286,7 +317,9 @@ def run(
             if nrm.get("type") == "speed_limit_change":
                 prev = pending_limit
                 if prev:
-                    dist = float(odom_m or 0.0) - float(prev.get("odom_m") or 0.0)  # distancia por odometro
+                    dist = float(odom_m or 0.0) - float(
+                        prev.get("odom_m") or 0.0
+                    )  # distancia por odometro
                     reach = {
                         "type": "limit_reached",
                         "limit_kmh": prev["limit_next_kmh"],
@@ -300,12 +333,22 @@ def run(
                     try:
                         plat, plon = prev.get("lat"), prev.get("lon")  # type: ignore[assignment]
                         clat, clon = evt_dict.get("lat"), evt_dict.get("lon")
-                        if (plat is not None) and (plon is not None) and (clat is not None) and (clon is not None):
+                        if (
+                            (plat is not None)
+                            and (plon is not None)
+                            and (clat is not None)
+                            and (clon is not None)
+                        ):
                             R = 6371000.0
-                            p1, p2 = math.radians(float(plat)), math.radians(float(clat))
+                            p1, p2 = math.radians(float(plat)), math.radians(
+                                float(clat)
+                            )
                             dphi = p2 - p1
                             dl = math.radians(float(clon) - float(plon))
-                            a = math.sin(dphi / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+                            a = (
+                                math.sin(dphi / 2) ** 2
+                                + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+                            )
                             reach["dist_geo_m"] = 2 * R * math.asin(math.sqrt(a))
                     except Exception:
                         pass
@@ -334,12 +377,17 @@ def run(
 
 if __name__ == "__main__":
     import argparse
-    import time as _t
     import sys as _sys
+    import time as _t
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--hz", type=float, default=12.0, help="Frecuencia objetivo (Hz)")
-    ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0=infinito)")
+    ap.add_argument(
+        "--duration",
+        type=float,
+        default=0.0,
+        help="Segundos hasta auto-salida (0=infinito)",
+    )
     ap.add_argument(
         "--bus-from-start",
         action="store_true",
@@ -358,7 +406,12 @@ if __name__ == "__main__DISABLED_OLD":
 
     ap = argparse.ArgumentParser()
     ap.add_argument("--hz", type=float, default=12.0, help="Frecuencia objetivo")
-    ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-stop (0=sin límite)")
+    ap.add_argument(
+        "--duration",
+        type=float,
+        default=0.0,
+        help="Segundos hasta auto-stop (0=sin límite)",
+    )
     args = ap.parse_args()
     import time as _t
 

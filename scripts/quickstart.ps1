@@ -26,4 +26,3 @@ if (Test-Path 'tools\plot_run.py') {
 
 Write-Host "[Quickstart] Listo. Puedes hacer tail en vivo con:"
 Write-Host "  Get-Content .\\data\\events\\events.jsonl -Tail 50 -Wait"
-

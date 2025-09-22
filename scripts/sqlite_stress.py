@@ -10,12 +10,13 @@ optionally written to an output JSON.
 """
 
 from __future__ import annotations
+
 import argparse
-import sqlite3
-import time
-import threading
-import random
 import json
+import random
+import sqlite3
+import threading
+import time
 from pathlib import Path
 
 
@@ -39,7 +40,10 @@ def writer_thread(db_path: str, stop_at: float, stats: dict, tid: int, interval:
             ts = time.time()
             odom = random.random() * 1000.0
             speed = random.random() * 120.0
-            cur.execute("INSERT INTO telemetry (t_wall, odom_m, speed_kph) VALUES (?, ?, ?)", (ts, odom, speed))
+            cur.execute(
+                "INSERT INTO telemetry (t_wall, odom_m, speed_kph) VALUES (?, ?, ?)",
+                (ts, odom, speed),
+            )
             conn.commit()
             stats["writes"] += 1
         except Exception:
@@ -84,11 +88,19 @@ def main(argv=None):
     stats = {"writes": 0, "reads": 0, "write_errors": 0, "read_errors": 0}
     ths = []
     for i in range(args.writers):
-        th = threading.Thread(target=writer_thread, args=(args.db, stop_at, stats, i, args.interval), daemon=True)
+        th = threading.Thread(
+            target=writer_thread,
+            args=(args.db, stop_at, stats, i, args.interval),
+            daemon=True,
+        )
         th.start()
         ths.append(th)
     for i in range(args.readers):
-        th = threading.Thread(target=reader_thread, args=(args.db, stop_at, stats, args.interval), daemon=True)
+        th = threading.Thread(
+            target=reader_thread,
+            args=(args.db, stop_at, stats, args.interval),
+            daemon=True,
+        )
         th.start()
         ths.append(th)
     try:

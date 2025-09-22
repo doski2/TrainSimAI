@@ -1,6 +1,8 @@
-import time
 import importlib
-from ingestion.rd_client import RD_RETRIES, RD_EMERGENCY, RD_ACK_LATENCY, RD_EMERGENCY_GAUGE
+import time
+
+from ingestion.rd_client import (RD_ACK_LATENCY, RD_EMERGENCY,
+                                 RD_EMERGENCY_GAUGE, RD_RETRIES)
 
 
 def test_metrics_presence_and_behavior(tmp_path, make_client):
@@ -14,7 +16,7 @@ def test_metrics_presence_and_behavior(tmp_path, make_client):
 
     # If prometheus is not installed, the constants are None
     try:
-        importlib.import_module('prometheus_client')
+        importlib.import_module("prometheus_client")
     except Exception:
         assert RD_RETRIES is None and RD_EMERGENCY is None and RD_ACK_LATENCY is None
         return
@@ -26,7 +28,7 @@ def test_metrics_presence_and_behavior(tmp_path, make_client):
 
     fake.set_controller_value = never_apply
 
-    rd.set_controller_value('Regulator', 0.9)
+    rd.set_controller_value("Regulator", 0.9)
     time.sleep(0.1)
 
     # metrics should have been incremented
@@ -36,6 +38,7 @@ def test_metrics_presence_and_behavior(tmp_path, make_client):
     # but ensure the emergency gauge is set if present
     if RD_EMERGENCY_GAUGE is not None:
         # gauge should be 1 (emergency active)
-        val = RD_EMERGENCY_GAUGE._value.get()  # rely on prometheus client internals for test
+        val = (
+            RD_EMERGENCY_GAUGE._value.get()
+        )  # rely on prometheus client internals for test
         assert int(val) == 1
-

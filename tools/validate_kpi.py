@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import argparse
 import sys
 from pathlib import Path
-from typing import Tuple, Dict, List, Any
-import pandas as pd
+from typing import Any, Dict, List, Tuple
+
 import numpy as np
+import pandas as pd
 
 
 def _choose_col(df: pd.DataFrame, candidates: List[str], name: str) -> str:
@@ -13,7 +15,9 @@ def _choose_col(df: pd.DataFrame, candidates: List[str], name: str) -> str:
     for c in candidates:
         if c.lower() in cols_map:
             return cols_map[c.lower()]
-    raise SystemExit(f"[validate_kpi] No se encontró columna '{name}'. Prueba con --{name.replace('_', '-')}-col")
+    raise SystemExit(
+        f"[validate_kpi] No se encontró columna '{name}'. Prueba con --{name.replace('_', '-')}-col"
+    )
 
 
 def _segments_by_limit(df: pd.DataFrame, limit_col: str) -> List[Tuple[int, int]]:
@@ -51,10 +55,16 @@ def compute_kpis(
     if not v_col or v_col not in df.columns:
         v_col = _choose_col(df, ["v_kmh", "v_kph", "speed_kph", "speed_kmh"], "v_col")
     if not limit_col or limit_col not in df.columns:
-        limit_col = _choose_col(df, ["next_limit_kph", "limit_kph", "limit_next_kph", "next_limit"], "limit_col")
+        limit_col = _choose_col(
+            df,
+            ["next_limit_kph", "limit_kph", "limit_next_kph", "next_limit"],
+            "limit_col",
+        )
     if not dist_col or dist_col not in df.columns:
         dist_col = _choose_col(
-            df, ["dist_next_limit_m", "next_limit_dist_m", "dist_next_limit", "d_next_m"], "dist_col"
+            df,
+            ["dist_next_limit_m", "next_limit_dist_m", "dist_next_limit", "d_next_m"],
+            "dist_col",
         )
     for c in (v_col, limit_col, dist_col):
         df[c] = pd.to_numeric(df[c], errors="coerce")
@@ -69,7 +79,12 @@ def compute_kpis(
     for i0, i1 in segs:
         d_raw = df.iloc[i0:i1][dist_col].to_numpy()
         if smooth_win and smooth_win > 1:
-            d = pd.Series(d_raw).rolling(smooth_win, center=True, min_periods=1).median().to_numpy()
+            d = (
+                pd.Series(d_raw)
+                .rolling(smooth_win, center=True, min_periods=1)
+                .median()
+                .to_numpy()
+            )
         else:
             d = d_raw
         dd = np.diff(d)
@@ -84,14 +99,18 @@ def compute_kpis(
                     j += 1
                 if run >= bump_confirm_samples:
                     bumps += 1
-                    bump_locs.append(i0 + i + 1)  # índice (fila) en df donde se manifiesta el bump
+                    bump_locs.append(
+                        i0 + i + 1
+                    )  # índice (fila) en df donde se manifiesta el bump
                     i = j
                     continue
             i += 1
 
     # --- 2) Margen medio últimos 'window_m' metros (v - limit) con 0 <= dist <= window_m
     win = df[(df[dist_col] >= 0) & (df[dist_col] <= window_m)].copy()
-    mean_margin_last50 = float((win[v_col] - win[limit_col]).mean()) if not win.empty else float("nan")
+    mean_margin_last50 = (
+        float((win[v_col] - win[limit_col]).mean()) if not win.empty else float("nan")
+    )
 
     # --- 3) Arrivals OK: detectar cruces al umbral 'arrival_dist_m' y evaluar velocidad
     # Evento: una muestra entra en [0, arrival_dist_m] desde > arrival_dist_m.
@@ -115,18 +134,26 @@ def compute_kpis(
 
     return {
         "arrivals": float(arrivals),
-        "arrivals_ok": float(arrivals_ok) if arrivals_ok == arrivals_ok else float("nan"),
+        "arrivals_ok": (
+            float(arrivals_ok) if arrivals_ok == arrivals_ok else float("nan")
+        ),
         "monotonicity_bumps": float(bumps),
-        "mean_margin_last50_kph": float(mean_margin_last50)
-        if mean_margin_last50 == mean_margin_last50
-        else float("nan"),
+        "mean_margin_last50_kph": (
+            float(mean_margin_last50)
+            if mean_margin_last50 == mean_margin_last50
+            else float("nan")
+        ),
         "bump_locs": bump_locs,
     }
 
 
 def main():
     p = argparse.ArgumentParser(description="Validador KPI v0 para TrainSimAI")
-    p.add_argument("--csv", required=True, help="Ruta al CSV de control (p.ej. data\\runs\\ctrl_live_XXXX.csv)")
+    p.add_argument(
+        "--csv",
+        required=True,
+        help="Ruta al CSV de control (p.ej. data\\runs\\ctrl_live_XXXX.csv)",
+    )
     p.add_argument("--dist-col", default="dist_next_limit_m")
     p.add_argument("--limit-col", default="next_limit_kph")
     p.add_argument("--v-col", default="v_kmh")
@@ -146,7 +173,11 @@ def main():
         default=1,
         help="Muestras consecutivas de subida para contar bump (>=1)",
     )
-    p.add_argument("--dump-bumps", default="", help="Ruta CSV para volcar ventanas alrededor de bumps (opcional)")
+    p.add_argument(
+        "--dump-bumps",
+        default="",
+        help="Ruta CSV para volcar ventanas alrededor de bumps (opcional)",
+    )
     # Umbrales de aceptación (puedes cambiarlos en CLI)
     p.add_argument("--min-arrivals-ok", type=float, default=0.90)
     p.add_argument("--max-bumps", type=int, default=0)
@@ -188,7 +219,9 @@ def main():
     if k["monotonicity_bumps"] > args.max_bumps:
         print(f"[KPI][FAIL] monotonicity_bumps > {args.max_bumps}")
         ok = False
-    if not (args.target_margin_min <= k["mean_margin_last50_kph"] <= args.target_margin_max):
+    if not (
+        args.target_margin_min <= k["mean_margin_last50_kph"] <= args.target_margin_max
+    ):
         # Split long message to satisfy line-length linters
         msg = (
             f"[KPI][WARN] mean_margin_last50_kph fuera del objetivo "
@@ -201,7 +234,7 @@ def main():
         for loc in k["bump_locs"]:
             lo = max(0, int(loc) - 5)
             hi = min(len(df) - 1, int(loc) + 5)
-            tmp = df.iloc[lo: hi + 1].copy()
+            tmp = df.iloc[lo : hi + 1].copy()
             tmp["__bump_center__"] = (tmp.index == int(loc)).astype(int)
             tmp["__window_id__"] = int(loc)
             rows.append(tmp)

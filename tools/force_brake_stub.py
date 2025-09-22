@@ -3,8 +3,8 @@
 
 from __future__ import annotations
 
-import time
 import sys
+import time
 from pathlib import Path
 
 # Ensure repo root is on path so `runtime` is importable when script run from tools/

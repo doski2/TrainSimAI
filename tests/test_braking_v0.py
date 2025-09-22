@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from runtime.braking_era import compute_target_speed_kph_era
 
 # Config v0 (dict). Ajusta si tu perfil difiere.

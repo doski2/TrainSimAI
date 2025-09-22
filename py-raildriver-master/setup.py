@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
 import os
-import setuptools
 
+import setuptools
 
 CLASSIFIERS = [
     "Development Status :: 5 - Production/Stable",

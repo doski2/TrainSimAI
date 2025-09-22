@@ -1,22 +1,25 @@
 from __future__ import annotations
-import os
-import time
-import sqlite3
+
 import argparse
 import json
+import logging
 import math
+import os
+import sqlite3
+import time
 from dataclasses import replace
 from pathlib import Path
-from typing import Optional, Dict, TYPE_CHECKING
-import logging
-from runtime.braking_v0 import BrakingConfig
+from typing import TYPE_CHECKING, Dict, Optional
+
+from runtime.actuators import (debug_trace, load_rd_from_spec, scan_for_rd,
+                               send_to_rd)
 from runtime.braking_era import EraCurve
-from runtime.profiles import load_braking_profile, load_profile_extras
-from runtime.guards import RateLimiter, JerkBrakeLimiter, overspeed_guard
+from runtime.braking_v0 import BrakingConfig
 from runtime.csv_logger import CSVLogger
-from storage.run_store_sqlite import RunStore
+from runtime.guards import JerkBrakeLimiter, RateLimiter, overspeed_guard
 from runtime.mode_guard import ModeGuard
-from runtime.actuators import scan_for_rd, send_to_rd, debug_trace, load_rd_from_spec
+from runtime.profiles import load_braking_profile, load_profile_extras
+from storage.run_store_sqlite import RunStore
 
 # Avoid redefining names during type-checking: import for types only and
 # provide runtime fallbacks when the modules are not available.
@@ -28,7 +31,8 @@ else:
         from runtime.event_stream import NonBlockingEventStream  # type: ignore
     except Exception:
         try:
-            from ingestion.event_stream import NonBlockingEventStream  # type: ignore
+            from ingestion.event_stream import \
+                NonBlockingEventStream  # type: ignore
         except Exception:
 
             class NonBlockingEventStream:
@@ -77,7 +81,9 @@ _last_dist_next_m: float | None = None
 class ControlLoop:
     """Fix: Clase ControlLoop simplificada y corregida"""
 
-    def __init__(self, source: str, profile=None, hz=5, db_path=None, run_csv=None, **kwargs):
+    def __init__(
+        self, source: str, profile=None, hz=5, db_path=None, run_csv=None, **kwargs
+    ):
         self.source = source
         self.profile = profile
         self.hz = hz
@@ -90,7 +96,9 @@ class ControlLoop:
         self.max_failures_before_fallback = 5
         # watchdog / emergency stop
         self.emergency = False
-        self.max_failures_before_emergency = int(kwargs.get("max_failures_before_emergency", 10))
+        self.max_failures_before_emergency = int(
+            kwargs.get("max_failures_before_emergency", 10)
+        )
         # ack/heartbeat settings
         self.ack_timeout_s = float(kwargs.get("ack_timeout_s", 2.0))
         # bookkeeping for last command/ack (initialized when first used)
@@ -115,7 +123,9 @@ class ControlLoop:
                 else:
                     self.consecutive_failures += 1
                     if self.consecutive_failures >= self.max_failures_before_fallback:
-                        self.logger.warning("Too many SQLite failures, switching to CSV")
+                        self.logger.warning(
+                            "Too many SQLite failures, switching to CSV"
+                        )
                         self.source = "csv"
                         return self._read_from_csv()
             else:
@@ -150,7 +160,9 @@ class ControlLoop:
                     return data
         except sqlite3.OperationalError as e:
             if "database is locked" in str(e):
-                self.logger.warning(f"Database locked (attempt {self.consecutive_failures})")
+                self.logger.warning(
+                    f"Database locked (attempt {self.consecutive_failures})"
+                )
                 return self._read_from_csv()
             else:
                 self.logger.error(f"SQLite operational error: {e}")
@@ -186,7 +198,9 @@ class ControlLoop:
                             # mantener strings para compatibilidad; conversiones posteriores harán float()
                             data[key] = str(float(data[key]))
                         except (ValueError, TypeError):
-                            self.logger.warning(f"Invalid numeric value for {key}: {data[key]}")
+                            self.logger.warning(
+                                f"Invalid numeric value for {key}: {data[key]}"
+                            )
                             data[key] = "0.0"
                 return data
         except Exception as e:
@@ -255,7 +269,10 @@ class ControlLoop:
                             self.consecutive_failures += 1
                             # opcional: aquí podríamos emitir un evento al EVT_PATH o CSV
                             # y activar el watchdog/emergency si es persistente
-                            if self.consecutive_failures >= self.max_failures_before_emergency:
+                            if (
+                                self.consecutive_failures
+                                >= self.max_failures_before_emergency
+                            ):
                                 self.enter_emergency("stale-data")
                         # monitor ack timeouts each cycle
                         try:
@@ -272,7 +289,10 @@ class ControlLoop:
                         self.logger.error(f"Error during stale-data check: {e}")
                         # prevenir que un fallo en la comprobación detenga el loop
                         self.consecutive_failures += 1
-                        if self.consecutive_failures >= self.max_failures_before_emergency:
+                        if (
+                            self.consecutive_failures
+                            >= self.max_failures_before_emergency
+                        ):
                             self.enter_emergency("exception-in-stale-check")
                 else:
                     self.logger.debug("No telemetry data available")
@@ -299,7 +319,9 @@ class ControlLoop:
         speed = data.get("speed_kph", 0)
         odom = data.get("odom_m", 0)
         timestamp = data.get("t_wall", time.time())
-        self.logger.debug(f"Processing: speed={speed} kph, odom={odom} m, t={timestamp}")
+        self.logger.debug(
+            f"Processing: speed={speed} kph, odom={odom} m, t={timestamp}"
+        )
         # Decision trace placeholder: controller modules compute a requested
         # deceleration (a_req) and map it to a brake command in [0,1].
         # For safety, ensure any command is clamped before sending.
@@ -309,13 +331,19 @@ class ControlLoop:
             raw_brake = None
             # Example: if upstream modules set data['a_req'], respect it
             if "a_req" in data:
-                raw_brake = _map_a_req_to_brake(data["a_req"], data.get("a_service", 1.0))
+                raw_brake = _map_a_req_to_brake(
+                    data["a_req"], data.get("a_service", 1.0)
+                )
             if raw_brake is not None:
                 sent = self.apply_brake_command(raw_brake)
-                self.logger.info(f"Decision: raw_brake={raw_brake:.3f}, sent_brake={sent:.3f}, t={timestamp}")
+                self.logger.info(
+                    f"Decision: raw_brake={raw_brake:.3f}, sent_brake={sent:.3f}, t={timestamp}"
+                )
             else:
                 # nothing to send; just trace
-                self.logger.debug(f"Decision: no brake command computed for t={timestamp}")
+                self.logger.debug(
+                    f"Decision: no brake command computed for t={timestamp}"
+                )
         except Exception as e:
             self.logger.error(f"Error computing/applying brake: {e}")
 
@@ -347,7 +375,9 @@ class ControlLoop:
                     cur = json.loads(p.read_text(encoding="utf-8"))
                     rd_ts = float(cur.get("ts", 0))
                     # if RD ack timestamp is newer/equal to our last command, treat as ack
-                    if self.last_command_time is not None and rd_ts >= float(self.last_command_time):
+                    if self.last_command_time is not None and rd_ts >= float(
+                        self.last_command_time
+                    ):
                         # record as last ack and persist
                         self.last_ack_time = rd_ts
                         try:
@@ -372,10 +402,15 @@ class ControlLoop:
             if self.last_command_time is None:
                 return
             # if ack exists and is newer than last command, we're good
-            if self.last_ack_time is not None and self.last_ack_time >= self.last_command_time:
+            if (
+                self.last_ack_time is not None
+                and self.last_ack_time >= self.last_command_time
+            ):
                 # clear emergency if any
                 if self.emergency:
-                    self.logger.info("Ack received for last command; clearing emergency")
+                    self.logger.info(
+                        "Ack received for last command; clearing emergency"
+                    )
                     self.clear_emergency()
                 return
             # if ack not received and timeout elapsed -> emergency
@@ -468,7 +503,9 @@ class ControlLoop:
         self.running = False
 
 
-def tail_csv_last_row(path: Path, max_bytes: int = 1_000_000) -> Optional[Dict[str, object]]:
+def tail_csv_last_row(
+    path: Path, max_bytes: int = 1_000_000
+) -> Optional[Dict[str, object]]:
     """
     Lee la última fila completa de un CSV sin bloquear.
     Devuelve dict(header->valor) o None si el archivo está vacío/incompleto.
@@ -537,7 +574,9 @@ def _kph_to_mps(kph: float) -> float:
     return kph / 3.6
 
 
-def _brake_distance_m(v_kph: float, v_target_kph: float, a_mps2: float, t_react_s: float) -> float:
+def _brake_distance_m(
+    v_kph: float, v_target_kph: float, a_mps2: float, t_react_s: float
+) -> float:
     """Distancia necesaria para pasar de v -> v_target con deceleración de servicio + tiempo de reacción."""
     v = max(0.0, _kph_to_mps(v_kph))
     vt = max(0.0, _kph_to_mps(v_target_kph))
@@ -569,12 +608,20 @@ def _map_a_req_to_brake(a_req: float, a_service: float) -> float:
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
+    p = argparse.ArgumentParser(
+        description="Control online a partir de run.csv y eventos"
+    )
     p.add_argument("--run", type=Path, default=Path("data/runs/run.csv"))
     p.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
-    p.add_argument("--emit-active-limit", action="store_true", help="Incluye columna active_limit_kph en la salida CSV")
     p.add_argument(
-        "--bus", default="data/lua_eventbus.jsonl", help="Event bus JSONL (fallback si events.jsonl no avanza)"
+        "--emit-active-limit",
+        action="store_true",
+        help="Incluye columna active_limit_kph en la salida CSV",
+    )
+    p.add_argument(
+        "--bus",
+        default="data/lua_eventbus.jsonl",
+        help="Event bus JSONL (fallback si events.jsonl no avanza)",
     )
     p.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
     p.add_argument("--hz", type=float, default=5.0)
@@ -586,7 +633,11 @@ def main() -> None:
     )
     p.add_argument("--db", default="data/run.db")
     p.add_argument("--source", choices=["sqlite", "csv"], default="sqlite")
-    p.add_argument("--no-csv-fallback", action="store_true", help="Desactiva fallback a CSV si SQLite está vacío")
+    p.add_argument(
+        "--no-csv-fallback",
+        action="store_true",
+        help="Desactiva fallback a CSV si SQLite está vacío",
+    )
     p.add_argument(
         "--derive-speed-if-missing",
         action="store_true",
@@ -594,26 +645,49 @@ def main() -> None:
         help="Si falta speed_kph, derivarla de odom_m (por defecto: activado)",
     )
     p.add_argument(
-        "--no-derive-speed", action="store_true", help="Desactiva la derivación automática de speed_kph si falta"
+        "--no-derive-speed",
+        action="store_true",
+        help="Desactiva la derivación automática de speed_kph si falta",
     )
     p.add_argument("--profile", type=str, default=None)
     p.add_argument("--era-curve", type=str, default=None)
-    p.add_argument("--start-events-from-end", action="store_true", help="Empezar a leer events.jsonl desde el final")
-    p.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0 = infinito)")
+    p.add_argument(
+        "--start-events-from-end",
+        action="store_true",
+        help="Empezar a leer events.jsonl desde el final",
+    )
+    p.add_argument(
+        "--duration",
+        type=float,
+        default=0.0,
+        help="Segundos hasta auto-salida (0 = infinito)",
+    )
     # Overrides CLI (opcionales)
     p.add_argument("--A", type=float, default=None)
     p.add_argument("--margin-kph", type=float, default=None)
     p.add_argument(
-        "--rise-per-s", type=float, default=None, help="Velocidad de subida del freno (por defecto en código)"
+        "--rise-per-s",
+        type=float,
+        default=None,
+        help="Velocidad de subida del freno (por defecto en código)",
     )
     p.add_argument(
-        "--fall-per-s", type=float, default=None, help="Velocidad de bajada del freno (por defecto en código)"
+        "--fall-per-s",
+        type=float,
+        default=None,
+        help="Velocidad de bajada del freno (por defecto en código)",
     )
     p.add_argument(
-        "--startup-gate-s", type=float, default=None, help="Segundos de compuerta de arranque (por defecto 4.0)"
+        "--startup-gate-s",
+        type=float,
+        default=None,
+        help="Segundos de compuerta de arranque (por defecto 4.0)",
     )
     p.add_argument(
-        "--hold-s", type=float, default=None, help="Segundos de retención mínima al encender freno (por defecto 0.5)"
+        "--hold-s",
+        type=float,
+        default=None,
+        help="Segundos de retención mínima al encender freno (por defecto 0.5)",
     )
     p.add_argument("--reaction", type=float, default=None)
     p.add_argument(
@@ -655,7 +729,11 @@ def main() -> None:
         cfg = load_braking_profile(args.profile, base=cfg)
         extras = load_profile_extras(args.profile)
         # si el perfil tiene bloque 'braking', mapear claves conocidas a BrakingConfig
-        if isinstance(extras, dict) and "braking" in extras and isinstance(extras["braking"], dict):
+        if (
+            isinstance(extras, dict)
+            and "braking" in extras
+            and isinstance(extras["braking"], dict)
+        ):
             b = extras["braking"]
             # keys posibles que podrían venir del bloque 'braking'
             mapping_keys = {
@@ -687,7 +765,9 @@ def main() -> None:
     curve = EraCurve.from_csv(era_curve_path) if era_curve_path else None
 
     # Estado de eventos y rate limiters
-    ev_stream = NonBlockingEventStream(events_path, from_end=bool(args.start_events_from_end))
+    ev_stream = NonBlockingEventStream(
+        events_path, from_end=bool(args.start_events_from_end)
+    )
     rl_th = RateLimiter(max_delta_per_s=0.8)
     jerk_br = JerkBrakeLimiter(max_rate_per_s=1.2, max_jerk_per_s2=3.0)
     # Estado para suavizado ligero y flag de approach (estado local, no usar self.* en función)
@@ -827,7 +907,10 @@ def main() -> None:
                 latest = store.latest_since(last_rowid)
                 if latest is None:
                     consecutive_failures += 1
-                    if not args.no_csv_fallback and consecutive_failures >= max_failures_before_fallback:
+                    if (
+                        not args.no_csv_fallback
+                        and consecutive_failures >= max_failures_before_fallback
+                    ):
                         print("[control] Demasiados fallos en SQLite, cambiando a CSV.")
                         use_csv = True
                     time.sleep(0.05)
@@ -839,8 +922,13 @@ def main() -> None:
                     age = time.time() - t_wall_val if t_wall_val else 9999
                     if age > stale_data_threshold:
                         consecutive_failures += 1
-                        print(f"[control] Datos obsoletos de SQLite: {age:.1f}s, fallo {consecutive_failures}")
-                        if not args.no_csv_fallback and consecutive_failures >= max_failures_before_fallback:
+                        print(
+                            f"[control] Datos obsoletos de SQLite: {age:.1f}s, fallo {consecutive_failures}"
+                        )
+                        if (
+                            not args.no_csv_fallback
+                            and consecutive_failures >= max_failures_before_fallback
+                        ):
                             print("[control] Cambiando a CSV por datos obsoletos.")
                             use_csv = True
                         time.sleep(0.05)
@@ -850,7 +938,10 @@ def main() -> None:
             except Exception as e:
                 consecutive_failures += 1
                 print(f"[control] Error leyendo SQLite: {e}")
-                if not args.no_csv_fallback and consecutive_failures >= max_failures_before_fallback:
+                if (
+                    not args.no_csv_fallback
+                    and consecutive_failures >= max_failures_before_fallback
+                ):
                     print("[control] Cambiando a CSV por errores consecutivos.")
                     use_csv = True
                 time.sleep(0.05)
@@ -875,20 +966,34 @@ def main() -> None:
         v = row.get("speed_kph") or row.get("v_kmh") or row.get("SpeedometerKPH")
         speed_kph = _to_float_loose(v)
         # EMA con tau ~0.4 s => alpha ≈ dt / (tau + dt)
-        dt_real = period  # por defecto, pero si t_wall es confiable, usar diferencia real
+        dt_real = (
+            period  # por defecto, pero si t_wall es confiable, usar diferencia real
+        )
         if last_t_wall_written is not None and t_wall > last_t_wall_written:
             dt_real = t_wall - last_t_wall_written
         tau = 0.4
         alpha = dt_real / (tau + dt_real) if dt_real > 0 else 0.2
-        speed_ema = speed_kph if speed_ema is None else (1 - alpha) * speed_ema + alpha * speed_kph
+        speed_ema = (
+            speed_kph
+            if speed_ema is None
+            else (1 - alpha) * speed_ema + alpha * speed_kph
+        )
         speed_for_target = speed_ema
 
         # --- suavizado ligero para control (no para ocultar errores de sensado) ---
         alpha = 0.25  # 0<alpha<=1; menor = más suave
         if v_filt_kph_state is None:
-            v_filt_kph_state = float(speed_kph) if (speed_kph is not None and not math.isnan(speed_kph)) else 0.0
+            v_filt_kph_state = (
+                float(speed_kph)
+                if (speed_kph is not None and not math.isnan(speed_kph))
+                else 0.0
+            )
         else:
-            sf = float(speed_kph) if (speed_kph is not None and not math.isnan(speed_kph)) else v_filt_kph_state
+            sf = (
+                float(speed_kph)
+                if (speed_kph is not None and not math.isnan(speed_kph))
+                else v_filt_kph_state
+            )
             v_filt_kph_state = alpha * sf + (1 - alpha) * v_filt_kph_state
         v_for_control_kph = v_filt_kph_state
 
@@ -921,7 +1026,9 @@ def main() -> None:
                     anchor_dist_m = float(dist)
                     anchor_odom_m = odom_m
                     try:
-                        print(f"[control] next_limit={next_limit_kph} kph  dist≈{anchor_dist_m} m")
+                        print(
+                            f"[control] next_limit={next_limit_kph} kph  dist≈{anchor_dist_m} m"
+                        )
                     except Exception:
                         pass
         if math.isnan(speed_kph):
@@ -975,7 +1082,11 @@ def main() -> None:
         if dist_next_limit_m is not None and dist_next_limit_m <= 2.0:
             try:
                 # promover a variable de módulo persistente
-                _active_limit_kph = float(next_limit_kph) if next_limit_kph is not None else _active_limit_kph
+                _active_limit_kph = (
+                    float(next_limit_kph)
+                    if next_limit_kph is not None
+                    else _active_limit_kph
+                )
             except Exception:
                 pass
             # limpiar el próximo límite y su anclaje
@@ -991,19 +1102,27 @@ def main() -> None:
         if start_t_wall is None:
             start_t_wall = float(t_wall)
         t_since = float(t_wall) - float(start_t_wall)
-        limits_valid = (active_limit_kph is not None and not math.isnan(float(active_limit_kph))) or (
-            next_limit_kph is not None and dist_next_limit_m is not None
-        )
+        limits_valid = (
+            active_limit_kph is not None and not math.isnan(float(active_limit_kph))
+        ) or (next_limit_kph is not None and dist_next_limit_m is not None)
         # compuerta de arranque: puede sobreescribirse por CLI
-        startup_gate_s = float(args.startup_gate_s) if args.startup_gate_s is not None else 4.0
+        startup_gate_s = (
+            float(args.startup_gate_s) if args.startup_gate_s is not None else 4.0
+        )
         control_ready = (t_since >= startup_gate_s) and bool(limits_valid)
 
         # 4) objetivo y PID (lógica 'approach' conservadora basada en distancia física)
         # Resolver parámetros físicos y de perfil (compatibilidad con nombres antiguos)
-        v_margin_kph = float(getattr(cfg, "v_margin_kph", getattr(cfg, "margin_kph", 3.0)))
-        a_service = float(getattr(cfg, "a_service_mps2", getattr(cfg, "max_service_decel", 0.7)))
+        v_margin_kph = float(
+            getattr(cfg, "v_margin_kph", getattr(cfg, "margin_kph", 3.0))
+        )
+        a_service = float(
+            getattr(cfg, "a_service_mps2", getattr(cfg, "max_service_decel", 0.7))
+        )
         t_react = float(getattr(cfg, "t_react_s", getattr(cfg, "reaction_time_s", 0.6)))
-        margin_m = float(extras.get("margin_m", 0.0) if isinstance(extras, dict) else 0.0)
+        margin_m = float(
+            extras.get("margin_m", 0.0) if isinstance(extras, dict) else 0.0
+        )
 
         # Crucero por defecto: si hay límite activo, lo usamos con margen; si no, mantenemos velocidad actual
         cruise_kph = speed_kph
@@ -1017,13 +1136,19 @@ def main() -> None:
         if next_limit_kph is None or dist_next_limit_m is None:
             # No hay siguiente límite -> mantén crucero del límite actual o velocidad actual
             v_tgt = cruise_kph
-            phase = "CRUISE" if (speed_kph is not None and v_tgt >= speed_kph - 0.1) else "COAST"
+            phase = (
+                "CRUISE"
+                if (speed_kph is not None and v_tgt >= speed_kph - 0.1)
+                else "COAST"
+            )
             approach_active = False
         else:
             # Distancia que necesitamos para llegar a target_next_kph con seguridad
             # Asegurar tipos válidos
             v_use = float(
-                v_for_control_kph if v_for_control_kph is not None else (speed_kph if speed_kph is not None else 0.0)
+                v_for_control_kph
+                if v_for_control_kph is not None
+                else (speed_kph if speed_kph is not None else 0.0)
             )
             tgt = float(target_next_kph if target_next_kph is not None else 0.0)
             d_need = _brake_distance_m(v_use, tgt, a_service, t_react) + margin_m
@@ -1040,10 +1165,20 @@ def main() -> None:
 
             if approach:
                 v_tgt = target_next_kph if target_next_kph is not None else 0.0
-                phase = "BRAKE" if (speed_kph is not None and v_tgt < speed_kph - cfg.coast_band_kph) else "COAST"
+                phase = (
+                    "BRAKE"
+                    if (
+                        speed_kph is not None and v_tgt < speed_kph - cfg.coast_band_kph
+                    )
+                    else "COAST"
+                )
             else:
                 v_tgt = cruise_kph
-                phase = "CRUISE" if (speed_kph is not None and v_tgt >= speed_kph - 0.1) else "COAST"
+                phase = (
+                    "CRUISE"
+                    if (speed_kph is not None and v_tgt >= speed_kph - 0.1)
+                    else "COAST"
+                )
 
         # Failsafe: si algo devolviera NaN o None, usar velocidad actual
         try:
@@ -1055,7 +1190,11 @@ def main() -> None:
 
         # SplitPID.update espera (error, dt); aquí error = v_tgt - speed_kph
         # Asegurar que speed_kph y v_tgt son floats válidos
-        sp = float(speed_kph) if (speed_kph is not None and not math.isnan(speed_kph)) else 0.0
+        sp = (
+            float(speed_kph)
+            if (speed_kph is not None and not math.isnan(speed_kph))
+            else 0.0
+        )
         tgt_err = float(v_tgt) - sp
         pid_out = pid.update(tgt_err, period)
         # Si el PID real devuelve una tupla (th, br), descomponer; si es float, usar como throttle y brake=0
@@ -1069,9 +1208,11 @@ def main() -> None:
         # overspeed_guard comparará contra next_limit_kph si está disponible, o bien contra _active_limit_kph
         og = overspeed_guard(
             float(speed_kph) if speed_kph is not None else 0.0,
-            float(next_limit_kph)
-            if next_limit_kph is not None
-            else (_active_limit_kph if _active_limit_kph is not None else 0.0),
+            (
+                float(next_limit_kph)
+                if next_limit_kph is not None
+                else (_active_limit_kph if _active_limit_kph is not None else 0.0)
+            ),
         )
 
         # 4.1) Guard FÍSICO por distancia (a_req > a_service -> pisar más freno)
@@ -1109,9 +1250,17 @@ def main() -> None:
             "speed_kph": float(speed_kph),
             "speed_filt_kph": float(v_for_control_kph),
             "next_limit_kph": "" if next_limit_kph is None else float(next_limit_kph),
-            "next_limit_used_kph": "" if next_limit_kph is None else float(next_limit_kph),
-            "cur_limit_used_kph": float(_active_limit_kph) if _active_limit_kph is not None else float("nan"),
-            "dist_next_limit_m": "" if dist_next_limit_m is None else float(dist_next_limit_m),
+            "next_limit_used_kph": (
+                "" if next_limit_kph is None else float(next_limit_kph)
+            ),
+            "cur_limit_used_kph": (
+                float(_active_limit_kph)
+                if _active_limit_kph is not None
+                else float("nan")
+            ),
+            "dist_next_limit_m": (
+                "" if dist_next_limit_m is None else float(dist_next_limit_m)
+            ),
             "target_speed_kph": float(v_tgt),
             "phase": phase,
             "throttle": float(round(th, 3)),
@@ -1120,7 +1269,9 @@ def main() -> None:
         }
         row_out["approach_active"] = int(bool(approach_active))
         if getattr(args, "emit_active_limit", False):
-            row_out["active_limit_kph"] = _active_limit_kph if _active_limit_kph is not None else ""
+            row_out["active_limit_kph"] = (
+                _active_limit_kph if _active_limit_kph is not None else ""
+            )
         # --- control de freno con histéresis + retención + rampa hacia "desired" ---
         # desired_brake: lo que pide el PID/guard como mínimo efectivo
         desired_brake = max(0.0, float(br))
@@ -1137,7 +1288,10 @@ def main() -> None:
             on = True
         # no frenar en crucero si no estamos en aproximación y vamos por debajo de cruise + 0.3
         # pero no cancelar el encendido si un guard físico/por distancia ya pide freno
-        if desired_brake <= 0.05 and (not approach_active and float(v_for_control_kph) <= (float(cruise_kph) + 0.3)):
+        if desired_brake <= 0.05 and (
+            not approach_active
+            and float(v_for_control_kph) <= (float(cruise_kph) + 0.3)
+        ):
             on = False
         # compuerta de arranque: hasta que el control esté "ready" NO se permite
         # frenar por control, pero si un guard físico/por distancia ya pide freno
@@ -1191,7 +1345,9 @@ def main() -> None:
         if delta >= 0.0:
             brake_cmd_local = min(1.0, brake_cmd_local + min(delta, rise_per_s * dt_br))
         else:
-            brake_cmd_local = max(0.0, brake_cmd_local + max(delta, -fall_per_s * dt_br))
+            brake_cmd_local = max(
+                0.0, brake_cmd_local + max(delta, -fall_per_s * dt_br)
+            )
         if ctrl_debug:
             try:
                 print(
@@ -1239,7 +1395,10 @@ def main() -> None:
             rd_obj, rd_name = scan_for_rd(locals(), globals())
         debug_on = os.getenv("TSC_RD_DEBUG", "0") in ("1", "true", "True")
         if rd_obj is None:
-            debug_trace(debug_on, f"NO-RD mode={mode_guard.mode} t_plan={throttle_cmd} b_plan={brake_cmd}")
+            debug_trace(
+                debug_on,
+                f"NO-RD mode={mode_guard.mode} t_plan={throttle_cmd} b_plan={brake_cmd}",
+            )
         else:
             if ctrl_debug:
                 try:

@@ -175,4 +175,3 @@ Copia y pega por día en `docs/diario.md`:
 - [ ] Plantilla `docs/diario.md` creada y en uso
 - [ ] `research/refs.md` con enlaces y notas
 - [ ] Roadmap `docs/roadmap.md` actualizado
-

@@ -411,4 +411,3 @@ Todo queda:
 4. Añadir detección de **PZB/SIFA** desde los nombres de controles presentes.
 5. Integrar **braking_curves.py** y planificador por **próximos límites**.
 6. Extender LUA para etiquetar **paradas por estación** (marcador de andén) y enviar **distancia al límite** si el contexto lo permite.
-

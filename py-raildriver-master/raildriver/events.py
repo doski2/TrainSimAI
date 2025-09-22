@@ -29,9 +29,13 @@ class Listener(object):
         self.interval: float = interval
         self.raildriver: Any = raildriver
 
-        self.bindings: DefaultDict[str, List[Callable[..., None]]] = collections.defaultdict(list)
+        self.bindings: DefaultDict[str, List[Callable[..., None]]] = (
+            collections.defaultdict(list)
+        )
         self.current_data: DefaultDict[str, Any] = collections.defaultdict(lambda: None)
-        self.previous_data: DefaultDict[str, Any] = collections.defaultdict(lambda: None)
+        self.previous_data: DefaultDict[str, Any] = collections.defaultdict(
+            lambda: None
+        )
         self.subscribed_fields: List[str] = []
         self.running: bool = False
         self.thread: Optional[threading.Thread] = None
@@ -64,16 +68,23 @@ class Listener(object):
                 del self.current_data[field_name]
             else:
                 self.current_data[field_name] = current_value
-                if current_value != self.previous_data[field_name] and self.iteration > 1:
+                if (
+                    current_value != self.previous_data[field_name]
+                    and self.iteration > 1
+                ):
                     binding_name = "on_{}_change".format(field_name.lower())
-                    self._execute_bindings(binding_name, current_value, self.previous_data[field_name])
+                    self._execute_bindings(
+                        binding_name, current_value, self.previous_data[field_name]
+                    )
 
         for field_name, method_name in self.special_fields.items():
             current_value = getattr(self.raildriver, method_name)()
             self.current_data[field_name] = current_value
             if current_value != self.previous_data[field_name] and self.iteration > 1:
                 binding_name = "on_{}_change".format(field_name[1:].lower())
-                self._execute_bindings(binding_name, current_value, self.previous_data[field_name])
+                self._execute_bindings(
+                    binding_name, current_value, self.previous_data[field_name]
+                )
 
     def _main_loop(self) -> None:
         try:
@@ -123,5 +134,7 @@ class Listener(object):
         available_controls = dict(self.raildriver.get_controller_list()).values()
         for field in field_names:
             if field not in available_controls:
-                raise ValueError("Cannot subscribe to a missing controller {}".format(field))
+                raise ValueError(
+                    "Cannot subscribe to a missing controller {}".format(field)
+                )
         self.subscribed_fields = field_names

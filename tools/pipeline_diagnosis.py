@@ -5,10 +5,11 @@ Script de diagnóstico para identificar por qué los datos están obsoletos
 
 from __future__ import annotations
 
-import psutil
-import time
 import os
+import time
 from pathlib import Path
+
+import psutil
 
 
 def check_trainsimai_processes() -> bool:
@@ -20,7 +21,13 @@ def check_trainsimai_processes() -> bool:
         try:
             cmdline = " ".join(proc.info.get("cmdline") or [])
             if any(
-                keyword in cmdline.lower() for keyword in ["collector", "control_loop", "getdata_bridge", "trainsimai"]
+                keyword in cmdline.lower()
+                for keyword in [
+                    "collector",
+                    "control_loop",
+                    "getdata_bridge",
+                    "trainsimai",
+                ]
             ):
                 runtime = time.time() - (proc.info.get("create_time") or time.time())
                 print(f"PID {proc.info.get('pid')}: {proc.info.get('name')}")
@@ -54,7 +61,9 @@ def check_key_files() -> None:
             size_mb = stat.st_size / (1024 * 1024)
             age_hours = (time.time() - stat.st_mtime) / 3600
             status = "🟢" if age_hours < 1 else "🟡" if age_hours < 24 else "🔴"
-            print(f"{status} {file_path}: {size_mb:.2f} MB, modificado hace {age_hours:.1f}h")
+            print(
+                f"{status} {file_path}: {size_mb:.2f} MB, modificado hace {age_hours:.1f}h"
+            )
         else:
             print(f"❌ {file_path}: NO EXISTE")
 
@@ -64,7 +73,8 @@ def check_getdata_file() -> None:
     print("\n=== TRAIN SIMULATOR GETDATA ===")
 
     getdata_path = os.environ.get(
-        "TSC_GETDATA_FILE", r"C:\Program Files (x86)\Steam\steamapps\common\RailWorks\plugins\GetData.txt"
+        "TSC_GETDATA_FILE",
+        r"C:\Program Files (x86)\Steam\steamapps\common\RailWorks\plugins\GetData.txt",
     )
 
     if not getdata_path:

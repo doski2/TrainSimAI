@@ -26,4 +26,3 @@ En rd_client._common_controls() estás buscando SIFA (mayúsculas) y PZB_1000/PZ
 También faltan alias comunes como VirtualBrake y VirtualEngineBrakeControl.
 Consecuencia: no se loguean esos campos aunque existan
 decir que por ahora las seguridades las guarde no las vamos a usar actualmente
-

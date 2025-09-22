@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import json
 import os
-import pytest
 
+import pytest
 
 EVENTS = os.path.join("data", "events", "events.jsonl")
 
@@ -19,8 +19,8 @@ def test_events_min_schema():
             total += 1
             obj = json.loads(line)
             assert "type" in obj, "Cada evento debe llevar 'type'"
-            assert ("t_wall" in obj) or ("t_game" in obj) or ("t_ingame" in obj), (
-                "Debe incluir tiempo de referencia (t_wall | t_game | t_ingame)"
-            )
+            assert (
+                ("t_wall" in obj) or ("t_game" in obj) or ("t_ingame" in obj)
+            ), "Debe incluir tiempo de referencia (t_wall | t_game | t_ingame)"
             ok += 1
     assert ok == total and total > 0, "Eventos válidos y no vacíos"

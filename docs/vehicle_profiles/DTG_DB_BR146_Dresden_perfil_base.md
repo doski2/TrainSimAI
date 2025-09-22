@@ -110,4 +110,3 @@
 ```
 
 > Si prefieres **BR146.0**, los rangos clave son idénticos (AFB 0..180, Vmax 180); cambia solo el fichero de **engine** y un par de indicadores (146.2 añade `ForceBar/BrakeBar`).
-

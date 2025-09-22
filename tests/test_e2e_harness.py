@@ -1,10 +1,10 @@
+import json
 import threading
 import time
-import json
 from pathlib import Path
 
-from runtime.control_loop import ControlLoop
 import runtime.raildriver_stub as rd_stub
+from runtime.control_loop import ControlLoop
 
 
 def _write_run_csv(row: dict):
@@ -37,7 +37,13 @@ def actuator_watcher(stop_event: threading.Event):
 
 def test_e2e_simple_flow():
     # prepare a run.csv row that instructs a_req so ControlLoop applies a brake
-    row = {"t_wall": time.time(), "odom_m": 0.0, "speed_kph": 80.0, "a_req": -1.0, "a_service": 1.0}
+    row = {
+        "t_wall": time.time(),
+        "odom_m": 0.0,
+        "speed_kph": 80.0,
+        "a_req": -1.0,
+        "a_service": 1.0,
+    }
     _write_run_csv(row)
 
     # start actuator watcher thread
@@ -46,7 +52,9 @@ def test_e2e_simple_flow():
     th.start()
 
     # run control loop one iteration using csv source
-    cl = ControlLoop(source="csv", run_csv="data/runs/run.csv", hz=20, ack_timeout_s=1.0)
+    cl = ControlLoop(
+        source="csv", run_csv="data/runs/run.csv", hz=20, ack_timeout_s=1.0
+    )
     # run only a short time in another thread to avoid blocking
     t = threading.Thread(target=cl.run, daemon=True)
     t.start()

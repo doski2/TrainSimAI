@@ -86,7 +86,9 @@ def main() -> int:
             out_path = Path(args.out_file)
             out_path.parent.mkdir(parents=True, exist_ok=True)
             with out_path.open("w", encoding="utf-8") as f:
-                json.dump({k: v for k, v in sorted_tokens}, f, indent=2, ensure_ascii=False)
+                json.dump(
+                    {k: v for k, v in sorted_tokens}, f, indent=2, ensure_ascii=False
+                )
             print("Wrote proposals to", str(out_path))
         except Exception as e:
             print("Failed to write out file:", e)

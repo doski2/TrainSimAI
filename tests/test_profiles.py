@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pathlib import Path
 from dataclasses import replace
+from pathlib import Path
 
 from runtime.braking_v0 import BrakingConfig
 from runtime.profiles import load_braking_profile

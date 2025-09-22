@@ -1,40 +1,21 @@
-repos:
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.13.0
-    hooks:
-      - id: ruff
-        args: [--fix]
-
-  - repo: https://github.com/psf/black
-    rev: 24.1.0
-    hooks:
-      - id: black
-        args: [--fast]
-
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.12.0
-    hooks:
-      - id: isort
-repos:
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.5.0
-    hooks:
-      - id: ruff
-        args: ["check", "."]
-
-  - repo: https://github.com/psf/black
-    rev: 24.3.0
-    hooks:
-      - id: black
-        language_version: python3.11
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
-    hooks:
-      - id: end-of-file-fixer
-      - id: check-yaml
+﻿repos:
+- repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: a113f03edeabb71305f025e6e14bd2cd68660e29  # frozen: v0.13.1
+  hooks:
+    - id: ruff
+      args: [--fix]
+- repo: https://github.com/psf/black
+  rev: af0ba72a73598c76189d6dd1b21d8532255d5942  # frozen: 25.9.0
+  hooks:
+    - id: black
+      args: [--fast]
+      language_version: python3.11
+- repo: https://github.com/PyCQA/isort
+  rev: c8ab4a5b21bac924d106e3103dd7c979fdd0f9bc  # frozen: 6.0.1
+  hooks:
+    - id: isort
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
+  hooks:
+    - id: end-of-file-fixer
+    - id: check-yaml

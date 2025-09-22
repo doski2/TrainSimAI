@@ -38,10 +38,16 @@ class RailDriver(object):
         """
         if not dll_location:
             if sys.platform != "win32" or winreg is None:
-                raise EnvironmentError("Automatic discovery of raildriver.dll requires Windows registry (win32).")
-            steam_key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, "Software\\Valve\\Steam")
+                raise EnvironmentError(
+                    "Automatic discovery of raildriver.dll requires Windows registry (win32)."
+                )
+            steam_key = winreg.OpenKey(
+                winreg.HKEY_CURRENT_USER, "Software\\Valve\\Steam"
+            )
             steam_path = winreg.QueryValueEx(steam_key, "SteamPath")[0]
-            railworks_path = os.path.join(steam_path, "steamApps", "common", "railworks", "plugins")
+            railworks_path = os.path.join(
+                steam_path, "steamApps", "common", "railworks", "plugins"
+            )
             dll_location = os.path.join(railworks_path, "raildriver.dll")
             if not os.path.isfile(dll_location):
                 raise EnvironmentError("Unable to automatically locate raildriver.dll.")
@@ -61,7 +67,9 @@ class RailDriver(object):
 
     def _get_dll(self):
         if self.dll is None:
-            raise RuntimeError("RailDriver DLL is not loaded. Instantiate RailDriver correctly.")
+            raise RuntimeError(
+                "RailDriver DLL is not loaded. Instantiate RailDriver correctly."
+            )
         return self.dll
 
     def get_controller_list(self):
@@ -114,7 +122,9 @@ class RailDriver(object):
 
         :return: tuple (lat, lon)
         """
-        return self.get_current_controller_value(400), self.get_current_controller_value(401)
+        return self.get_current_controller_value(
+            400
+        ), self.get_current_controller_value(401)
 
     def get_current_fuel_level(self):
         """

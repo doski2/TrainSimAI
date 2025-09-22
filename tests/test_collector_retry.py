@@ -1,4 +1,5 @@
 import time
+
 import pytest
 
 from runtime.collector import retry_on_exception
@@ -20,7 +21,9 @@ def test_retry_decorator_recovers_after_transient_failure(monkeypatch):
     f = _Flaky(fail_times=2)
 
     # decorate with small delays for fast test
-    wrapped = retry_on_exception(max_attempts=4, base_delay=0.001, max_delay=0.01)(f.run)
+    wrapped = retry_on_exception(max_attempts=4, base_delay=0.001, max_delay=0.01)(
+        f.run
+    )
 
     t0 = time.time()
     res = wrapped()
@@ -35,6 +38,8 @@ def test_retry_decorator_recovers_after_transient_failure(monkeypatch):
 
 def test_retry_decorator_raises_after_exhaustion():
     f = _Flaky(fail_times=10)
-    wrapped = retry_on_exception(max_attempts=3, base_delay=0.001, max_delay=0.01)(f.run)
+    wrapped = retry_on_exception(max_attempts=3, base_delay=0.001, max_delay=0.01)(
+        f.run
+    )
     with pytest.raises(RuntimeError):
         wrapped()

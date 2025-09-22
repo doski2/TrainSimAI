@@ -23,4 +23,3 @@ Notas técnicas
 
 - El código ya soporta `RAILWORKS_PLUGINS` (ver `ingestion/rd_client.py`) y autodetección por registro de Steam.
 - En Python 64‑bit se carga `RailDriver64.dll`; en 32‑bit, `RailDriver.dll`.
-

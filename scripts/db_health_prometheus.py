@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from pathlib import Path
 import argparse
-from storage import db_check
 import json
 import os
 import socket
 import time
+from pathlib import Path
+
+from storage import db_check
 
 
 def _read_control_status(path: str | Path) -> dict:
@@ -46,7 +47,9 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
             retries = int(res.get("retries", {}).get("count", 0))
         except Exception:
             retries = 0
-        f.write("# HELP trainsim_db_retry_count_total Number of DB retry attempts seen during checks\n")
+        f.write(
+            "# HELP trainsim_db_retry_count_total Number of DB retry attempts seen during checks\n"
+        )
         f.write("# TYPE trainsim_db_retry_count_total counter\n")
         f.write(f'trainsim_db_retry_count_total{{db="{db_path}"}} {retries}\n')
         # Export control status metrics if available
@@ -92,7 +95,9 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
             except Exception:
                 pass
             # command latency (time since last command)
-            f.write("# HELP trainsim_control_command_latency_seconds Time since last command was issued (s)\n")
+            f.write(
+                "# HELP trainsim_control_command_latency_seconds Time since last command was issued (s)\n"
+            )
             f.write("# TYPE trainsim_control_command_latency_seconds gauge\n")
             try:
                 if lct is not None:
@@ -105,7 +110,9 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
             except Exception:
                 pass
             # telemetry age
-            f.write("# HELP trainsim_control_telemetry_age_seconds Age of last telemetry sample (s)\n")
+            f.write(
+                "# HELP trainsim_control_telemetry_age_seconds Age of last telemetry sample (s)\n"
+            )
             f.write("# TYPE trainsim_control_telemetry_age_seconds gauge\n")
             try:
                 if telem_age is not None:
@@ -116,7 +123,9 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
                     f.write(telem_line)
             except Exception:
                 pass
-            f.write("# HELP trainsim_control_last_command_value last command value (0..1)\n")
+            f.write(
+                "# HELP trainsim_control_last_command_value last command value (0..1)\n"
+            )
             f.write("# TYPE trainsim_control_last_command_value gauge\n")
             try:
                 if lcv is not None:

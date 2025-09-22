@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import argparse
 import json
 import os
@@ -48,7 +49,9 @@ def save_profile(path: str, data: dict):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--profile", default=os.getenv("TSC_PROFILE", "profiles/BR146.json"))
+    ap.add_argument(
+        "--profile", default=os.getenv("TSC_PROFILE", "profiles/BR146.json")
+    )
     ap.add_argument("--kpi-file", default="data/runs/kpi_latest.txt")
     ap.add_argument("--target", type=float, default=0.8)
     ap.add_argument("--step", type=float, default=0.5)
@@ -71,7 +74,9 @@ def main():
     v = float(prof.get("v_margin_kph", 3.5))
     err = mean_margin - args.target
     if abs(err) < 0.3:
-        print(f"[autotune] mean_margin ya cerca del objetivo ({args.target:.1f}). v_margin_kph se queda en {v:.2f}")
+        print(
+            f"[autotune] mean_margin ya cerca del objetivo ({args.target:.1f}). v_margin_kph se queda en {v:.2f}"
+        )
         return 0
 
     # Si el margen medio está alto, subimos v_margin_kph; si está bajo, lo bajamos.
@@ -91,7 +96,9 @@ def main():
             f"{datetime.now().isoformat(timespec='seconds')} profile={args.profile} "
             f"v_margin_kph {v:.2f} -> {new_v:.2f} (err={err:.2f}) bak={bak}\n"
         )
-    print(f"[autotune] v_margin_kph: {v:.2f} -> {new_v:.2f} (err={err:.2f}). Backup: {bak}")
+    print(
+        f"[autotune] v_margin_kph: {v:.2f} -> {new_v:.2f} (err={err:.2f}). Backup: {bak}"
+    )
     return 0
 
 

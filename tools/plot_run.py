@@ -17,10 +17,10 @@ from __future__ import annotations
 import argparse
 import csv
 import json
-import os
-from typing import List, Dict, Any, Optional, Sequence, Mapping, Tuple
 import math
+import os
 from pathlib import Path
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
 import matplotlib
 
@@ -61,7 +61,11 @@ def read_run_csv(path: str) -> Dict[str, List[Any]]:
             t_ing.append(tg)
             # velocidad
             try:
-                vk = float(row.get("v_kmh") or (row.get("SpeedometerKPH") or 0.0) or (row.get("speed_kph") or 0.0))
+                vk = float(
+                    row.get("v_kmh")
+                    or (row.get("SpeedometerKPH") or 0.0)
+                    or (row.get("speed_kph") or 0.0)
+                )
             except Exception:
                 vk = None
             v_kmh.append(vk)
@@ -121,7 +125,9 @@ def nearest_idx(seq: Sequence[Optional[float]], val: float) -> int:
     return best_i
 
 
-def build_event_table(events: List[Dict[str, Any]], run: Mapping[str, List[Optional[float]]]) -> List[Dict[str, Any]]:
+def build_event_table(
+    events: List[Dict[str, Any]], run: Mapping[str, List[Optional[float]]]
+) -> List[Dict[str, Any]]:
     table = []
     for e in events:
         t = e.get("t_ingame") or e.get("time")
@@ -173,7 +179,11 @@ def _ensure_parent_dir(path: str) -> str:
     return str(p)
 
 
-def plot_speed_vs_odom(run: Mapping[str, List[Optional[float]]], evtable: List[Dict[str, Any]], out_path: str) -> None:
+def plot_speed_vs_odom(
+    run: Mapping[str, List[Optional[float]]],
+    evtable: List[Dict[str, Any]],
+    out_path: str,
+) -> None:
     import matplotlib.pyplot as plt
 
     xs, ys, idxs = [], [], []
@@ -196,10 +206,26 @@ def plot_speed_vs_odom(run: Mapping[str, List[Optional[float]]], evtable: List[D
         t = r.get("type")
         if t == "speed_limit_change":
             ax.axvline(x, linestyle="--", alpha=0.7)
-            ax.text(x, ymax * 0.95, f"limit→{r.get('limit_next_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
+            ax.text(
+                x,
+                ymax * 0.95,
+                f"limit→{r.get('limit_next_kmh')}",
+                rotation=90,
+                va="top",
+                ha="right",
+                fontsize=8,
+            )
         elif t == "limit_reached":
             ax.axvline(x, linestyle=":", alpha=0.7)
-            ax.text(x, ymax * 0.80, f"reached {r.get('limit_kmh')}", rotation=90, va="top", ha="right", fontsize=8)
+            ax.text(
+                x,
+                ymax * 0.80,
+                f"reached {r.get('limit_kmh')}",
+                rotation=90,
+                va="top",
+                ha="right",
+                fontsize=8,
+            )
         elif t == "marker_pass":
             ax.axvline(x, linestyle="-.", alpha=0.5)
             ax.text(
@@ -289,7 +315,10 @@ def plot_speed_vs_odom(run: Mapping[str, List[Optional[float]]], evtable: List[D
     # Sombreado (axvspan) para zonas donde approach_active=1
     if "approach_active" in run:
         try:
-            mask = [int(x) if x not in (None, "") else 0 for x in run.get("approach_active", [0] * len(run["odom"]))]
+            mask = [
+                int(x) if x not in (None, "") else 0
+                for x in run.get("approach_active", [0] * len(run["odom"]))
+            ]
             s = None
             for i, m in enumerate(mask):
                 if m and s is None:
@@ -302,9 +331,13 @@ def plot_speed_vs_odom(run: Mapping[str, List[Optional[float]]], evtable: List[D
                         raw1 = run["odom"][e]
                         x0 = None
                         x1 = None
-                        if raw0 is not None and not (isinstance(raw0, float) and math.isnan(raw0)):
+                        if raw0 is not None and not (
+                            isinstance(raw0, float) and math.isnan(raw0)
+                        ):
                             x0 = float(raw0)
-                        if raw1 is not None and not (isinstance(raw1, float) and math.isnan(raw1)):
+                        if raw1 is not None and not (
+                            isinstance(raw1, float) and math.isnan(raw1)
+                        ):
                             x1 = float(raw1)
                         # fallback a índices si no hay coordenadas de odómetro válidas
                         if x0 is None:
@@ -339,7 +372,13 @@ def plot_speed_vs_index_df(df, out_path: str) -> None:
     if "target_speed_kph" in df.columns:
         ax.plot(df.index, df["target_speed_kph"], label="target_speed_kph")
     if "speed_filt_kph" in df.columns:
-        ax.plot(df.index, df["speed_filt_kph"], label="speed_filt_kph", linestyle="--", alpha=0.6)
+        ax.plot(
+            df.index,
+            df["speed_filt_kph"],
+            label="speed_filt_kph",
+            linestyle="--",
+            alpha=0.6,
+        )
 
     # active_limit en eje secundario
     if "active_limit_kph" in df.columns:
@@ -390,7 +429,11 @@ def main():
     ap.add_argument("--run", default=os.path.join("data", "runs", "run.csv"))
     ap.add_argument("--events", default=os.path.join("data", "events", "events.jsonl"))
     ap.add_argument("--out", default="plot_speed_vs_odom.png")
-    ap.add_argument("--pandas", action="store_true", help="Usar pandas DataFrame como fuente y trazado alternativo")
+    ap.add_argument(
+        "--pandas",
+        action="store_true",
+        help="Usar pandas DataFrame como fuente y trazado alternativo",
+    )
     ap.add_argument("--events-out-csv", default="events_timeline.csv")
     args = ap.parse_args()
     run = read_run_csv(args.run)
@@ -400,7 +443,9 @@ def main():
         try:
             import pandas as pd
         except Exception:
-            raise RuntimeError("Se solicitó --pandas pero no está disponible 'pandas' en el entorno")
+            raise RuntimeError(
+                "Se solicitó --pandas pero no está disponible 'pandas' en el entorno"
+            )
         # construir DataFrame simple (index incremental)
         df = pd.DataFrame(run)
         df.index = pd.RangeIndex(start=0, stop=len(df))
@@ -408,7 +453,13 @@ def main():
         if "speed_kph" not in df.columns and "v_kmh" in df.columns:
             df["speed_kph"] = df["v_kmh"]
         # Forzar columnas numéricas donde corresponda (coerce -> NaN si no convertible)
-        for col in ("speed_kph", "target_speed_kph", "speed_filt_kph", "active_limit_kph", "approach_active"):
+        for col in (
+            "speed_kph",
+            "target_speed_kph",
+            "speed_filt_kph",
+            "active_limit_kph",
+            "approach_active",
+        ):
             if col in df.columns:
                 try:
                     df[col] = pd.to_numeric(df[col], errors="coerce")
