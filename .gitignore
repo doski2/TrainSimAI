@@ -173,3 +173,6 @@ tmp_*
 plot_*.png
 stderr*.txt
 stdout*.txt
+
+# CI artifacts
+artifacts/
