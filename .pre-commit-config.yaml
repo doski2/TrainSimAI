@@ -1,48 +1,21 @@
-repos:
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.13.0
-    hooks:
-      - id: ruff
-        args: [--fix]
-
-  - repo: https://github.com/psf/black
-    rev: 24.3.0
-    hooks:
-      - id: black
-        args: [--fast]
-        language_version: python3.11
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
-    hooks:
-      - id: end-of-file-fixer
-      - id: check-yaml
-repos:
-  - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.13.0
-    hooks:
-      - id: ruff
-        args: [--fix]
-
-  - repo: https://github.com/psf/black
-    rev: 24.3.0
-    hooks:
-      - id: black
-        args: [--fast]
-        language_version: python3.11
-
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.12.0
-    hooks:
-      - id: isort
-
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
-    hooks:
-      - id: end-of-file-fixer
-      - id: check-yaml
+﻿repos:
+- repo: https://github.com/charliermarsh/ruff-pre-commit
+  rev: v0.13.0
+  hooks:
+    - id: ruff
+      args: [--fix]
+- repo: https://github.com/psf/black
+  rev: 24.3.0
+  hooks:
+    - id: black
+      args: [--fast]
+      language_version: python3.11
+- repo: https://github.com/PyCQA/isort
+  rev: 5.12.0
+  hooks:
+    - id: isort
+- repo: https://github.com/pre-commit/pre-commit-hooks
+  rev: v4.4.0
+  hooks:
+    - id: end-of-file-fixer
+    - id: check-yaml
