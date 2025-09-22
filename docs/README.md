@@ -7,4 +7,3 @@
 - **Higiene del repo / data/** — qué versionar y qué ignorar: [`repo_limpieza.md`](./repo_limpieza.md) / [`data_hygiene.md`](./data_hygiene.md)
 
 > Páginas pensadas para revisión rápida durante el desarrollo en Windows + VS Code.
-

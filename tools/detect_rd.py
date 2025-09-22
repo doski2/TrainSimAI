@@ -1,10 +1,12 @@
 from __future__ import annotations
+
 import argparse
 import importlib
 import inspect
 from pathlib import Path
-from typing import Any, Optional, Tuple, List
-from runtime.actuators import METHODS_THROTTLE, METHODS_BRAKE
+from typing import Any, List, Optional, Tuple
+
+from runtime.actuators import METHODS_BRAKE, METHODS_THROTTLE
 
 CANDIDATE_MODULES = [
     # Ajusta/añade si usas otro namespace
@@ -100,9 +102,20 @@ def write_rd_provider(spec: str, path: Path) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(description="Detecta automaticamente el proveedor RailDriver (TSC_RD).")
-    ap.add_argument("--modules", nargs="*", default=[], help="Modulos extra a probar (p.ej. paquete.subpaquete.modulo)")
-    ap.add_argument("--write", action="store_true", help="Escribe scripts\\env\\rd_provider.bat con el spec detectado")
+    ap = argparse.ArgumentParser(
+        description="Detecta automaticamente el proveedor RailDriver (TSC_RD)."
+    )
+    ap.add_argument(
+        "--modules",
+        nargs="*",
+        default=[],
+        help="Modulos extra a probar (p.ej. paquete.subpaquete.modulo)",
+    )
+    ap.add_argument(
+        "--write",
+        action="store_true",
+        help="Escribe scripts\\env\\rd_provider.bat con el spec detectado",
+    )
     args = ap.parse_args()
 
     spec, kind = best_candidate(args.modules)

@@ -2,12 +2,20 @@ import time
 
 import pytest
 
+
 @pytest.mark.safety
-def test_ack_watchdog_clears_retries_when_ack_arrives(monkeypatch, tmp_path, make_client):
+def test_ack_watchdog_clears_retries_when_ack_arrives(
+    monkeypatch, tmp_path, make_client
+):
     """If ACK arrives after some retries, the retry counts should be cleared and no emergency should remain."""
     monkeypatch.chdir(tmp_path)
 
-    client, rd = make_client(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
+    client, rd = make_client(
+        poll_dt=0.01,
+        control_aliases=None,
+        ack_watchdog=True,
+        ack_watchdog_interval=0.01,
+    )
 
     # Instead of modifying driver's set method, simulate that an external
     # process applies the requested value after a short delay (ACK arrival).
@@ -38,7 +46,10 @@ def test_ack_watchdog_clears_retries_when_ack_arrives(monkeypatch, tmp_path, mak
     deadline = time.time() + 3.0
     while time.time() < deadline:
         # if retries recorded at all, and no emergency, allow a short settle
-        if client._retry_counts.get("VirtualBrake", 0) > 0 and not client._emergency_active:
+        if (
+            client._retry_counts.get("VirtualBrake", 0) > 0
+            and not client._emergency_active
+        ):
             time.sleep(0.05)
             break
         time.sleep(0.02)

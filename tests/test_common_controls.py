@@ -21,8 +21,9 @@ def test_common_controls_uses_profiles_controls():
     sample = [aliases[0], "Regulator", "SpeedometerKPH"]
     rd = _make_dummy_rd(sample)
     # call the RDClient._common_controls function with rd as 'self'
-    from ingestion.rd_client import RDClient
     from typing import cast
+
+    from ingestion.rd_client import RDClient
 
     got = RDClient._common_controls(cast(RDClient, rd))
     # ensure that at least the alias we provided is returned
@@ -34,8 +35,9 @@ def test_common_controls_fallback_on_missing_profiles():
     # _common_controls should still pick them (e.g., 'Regulator' -> Throttle)
     sample = ["Regulator", "TrainBrake"]
     rd = _make_dummy_rd(sample)
-    from ingestion.rd_client import RDClient
     from typing import cast
+
+    from ingestion.rd_client import RDClient
 
     got = RDClient._common_controls(cast(RDClient, rd))
     assert "Regulator" in got or "TrainBrake" in got

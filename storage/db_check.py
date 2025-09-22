@@ -3,7 +3,7 @@ from __future__ import annotations
 import sqlite3
 import time
 from pathlib import Path
-from typing import Dict, Any, Tuple
+from typing import Any, Dict, Tuple
 
 
 def check_connect(db_path: str | Path, timeout: float = 5.0) -> Tuple[bool, str]:

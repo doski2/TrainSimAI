@@ -3,18 +3,18 @@ from __future__ import annotations
 import argparse
 import csv
 import json
+import os
 import time
 from dataclasses import replace
-import os
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 
-from runtime.braking_v0 import BrakingConfig, compute_target_speed_kph
 from runtime.braking_era import EraCurve, compute_target_speed_kph_era
+from runtime.braking_v0 import BrakingConfig, compute_target_speed_kph
+from runtime.guards import RateLimiter, clamp01, overspeed_guard
 from runtime.profiles import load_braking_profile, load_profile_extras
-from runtime.guards import RateLimiter, overspeed_guard, clamp01
 
 """
 Control online (MVP) basado en run.csv y eventos getdata_next_limit.
@@ -140,7 +140,9 @@ class SplitPID:
         self.kp_th = float(kp_th)
         self.kp_br = float(kp_br)
 
-    def update(self, v_target_kph: float, v_now_kph: float, dt: float) -> tuple[float, float]:
+    def update(
+        self, v_target_kph: float, v_now_kph: float, dt: float
+    ) -> tuple[float, float]:
         e = float(v_target_kph) - float(v_now_kph)
         if e >= 0:
             th = clamp01(self.kp_th * e)
@@ -152,15 +154,26 @@ class SplitPID:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
+    ap = argparse.ArgumentParser(
+        description="Control online a partir de run.csv y eventos"
+    )
     ap.add_argument("--run", type=Path, default=Path("data/run.csv"))
     ap.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
     ap.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
     ap.add_argument("--hz", type=float, default=5.0)
     ap.add_argument("--profile", type=str, default=None)
     ap.add_argument("--era-curve", type=str, default=None)
-    ap.add_argument("--start-events-from-end", action="store_true", help="Empezar a leer events.jsonl desde el final")
-    ap.add_argument("--duration", type=float, default=0.0, help="Segundos hasta auto-salida (0 = infinito)")
+    ap.add_argument(
+        "--start-events-from-end",
+        action="store_true",
+        help="Empezar a leer events.jsonl desde el final",
+    )
+    ap.add_argument(
+        "--duration",
+        type=float,
+        default=0.0,
+        help="Segundos hasta auto-salida (0 = infinito)",
+    )
     # Overrides CLI (opcionales)
     ap.add_argument("--A", type=float, default=None)
     ap.add_argument("--margin-kph", type=float, default=None)
@@ -188,7 +201,9 @@ def main() -> None:
     curve = EraCurve.from_csv(era_curve_path) if era_curve_path else None
 
     # Estado de eventos y rate limiters
-    ev_stream = NonBlockingEventStream(events_path, from_end=bool(args.start_events_from_end))
+    ev_stream = NonBlockingEventStream(
+        events_path, from_end=bool(args.start_events_from_end)
+    )
     rl_th = RateLimiter(max_delta_per_s=0.8)
     rl_br = RateLimiter(max_delta_per_s=1.2)
     # pid eliminado: no se utiliza
@@ -304,15 +319,25 @@ def main() -> None:
             v_tgt = float(
                 compute_target_speed_kph(
                     np.asarray([speed_kph]),
-                    np.asarray([dist_next_limit_m if dist_next_limit_m is not None else np.nan]),
-                    np.asarray([next_limit_kph]) if next_limit_kph is not None else None,
+                    np.asarray(
+                        [dist_next_limit_m if dist_next_limit_m is not None else np.nan]
+                    ),
+                    (
+                        np.asarray([next_limit_kph])
+                        if next_limit_kph is not None
+                        else None
+                    ),
                     cfg,
                 )[0]
             )
             phase = (
                 "BRAKE"
                 if v_tgt < speed_kph - cfg.coast_band_kph
-                else ("COAST" if abs(v_tgt - speed_kph) <= cfg.coast_band_kph else "CRUISE")
+                else (
+                    "COAST"
+                    if abs(v_tgt - speed_kph) <= cfg.coast_band_kph
+                    else "CRUISE"
+                )
             )
 
         # Failsafe: si algo devolviera NaN, usar velocidad actual

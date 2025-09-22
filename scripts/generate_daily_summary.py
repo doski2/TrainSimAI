@@ -114,7 +114,9 @@ def main() -> None:
 
     # Solo escribir si hay cambios reales (ignorando la línea de timestamp "Generado:")
     def strip_generated(ts: str) -> str:
-        return "\n".join(ln for ln in ts.splitlines() if not ln.startswith("- Generado:")).strip()
+        return "\n".join(
+            ln for ln in ts.splitlines() if not ln.startswith("- Generado:")
+        ).strip()
 
     if out_path.exists():
         old_content = out_path.read_text(encoding="utf-8")

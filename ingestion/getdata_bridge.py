@@ -1,9 +1,10 @@
 from __future__ import annotations
-import os
-import time
-import json
-import sys
+
 import argparse
+import json
+import os
+import sys
+import time
 from pathlib import Path
 
 GETDATA = Path(
@@ -135,8 +136,12 @@ def run(
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("--duration", type=float, default=0.0, help="segundos; 0 = infinito")
-    ap.add_argument("--interval", type=float, default=0.25, help="segundos entre lecturas")
+    ap.add_argument(
+        "--duration", type=float, default=0.0, help="segundos; 0 = infinito"
+    )
+    ap.add_argument(
+        "--interval", type=float, default=0.25, help="segundos entre lecturas"
+    )
     ap.add_argument("--quiet", action="store_true", help="menos logs")
     args = ap.parse_args()
     try:

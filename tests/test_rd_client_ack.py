@@ -1,5 +1,7 @@
-import time
 import json
+import time
+
+
 def test_ack_and_emergency_on_missing_ack(tmp_path, monkeypatch, make_client):
     """Simulate a driver that delays applying controller writes so ack fails and triggers emergency_stop."""
     # Create fake driver with controllable delay

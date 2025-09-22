@@ -159,4 +159,3 @@ markers =
 - [ ] Añadir anti‑spam (±25 m) al bridge si el log es muy verboso.
 - [ ] Generar `run.dist.csv` tras una pasada completa por una señal (ver cruce por ~0 m).
 - [ ] (Opcional) Añadir workflow de CI en `.github/workflows/ci.yml` con ruff + pytest unit.
-

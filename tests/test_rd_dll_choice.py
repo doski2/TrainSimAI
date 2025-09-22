@@ -1,6 +1,7 @@
 from __future__ import annotations
-import struct
+
 import importlib
+import struct
 
 
 def is_64() -> bool:

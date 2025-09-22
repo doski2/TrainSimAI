@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
-from typing import Optional, Dict, Any, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 
 class RunStore:
@@ -65,7 +65,9 @@ class RunStore:
             )
             """
         )
-        self.con.execute("CREATE INDEX IF NOT EXISTS ix_telemetry_twall ON telemetry(t_wall)")
+        self.con.execute(
+            "CREATE INDEX IF NOT EXISTS ix_telemetry_twall ON telemetry(t_wall)"
+        )
 
     def insert_row(self, row: Dict[str, Any]) -> None:
         meta = row.get("meta") or {}

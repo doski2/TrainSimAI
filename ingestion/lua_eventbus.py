@@ -7,7 +7,9 @@ from typing import Any, Dict, Iterable, Optional
 
 
 class LuaEventBus:
-    def __init__(self, path: str, from_end: bool = True, create_if_missing: bool = True) -> None:
+    def __init__(
+        self, path: str, from_end: bool = True, create_if_missing: bool = True
+    ) -> None:
         self.path = path
         self.pos = 0
         # Crea el fichero y carpeta si no existen (evita fallos y bloqueos)

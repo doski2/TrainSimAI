@@ -16,4 +16,3 @@ function OnConsistPass(prev, next, front, back, linkIndex)
     MarkerPassed(STATION_NAME)
   end
 end
-

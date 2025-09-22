@@ -8,13 +8,18 @@ PowerShell wrappers.
 from __future__ import annotations
 
 import argparse
+
 # minimal runner: keep imports local to avoid unused-import warnings
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Run pytest with helpers")
-    parser.add_argument("--mode", choices=("all", "not-real", "real"), default="not-real")
-    parser.add_argument("--pytest-args", nargs="*", help="Additional args passed to pytest")
+    parser.add_argument(
+        "--mode", choices=("all", "not-real", "real"), default="not-real"
+    )
+    parser.add_argument(
+        "--pytest-args", nargs="*", help="Additional args passed to pytest"
+    )
     args = parser.parse_args(argv)
 
     # The test DB is created by an autouse fixture in conftest.py when needed.

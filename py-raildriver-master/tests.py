@@ -1,18 +1,18 @@
 import ctypes
 import datetime
-import unittest
-import time
 import sys
+import time
+import unittest
 
 try:
     from unittest import mock  # Python 3 standard library
 except ImportError:  # pragma: no cover
     import mock  # type: ignore
-import six
 
-import raildriver
 from typing import Any
 
+import raildriver
+import six
 
 WINREG_MODULE = "_winreg" if sys.version_info < (3,) else "winreg"
 
@@ -46,7 +46,9 @@ class ListenerTestCase(AbstractRaildriverDllTestCase):
         self.assertEqual(self.listener.iteration, 3)
 
     def test_current_and_previous_data(self):
-        with mock.patch.object(self.raildriver, "get_current_controller_value", return_value=0.0) as mock_gcv:
+        with mock.patch.object(
+            self.raildriver, "get_current_controller_value", return_value=0.0
+        ) as mock_gcv:
             self.listener.subscribe(["Reverser"])
             self.listener._main_iteration()
             mock_gcv.return_value = 1.0
@@ -55,11 +57,15 @@ class ListenerTestCase(AbstractRaildriverDllTestCase):
         self.assertEqual(self.listener.current_data["Reverser"], 1.0)
 
     def test_subscribe_possible_only_to_existing_controls(self):
-        self.assertRaises(ValueError, self.listener.subscribe, ["Reverser", "SpeedSet", "Bell"])
+        self.assertRaises(
+            ValueError, self.listener.subscribe, ["Reverser", "SpeedSet", "Bell"]
+        )
 
     def test_on_regular_field_change(self):
         reverser_callback = mock.Mock()
-        with mock.patch.object(self.raildriver, "get_current_controller_value", return_value=0.0) as mock_gcv:
+        with mock.patch.object(
+            self.raildriver, "get_current_controller_value", return_value=0.0
+        ) as mock_gcv:
             self.listener.subscribe(["Reverser"])
             self.listener.on_reverser_change(reverser_callback)
             self.listener._main_iteration()
@@ -78,7 +84,9 @@ class ListenerTestCase(AbstractRaildriverDllTestCase):
             return 0.0
 
         speed_set_callback = mock.Mock()
-        with mock.patch.object(self.raildriver, "get_current_controller_value", return_value=0.0) as mock_gcv:
+        with mock.patch.object(
+            self.raildriver, "get_current_controller_value", return_value=0.0
+        ) as mock_gcv:
             self.listener.subscribe(["SpeedSet"])
             self.listener.on_speedset_change(speed_set_callback)
             self.listener._main_iteration()
@@ -94,8 +102,12 @@ class ListenerTestCase(AbstractRaildriverDllTestCase):
         is_in_tunnel_callback = mock.Mock()
         loco_name_callback = mock.Mock()
         time_callback = mock.Mock()
-        with mock.patch.object(self.raildriver, "get_current_controller_value", return_value=0.0) as mock_gcv:
-            with mock.patch.object(self.raildriver, "get_loco_name", return_value=["AP", "Class 321"]) as mock_gln:
+        with mock.patch.object(
+            self.raildriver, "get_current_controller_value", return_value=0.0
+        ) as mock_gcv:
+            with mock.patch.object(
+                self.raildriver, "get_loco_name", return_value=["AP", "Class 321"]
+            ) as mock_gln:
                 self.listener.on_coordinates_change(coordinates_callback)
                 self.listener.on_fuellevel_change(fuel_level_callback)
                 self.listener.on_gradient_change(gradient_callback)
@@ -119,7 +131,9 @@ class ListenerTestCase(AbstractRaildriverDllTestCase):
 class RailDriverGetControllerListTestCase(AbstractRaildriverDllTestCase):
     def test_returns_list_of_tuples_if_ready(self):
         with mock.patch.object(
-            self.mock_dll, "GetControllerList", return_value=six.b("Active::Throttle::Brake::Reverser")
+            self.mock_dll,
+            "GetControllerList",
+            return_value=six.b("Active::Throttle::Brake::Reverser"),
         ):
             self.assertEqual(
                 list(self.raildriver.get_controller_list()),
@@ -132,28 +146,47 @@ class RailDriverGetControllerListTestCase(AbstractRaildriverDllTestCase):
             )
 
     def test_returns_empty_list_if_not_ready(self):
-        with mock.patch.object(self.mock_dll, "GetControllerList", return_value=six.b("")):
+        with mock.patch.object(
+            self.mock_dll, "GetControllerList", return_value=six.b("")
+        ):
             self.assertEqual(list(self.raildriver.get_controller_list()), [])
 
 
 class RailDriverGetControllerValueTestCase(AbstractRaildriverDllTestCase):
     def test_get_by_index(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.5) as mock_gcv:
-            self.assertEqual(self.raildriver.get_controller_value(1, raildriver.VALUE_CURRENT), 0.5)
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.5
+        ) as mock_gcv:
+            self.assertEqual(
+                self.raildriver.get_controller_value(1, raildriver.VALUE_CURRENT), 0.5
+            )
             mock_gcv.assert_called_with(1, 0)
 
     def test_get_by_name_exists(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.5) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.5
+        ) as mock_gcv:
             with mock.patch.object(
-                self.mock_dll, "GetControllerList", return_value=six.b("Active::Throttle::Brake::Reverser")
+                self.mock_dll,
+                "GetControllerList",
+                return_value=six.b("Active::Throttle::Brake::Reverser"),
             ):
-                self.assertEqual(self.raildriver.get_controller_value("Throttle", raildriver.VALUE_CURRENT), 0.5)
+                self.assertEqual(
+                    self.raildriver.get_controller_value(
+                        "Throttle", raildriver.VALUE_CURRENT
+                    ),
+                    0.5,
+                )
                 mock_gcv.assert_called_with(1, 0)
 
     def test_get_by_name_does_not_exist(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.5) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.5
+        ) as mock_gcv:
             with mock.patch.object(
-                self.mock_dll, "GetControllerList", return_value=six.b("Active::Throttle::Brake::Reverser")
+                self.mock_dll,
+                "GetControllerList",
+                return_value=six.b("Active::Throttle::Brake::Reverser"),
             ):
                 self.assertRaises(
                     ValueError,
@@ -167,22 +200,32 @@ class RailDriverGetControllerValueTestCase(AbstractRaildriverDllTestCase):
 
 class RailDriverGetCurrentControllerValue(AbstractRaildriverDllTestCase):
     def test_get_by_index(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.5) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.5
+        ) as mock_gcv:
             self.assertEqual(self.raildriver.get_current_controller_value(1), 0.5)
             mock_gcv.assert_called_with(1, 0)
 
     def test_get_by_name(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.5) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.5
+        ) as mock_gcv:
             with mock.patch.object(
-                self.mock_dll, "GetControllerList", return_value=six.b("Active::Throttle::Brake::Reverser")
+                self.mock_dll,
+                "GetControllerList",
+                return_value=six.b("Active::Throttle::Brake::Reverser"),
             ):
-                self.assertEqual(self.raildriver.get_current_controller_value("Throttle"), 0.5)
+                self.assertEqual(
+                    self.raildriver.get_current_controller_value("Throttle"), 0.5
+                )
                 mock_gcv.assert_called_with(1, 0)
 
 
 class RailDriverGetCurrentCoordinates(AbstractRaildriverDllTestCase):
     def test_get(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", side_effect=[51.50, -0.13]) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", side_effect=[51.50, -0.13]
+        ) as mock_gcv:
             self.assertEqual(self.raildriver.get_current_coordinates(), (51.50, -0.13))
             mock_gcv.assert_any_call(400, 0)
             mock_gcv.assert_any_call(401, 0)
@@ -190,36 +233,48 @@ class RailDriverGetCurrentCoordinates(AbstractRaildriverDllTestCase):
 
 class RailDriverGetCurrentFuelLevelTestCase(AbstractRaildriverDllTestCase):
     def test_get(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=100) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=100
+        ) as mock_gcv:
             self.assertEqual(self.raildriver.get_current_fuel_level(), 100)
             mock_gcv.assert_called_with(402, 0)
 
 
 class RailDriverGetCurrentIsInTunnelLevelTestCase(AbstractRaildriverDllTestCase):
     def test_get(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=1.0) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=1.0
+        ) as mock_gcv:
             self.assertTrue(self.raildriver.get_current_is_in_tunnel())
             mock_gcv.assert_called_with(403, 0)
 
 
 class RailDriverGetCurrentGradientTestCase(AbstractRaildriverDllTestCase):
     def test_get(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.1) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.1
+        ) as mock_gcv:
             self.assertEqual(self.raildriver.get_current_gradient(), 0.1)
             mock_gcv.assert_called_with(404, 0)
 
 
 class RailDriverGetCurrentHeadingTestCase(AbstractRaildriverDllTestCase):
     def test_get(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.1) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.1
+        ) as mock_gcv:
             self.assertEqual(self.raildriver.get_current_heading(), 0.1)
             mock_gcv.assert_called_with(405, 0)
 
 
 class RailDriverGetCurrentTime(AbstractRaildriverDllTestCase):
     def test_get(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", side_effect=[12, 30, 0]) as mock_gcv:
-            self.assertEqual(self.raildriver.get_current_time(), datetime.time(12, 30, 0))
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", side_effect=[12, 30, 0]
+        ) as mock_gcv:
+            self.assertEqual(
+                self.raildriver.get_current_time(), datetime.time(12, 30, 0)
+            )
             mock_gcv.assert_any_call(406, 0)
             mock_gcv.assert_any_call(407, 0)
             mock_gcv.assert_any_call(408, 0)
@@ -228,9 +283,14 @@ class RailDriverGetCurrentTime(AbstractRaildriverDllTestCase):
 class RailDriverGetLocoNameTestCase(AbstractRaildriverDllTestCase):
     def test_returns_list_if_ready(self):
         with mock.patch.object(
-            self.mock_dll, "GetLocoName", return_value=six.b("DTG.:.Class105Pack01.:.Class 105 DMBS")
+            self.mock_dll,
+            "GetLocoName",
+            return_value=six.b("DTG.:.Class105Pack01.:.Class 105 DMBS"),
         ):
-            self.assertEqual(self.raildriver.get_loco_name(), ["DTG", "Class105Pack01", "Class 105 DMBS"])
+            self.assertEqual(
+                self.raildriver.get_loco_name(),
+                ["DTG", "Class105Pack01", "Class 105 DMBS"],
+            )
 
     def test_returns_None_if_not_ready(self):
         with mock.patch.object(self.mock_dll, "GetLocoName", return_value=six.b("")):
@@ -239,42 +299,62 @@ class RailDriverGetLocoNameTestCase(AbstractRaildriverDllTestCase):
 
 class RailDriverGetMaxControllerValueTestCase(AbstractRaildriverDllTestCase):
     def test_get_by_index(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.5) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.5
+        ) as mock_gcv:
             self.assertEqual(self.raildriver.get_max_controller_value(1), 0.5)
             mock_gcv.assert_called_with(1, 2)
 
     def test_get_by_name(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.5) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.5
+        ) as mock_gcv:
             with mock.patch.object(
-                self.mock_dll, "GetControllerList", return_value=six.b("Active::Throttle::Brake::Reverser")
+                self.mock_dll,
+                "GetControllerList",
+                return_value=six.b("Active::Throttle::Brake::Reverser"),
             ):
-                self.assertEqual(self.raildriver.get_max_controller_value("Throttle"), 0.5)
+                self.assertEqual(
+                    self.raildriver.get_max_controller_value("Throttle"), 0.5
+                )
                 mock_gcv.assert_called_with(1, 2)
 
 
 class RailDriverGetMinControllerValueTestCase(AbstractRaildriverDllTestCase):
     def test_get_by_index(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.5) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.5
+        ) as mock_gcv:
             self.assertEqual(self.raildriver.get_min_controller_value(1), 0.5)
             mock_gcv.assert_called_with(1, 1)
 
     def test_get_by_name(self):
-        with mock.patch.object(self.mock_dll, "GetControllerValue", return_value=0.5) as mock_gcv:
+        with mock.patch.object(
+            self.mock_dll, "GetControllerValue", return_value=0.5
+        ) as mock_gcv:
             with mock.patch.object(
-                self.mock_dll, "GetControllerList", return_value=six.b("Active::Throttle::Brake::Reverser")
+                self.mock_dll,
+                "GetControllerList",
+                return_value=six.b("Active::Throttle::Brake::Reverser"),
             ):
-                self.assertEqual(self.raildriver.get_min_controller_value("Throttle"), 0.5)
+                self.assertEqual(
+                    self.raildriver.get_min_controller_value("Throttle"), 0.5
+                )
                 mock_gcv.assert_called_with(1, 1)
 
 
 @mock.patch("ctypes.cdll.LoadLibrary")
 class RailDriverInitTestCase(unittest.TestCase):
     @mock.patch("{}.OpenKey".format(WINREG_MODULE), mock.Mock())
-    @mock.patch("{}.QueryValueEx".format(WINREG_MODULE), mock.Mock(return_value=["C:\\Steam"]))
+    @mock.patch(
+        "{}.QueryValueEx".format(WINREG_MODULE), mock.Mock(return_value=["C:\\Steam"])
+    )
     @mock.patch("os.path.isfile", mock.Mock(return_value=True))
     def test_if_location_not_specified_checks_registry(self, load_library):
         raildriver.RailDriver()
-        load_library.assert_called_with("C:\\Steam\\steamApps\\common\\railworks\\plugins\\raildriver.dll")
+        load_library.assert_called_with(
+            "C:\\Steam\\steamApps\\common\\railworks\\plugins\\raildriver.dll"
+        )
 
     def test_if_location_specified_uses_that(self, load_library):
         raildriver.RailDriver("C:\\Railworks\\raildriver.dll")
@@ -294,7 +374,9 @@ class RailDriverSetControllerValue(AbstractRaildriverDllTestCase):
     def test_set_by_name(self):
         with mock.patch.object(self.mock_dll, "SetControllerValue") as mock_scv:
             with mock.patch.object(
-                self.mock_dll, "GetControllerList", return_value=six.b("Active::Throttle::Brake::Reverser")
+                self.mock_dll,
+                "GetControllerList",
+                return_value=six.b("Active::Throttle::Brake::Reverser"),
             ):
                 self.raildriver.set_controller_value("Throttle", 0.5)
                 mock_calls = mock_scv.mock_calls

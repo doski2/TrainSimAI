@@ -2,12 +2,18 @@ import time
 
 import pytest
 
+
 @pytest.mark.safety
 def test_ack_watchdog_no_retry_on_ack(monkeypatch, tmp_path, make_client):
     """If the RD applies the value immediately, watchdog should not record retries or escalate."""
     monkeypatch.chdir(tmp_path)
 
-    client, rd = make_client(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
+    client, rd = make_client(
+        poll_dt=0.01,
+        control_aliases=None,
+        ack_watchdog=True,
+        ack_watchdog_interval=0.01,
+    )
 
     # normal set implementation: returns ack
     # shorten timeouts
@@ -20,6 +26,7 @@ def test_ack_watchdog_no_retry_on_ack(monkeypatch, tmp_path, make_client):
     # wait briefly for worker to process
     time.sleep(0.1)
 
-    assert client._retry_counts.get("VirtualBrake", 0) == 0, "Unexpected retries when ACK present"
+    assert (
+        client._retry_counts.get("VirtualBrake", 0) == 0
+    ), "Unexpected retries when ACK present"
     assert not client._emergency_active, "Unexpected emergency when ACK present"
-

@@ -10,9 +10,9 @@ def test_virtual_brake_and_engine_brake_detected(tmp_path, make_client):
 
     common = client._common_controls()
     # Ensure VirtualBrake and VirtualEngineBrakeControl are recognized
-    assert any(n in common for n in ("VirtualBrake", "VirtualEngineBrakeControl")), (
-        "Expected VirtualBrake or VirtualEngineBrakeControl in common controls"
-    )
+    assert any(
+        n in common for n in ("VirtualBrake", "VirtualEngineBrakeControl")
+    ), "Expected VirtualBrake or VirtualEngineBrakeControl in common controls"
 
 
 def test_shim_set_brake_affects_fake_driver(tmp_path, make_client):
@@ -32,5 +32,6 @@ def test_shim_set_brake_affects_fake_driver(tmp_path, make_client):
     time.sleep(0.02)
     # Confirm FakeRailDriver state updated
     val = rd.get_current_controller_value("VirtualBrake")
-    assert abs(float(val) - 1.0) <= 1e-6, f"VirtualBrake not applied to fake driver, got {val}"
-
+    assert (
+        abs(float(val) - 1.0) <= 1e-6
+    ), f"VirtualBrake not applied to fake driver, got {val}"

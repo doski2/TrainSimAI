@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 
@@ -9,7 +10,7 @@ def _has_rd_dlls() -> bool:
     # basic check: any .dll file in the directory
     try:
         for f in os.listdir(dll_dir):
-            if f.lower().endswith('.dll'):
+            if f.lower().endswith(".dll"):
                 return True
     except Exception:
         return False
@@ -27,7 +28,9 @@ def test_real_smoke_check():
     This avoids noisy failures when running on runners that are not prepared.
     """
     if not (_has_rd_dlls() or _has_rd_endpoint()):
-        pytest.skip("Skipping real tests: no TSC_RD_DLL_DIR/RAILWORKS_PLUGINS or TSC_RD configured on this runner")
+        pytest.skip(
+            "Skipping real tests: no TSC_RD_DLL_DIR/RAILWORKS_PLUGINS or TSC_RD configured on this runner"
+        )
 
     # Basic import sanity check (do not raise if it imports but cannot connect)
     try:

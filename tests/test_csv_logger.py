@@ -1,7 +1,9 @@
 from __future__ import annotations
+
+import csv
 from pathlib import Path
 from typing import List, cast
-import csv
+
 from runtime.csv_logger import CSVLogger, CsvLogger
 
 

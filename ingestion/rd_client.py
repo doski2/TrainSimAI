@@ -1,28 +1,40 @@
 from __future__ import annotations
 
+import logging
 import os
+import platform
+import re
+import struct
 import sys
 import time
-from typing import Any, Dict, Iterable, Iterator, List, Optional
-from queue import Queue, Empty
-from threading import Thread, Event
-import platform
-import struct
 from pathlib import Path
-import re
-import logging
+from queue import Empty, Queue
+from threading import Event, Thread
+from typing import Any, Dict, Iterable, Iterator, List, Optional
 
 # Optional Prometheus metrics (do not hard-fail if library missing)
 try:
-    from prometheus_client import Counter, Histogram, Gauge  # type: ignore
+    from prometheus_client import Counter, Gauge, Histogram  # type: ignore
+
     RD_SET_CALLS = Counter("trainsim_rd_set_calls_total", "Number of RD set calls")
     RD_ERRORS = Counter("trainsim_rd_errors_total", "Number of RD errors")
-    RD_MISSING = Counter("trainsim_rd_missing_control_total", "Number of attempts to set missing controls")
+    RD_MISSING = Counter(
+        "trainsim_rd_missing_control_total",
+        "Number of attempts to set missing controls",
+    )
     RD_ACKS = Counter("trainsim_rd_acks_total", "Number of RD acks observed")
-    RD_RETRIES = Counter("trainsim_rd_retries_total", "Number of RD retries due to missing ack or errors")
-    RD_EMERGENCY = Counter("trainsim_rd_emergencystops_total", "Number of emergency stops triggered")
-    RD_ACK_LATENCY = Histogram("trainsim_rd_ack_latency_seconds", "Ack latency in seconds")
-    RD_EMERGENCY_GAUGE = Gauge("trainsim_rd_emergency_state", "Current emergency state (0/1)")
+    RD_RETRIES = Counter(
+        "trainsim_rd_retries_total", "Number of RD retries due to missing ack or errors"
+    )
+    RD_EMERGENCY = Counter(
+        "trainsim_rd_emergencystops_total", "Number of emergency stops triggered"
+    )
+    RD_ACK_LATENCY = Histogram(
+        "trainsim_rd_ack_latency_seconds", "Ack latency in seconds"
+    )
+    RD_EMERGENCY_GAUGE = Gauge(
+        "trainsim_rd_emergency_state", "Current emergency state (0/1)"
+    )
 except Exception:
     RD_SET_CALLS = None  # type: ignore
     RD_ERRORS = None  # type: ignore
@@ -35,6 +47,7 @@ except Exception:
 
 
 # Optionally start an HTTP exporter if user enables via env var
+
 
 def _maybe_start_prometheus_exporter() -> None:
     port = os.getenv("TSC_PROMETHEUS_PORT")
@@ -53,12 +66,17 @@ def _maybe_start_prometheus_exporter() -> None:
                 return
         try:
             start_http_server(p)
-            logging.getLogger("ingestion.rd_client").info("Prometheus exporter started on port %s", p)
+            logging.getLogger("ingestion.rd_client").info(
+                "Prometheus exporter started on port %s", p
+            )
         except Exception:
-            logging.getLogger("ingestion.rd_client").exception("Failed to start Prometheus exporter on %s", p)
+            logging.getLogger("ingestion.rd_client").exception(
+                "Failed to start Prometheus exporter on %s", p
+            )
     except Exception:
         # prometheus_client not available or import failed
         return
+
 
 # NOTE: Starting an HTTP exporter at module import can cause surprising side-effects
 # (server started on import). We prefer to start it explicitly when the runtime
@@ -92,8 +110,10 @@ if not USE_FAKE:
     if _os.environ.get("TSC_FAKE_RD") == "1":
         USE_FAKE = True
 if USE_FAKE:
-    from ingestion.rd_fake import FakeRailDriver as RailDriver  # type: ignore  # noqa: E402, F811
-    from ingestion.rd_fake import FakeListener as Listener  # type: ignore  # noqa: E402, F811
+    from ingestion.rd_fake import \
+        FakeListener as Listener  # type: ignore  # noqa: E402, F811
+    from ingestion.rd_fake import \
+        FakeRailDriver as RailDriver  # type: ignore  # noqa: E402, F811
 
 
 # Claves especiales disponibles en Listener (no se suscriben; se evalúan siempre)
@@ -192,7 +212,9 @@ def _prepare_dll_search_path(base: Path) -> Path:
                 f"Tu Python es {arch}-bit. Instala la DLL correcta o usa Python de otra arquitectura. "
                 f"También puedes definir TSC_RD_DLL_DIR/RAILWORKS_PLUGINS."
             )
-        raise FileNotFoundError(f"No se encontró {want.name} en {base}. Define RAILWORKS_PLUGINS o TSC_RD_DLL_DIR.")
+        raise FileNotFoundError(
+            f"No se encontró {want.name} en {base}. Define RAILWORKS_PLUGINS o TSC_RD_DLL_DIR."
+        )
     try:
         if hasattr(os, "add_dll_directory"):
             os.add_dll_directory(str(base))  # type: ignore[attr-defined]
@@ -226,8 +248,8 @@ class RDClient:
         self,
         poll_dt: float = 0.2,
         poll_hz: float | None = None,
-    dll_location: str | None = None,
-    rd: object | None = None,
+        dll_location: str | None = None,
+        rd: object | None = None,
         control_aliases: dict | None = None,
         ack_watchdog: bool | int = False,
         ack_watchdog_interval: float = 0.1,
@@ -276,9 +298,7 @@ class RDClient:
                 # Diagnóstico: mostrar la DLL elegida (útil para WinError 193)
                 try:
                     if dll_path:
-                        self.logger.debug(
-                            "using RailDriver DLL: %s", dll_path
-                        )
+                        self.logger.debug("using RailDriver DLL: %s", dll_path)
                 except Exception:
                     self.logger.exception("error logging dll path")
                 # Registrar el directorio de la DLL en el buscador de Windows (Py 3.8+)
@@ -373,7 +393,9 @@ class RDClient:
             def _ack_worker_fn():
                 while not self._ack_worker_stop.is_set():
                     try:
-                        name, expected, attempts = self._ack_queue.get(timeout=self._ack_watchdog_interval)
+                        name, expected, attempts = self._ack_queue.get(
+                            timeout=self._ack_watchdog_interval
+                        )
                     except Empty:
                         continue
                     # attempt to confirm; if not confirmed, requeue or escalate
@@ -564,7 +586,7 @@ class RDClient:
                     val = float(self.rd.get_current_controller_value(idx))  # type: ignore[attr-defined]
                 else:
                     snap = self._snapshot()
-                    val = float(snap.get(name, float('nan')))
+                    val = float(snap.get(name, float("nan")))
                 # Consider confirmation if value is close enough
                 if abs(val - expected) <= 1e-3:
                     if timer is not None:
@@ -629,7 +651,14 @@ class RDClient:
                 # atomic write
                 tmp = Path("data") / f"control_status.json.tmp.{int(time.time())}"
                 tmp.write_text(
-                    json.dumps({"mode": "manual", "takeover": True, "reason": reason, "ts": time.time()}),
+                    json.dumps(
+                        {
+                            "mode": "manual",
+                            "takeover": True,
+                            "reason": reason,
+                            "ts": time.time(),
+                        }
+                    ),
                     encoding="utf-8",
                 )
                 tmp.replace(Path("data") / "control_status.json")
@@ -726,7 +755,9 @@ class RDClient:
             # !Time suele venir como datetime.time o [h,m,s]
             tval = snap["!Time"]
             if isinstance(tval, (list, tuple)) and len(tval) >= 3:
-                out["time_ingame_h"], out["time_ingame_m"], out["time_ingame_s"] = tval[:3]
+                out["time_ingame_h"], out["time_ingame_m"], out["time_ingame_s"] = tval[
+                    :3
+                ]
             else:
                 out["time_ingame"] = str(tval)
         else:
@@ -1143,6 +1174,7 @@ def _make_rd():
                 if hasattr(self.c, "_limits") and hasattr(self.c, "clamp_command"):
                     clamp_fn = getattr(self.c, "clamp_command")
                 else:
+
                     def _fallback_clamp(n, x):
                         return _clamp01(x)
 
@@ -1157,9 +1189,12 @@ def _make_rd():
                     RD_ERRORS.inc()
                 # record retry and possibly escalate (use fallbacks)
                 # only call record_retry when the client initialized retry state
-                if hasattr(self.c, "_retry_counts") and hasattr(self.c, "_record_retry"):
+                if hasattr(self.c, "_retry_counts") and hasattr(
+                    self.c, "_record_retry"
+                ):
                     record_retry = getattr(self.c, "_record_retry")
                 else:
+
                     def _fallback_record(n):
                         return None
 
@@ -1169,7 +1204,9 @@ def _make_rd():
                 max_retries = getattr(self.c, "_max_retries", 3)
                 if retry_counts.get(name or "brake", 0) > max_retries:
                     try:
-                        self.c.logger.error("max retries exceeded for brake %s -> emergency", name)
+                        self.c.logger.error(
+                            "max retries exceeded for brake %s -> emergency", name
+                        )
                     except Exception:
                         pass
                     emergency_fn = getattr(self.c, "emergency_stop", lambda r: None)
@@ -1194,7 +1231,9 @@ def _make_rd():
                 try:
                     if not allow_rate_fn(name):
                         try:
-                            self.c.logger.debug("rate-limited throttle command %s", name)
+                            self.c.logger.debug(
+                                "rate-limited throttle command %s", name
+                            )
                         except Exception:
                             pass
                         return
@@ -1207,6 +1246,7 @@ def _make_rd():
                 if hasattr(self.c, "_limits") and hasattr(self.c, "clamp_command"):
                     clamp_fn = getattr(self.c, "clamp_command")
                 else:
+
                     def _fallback_clamp(n, x):
                         return _clamp01(x)
 
@@ -1218,9 +1258,12 @@ def _make_rd():
             except Exception:
                 if RD_ERRORS is not None:
                     RD_ERRORS.inc()
-                if hasattr(self.c, "_retry_counts") and hasattr(self.c, "_record_retry"):
+                if hasattr(self.c, "_retry_counts") and hasattr(
+                    self.c, "_record_retry"
+                ):
                     record_retry = getattr(self.c, "_record_retry")
                 else:
+
                     def _fallback_record(n):
                         return None
 
@@ -1230,7 +1273,9 @@ def _make_rd():
                 max_retries = getattr(self.c, "_max_retries", 3)
                 if retry_counts.get(name or "throttle", 0) > max_retries:
                     try:
-                        self.c.logger.error("max retries exceeded for throttle %s -> emergency", name)
+                        self.c.logger.error(
+                            "max retries exceeded for throttle %s -> emergency", name
+                        )
                     except Exception:
                         pass
                     emergency_fn = getattr(self.c, "emergency_stop", lambda r: None)

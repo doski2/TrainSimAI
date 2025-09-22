@@ -1,5 +1,6 @@
-import pytest
 from typing import Any, cast
+
+import pytest
 
 
 @pytest.mark.safety
@@ -20,9 +21,9 @@ def test_emergency_path_isolated(monkeypatch, tmp_path):
             self.calls.append((idx, v))
 
     # Create a lightweight fake RDClient with the bits our RD shim expects
-    from ingestion.rd_client import RDClient
-
     from typing import Any, cast
+
+    from ingestion.rd_client import RDClient
 
     fake = FakeRD()
 
@@ -38,7 +39,7 @@ def test_emergency_path_isolated(monkeypatch, tmp_path):
     called = {}
 
     def _emergency(reason: str = "unknown") -> None:
-        called['reason'] = reason
+        called["reason"] = reason
 
     rc.emergency_stop = _emergency
 
@@ -49,8 +50,8 @@ def test_emergency_path_isolated(monkeypatch, tmp_path):
         pytest.skip("environment not suitable for shim creation")
 
     # calling set_controller_value with no index should eventually trigger emergency
-    shim.set_controller_value('NonExisting', 0.5)
-    assert 'reason' in called
+    shim.set_controller_value("NonExisting", 0.5)
+    assert "reason" in called
 
 
 @pytest.mark.safety
@@ -114,10 +115,10 @@ def test_retry_exhaustion_triggers_emergency(monkeypatch):
     called = {}
 
     def _emergency(reason: str = "unknown") -> None:
-        called['reason'] = reason
+        called["reason"] = reason
 
     rc.emergency_stop = _emergency
 
     shim = rc._make_rd()
     shim.set_controller_value("Brake", 1.0)
-    assert 'reason' in called
+    assert "reason" in called

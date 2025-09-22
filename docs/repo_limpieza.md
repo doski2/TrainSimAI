@@ -13,4 +13,3 @@
 ## Vendorizados
 - Si no hay parches propios, preferir **pip** a copiar árboles de terceros.
 - Si hay parches, usar `vendor/<nombre>` con LICENSE y origen.
-

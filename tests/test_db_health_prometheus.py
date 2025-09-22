@@ -1,8 +1,9 @@
-import tempfile
-from pathlib import Path
-from scripts import db_health_prometheus
 import gc
+import tempfile
 import time
+from pathlib import Path
+
+from scripts import db_health_prometheus
 
 
 def test_db_health_prometheus_writes_file():

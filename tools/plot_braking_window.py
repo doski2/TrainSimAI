@@ -9,9 +9,9 @@ try:
 except Exception:  # pragma: no cover - best-effort plotting
     plt = None
 
-from runtime.braking_era import compute_target_speed_kph_era, EraCurve
-from runtime.profiles import load_braking_profile, load_profile_extras
+from runtime.braking_era import EraCurve, compute_target_speed_kph_era
 from runtime.braking_v0 import BrakingConfig
+from runtime.profiles import load_braking_profile, load_profile_extras
 
 
 def main(v_now: float, limit: float, dmax: float, step: float, profile: str) -> None:
@@ -22,7 +22,9 @@ def main(v_now: float, limit: float, dmax: float, step: float, profile: str) -> 
         cfg = BrakingConfig()
 
     extras = load_profile_extras(profile) if profile else {}
-    era_csv: Optional[str] = extras.get("era_curve_csv") if isinstance(extras, dict) else None
+    era_csv: Optional[str] = (
+        extras.get("era_curve_csv") if isinstance(extras, dict) else None
+    )
     if not era_csv:
         print("Profile does not include 'era_curve_csv' in extras", file=sys.stderr)
         return

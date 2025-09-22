@@ -14,11 +14,11 @@ Uso:
 
 """
 
+import csv
+import os
 import subprocess
 import time
-import csv
 from pathlib import Path
-import os
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT.joinpath("data")
@@ -81,15 +81,15 @@ def analyze_rd_log():
                 sub = ln[idx:]
                 # buscar ':' y luego , or }
                 colon = sub.index(":")
-                rest = sub[colon + 1:]
+                rest = sub[colon + 1 :]
                 # limpiar
                 sval = rest.split(",")[0].split("}")[0].strip()
                 v = float(sval)
             else:
                 # línea humana 'set_brake(0.0)'
                 if "set_brake" in ln:
-                    s = ln[ln.index("set_brake"):]
-                    v = float(s[s.index("(") + 1: s.index(")")])
+                    s = ln[ln.index("set_brake") :]
+                    v = float(s[s.index("(") + 1 : s.index(")")])
                 else:
                     continue
         except Exception:
@@ -131,9 +131,7 @@ for r in rise_vals:
                     "--duration",
                     str(duration),
                     "--out",
-                    str(
-                        DATA.joinpath(f"run.ctrl_r{r}_s{s}_h{h}_f{fall}.csv")
-                    ),
+                    str(DATA.joinpath(f"run.ctrl_r{r}_s{s}_h{h}_f{fall}.csv")),
                     "--rise-per-s",
                     str(r),
                     "--fall-per-s",
@@ -152,6 +150,20 @@ for r in rise_vals:
                 # append al CSV resumen
                 with SUMMARY_CSV.open("a", newline="", encoding="utf-8") as fh:
                     w = csv.writer(fh)
-                    w.writerow([r, s, h, fall, hz, duration, str(RUN_FILE), z, i_count, m_count, total])
+                    w.writerow(
+                        [
+                            r,
+                            s,
+                            h,
+                            fall,
+                            hz,
+                            duration,
+                            str(RUN_FILE),
+                            z,
+                            i_count,
+                            m_count,
+                            total,
+                        ]
+                    )
 
 print(f"Sweep finished. Summary: {SUMMARY_CSV}")

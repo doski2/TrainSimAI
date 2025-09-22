@@ -1,9 +1,11 @@
 from __future__ import annotations
-from runtime.control_loop import _to_float_loose
+
 import math
-from storage.sqlite_store import RunStore
 import sqlite3
 from pathlib import Path
+
+from runtime.control_loop import _to_float_loose
+from storage.sqlite_store import RunStore
 
 
 def test_parsing_regional_additional_cases():

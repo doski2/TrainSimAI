@@ -1,13 +1,22 @@
-import time
 import argparse
 import os
-from runtime.actuators import load_rd_from_spec, send_to_rd, debug_trace
+import time
+
+from runtime.actuators import debug_trace, load_rd_from_spec, send_to_rd
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--rd", default=os.getenv("TSC_RD", ""), help="modulo:atributo (objeto o factory)")
-    ap.add_argument("--pattern", default="0,0.5,1,0.5,0", help="valores de freno [0..1] separados por comas")
+    ap.add_argument(
+        "--rd",
+        default=os.getenv("TSC_RD", ""),
+        help="modulo:atributo (objeto o factory)",
+    )
+    ap.add_argument(
+        "--pattern",
+        default="0,0.5,1,0.5,0",
+        help="valores de freno [0..1] separados por comas",
+    )
     ap.add_argument("--step-ms", type=int, default=800)
     args = ap.parse_args()
 

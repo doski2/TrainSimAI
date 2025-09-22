@@ -11,4 +11,3 @@ if (Test-Path $src) {
 # tocar nuevo run.csv vacío
 New-Item -ItemType File -Force -Path $src | Out-Null
 Write-Host "Nuevo $src listo"
-

@@ -12,4 +12,3 @@ foreach ($p in $paths) {
 New-Item -ItemType File -Force -Path data\runs\.gitkeep | Out-Null
 New-Item -ItemType File -Force -Path data\events\.gitkeep | Out-Null
 Write-Host "[OK] Limpieza completada."
-

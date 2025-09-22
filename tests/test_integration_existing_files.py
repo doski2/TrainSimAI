@@ -1,8 +1,8 @@
-from pathlib import Path
 import json
+from pathlib import Path
+
 import pandas as pd
 import pytest
-
 
 EV = Path("data/events/events.jsonl")
 RUN = Path("data/runs/run.csv")

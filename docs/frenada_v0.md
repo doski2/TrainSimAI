@@ -58,4 +58,3 @@ v_obj, fase = compute_target_speed_kph(v_now_kph, next_limit_kph, dist_next_limi
 th, br = pid.update(v_obj, v_now_kph, dt)
 ```
 Recomendado: `overspeed_guard`, limitación de rate en actuadores y log de `v_obj/fase/th/br`.
-

@@ -2,6 +2,7 @@ import time
 
 import pytest
 
+
 @pytest.mark.safety
 def test_ack_watchdog_retries_and_escalates(monkeypatch, tmp_path, make_client):
     """Ensure the ack watchdog requeues attempts, records retries and escalates to emergency
@@ -10,7 +11,12 @@ def test_ack_watchdog_retries_and_escalates(monkeypatch, tmp_path, make_client):
     # NOTE: test created to validate ack-watchdog behaviour (no-op comment to allow PR creation)
     monkeypatch.chdir(tmp_path)
 
-    client, rd = make_client(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
+    client, rd = make_client(
+        poll_dt=0.01,
+        control_aliases=None,
+        ack_watchdog=True,
+        ack_watchdog_interval=0.01,
+    )
 
     # make driver ignore sets (no ack)
     def _no_op(index_or_name, value):
@@ -38,5 +44,9 @@ def test_ack_watchdog_retries_and_escalates(monkeypatch, tmp_path, make_client):
             time.sleep(0.05)
         time.sleep(0.02)
 
-    assert client._retry_counts.get("VirtualBrake", 0) >= 1, "watchdog did not record retries"
-    assert client._emergency_active, "watchdog did not escalate to emergency after retries"
+    assert (
+        client._retry_counts.get("VirtualBrake", 0) >= 1
+    ), "watchdog did not record retries"
+    assert (
+        client._emergency_active
+    ), "watchdog did not escalate to emergency after retries"

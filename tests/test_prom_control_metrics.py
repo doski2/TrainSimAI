@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+
 from scripts.db_health_prometheus import render_prom_file
 
 
@@ -7,7 +8,11 @@ def test_prom_includes_control_status(tmp_path: Path):
     # prepare control_status.json
     data_dir = Path("data")
     data_dir.mkdir(exist_ok=True)
-    cs = {"last_command_time": 12345.6, "last_ack_time": 12346.0, "last_command_value": 0.75}
+    cs = {
+        "last_command_time": 12345.6,
+        "last_ack_time": 12346.0,
+        "last_command_value": 0.75,
+    }
     p = data_dir.joinpath("control_status.json")
     p.write_text(json.dumps(cs), encoding="utf-8")
     out = tmp_path.joinpath("trainsim_db.prom")

@@ -1,6 +1,7 @@
-from tools import validate_run as vr
-from pathlib import Path
 import csv
+from pathlib import Path
+
+from tools import validate_run as vr
 
 
 def test_reader_handles_semicolon_and_limits(tmp_path: Path):

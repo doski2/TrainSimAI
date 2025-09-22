@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import csv
 from dataclasses import dataclass
 from math import ceil
 from pathlib import Path
 from typing import List, Optional
-import csv
 
-from runtime.braking_v0 import BrakingConfig, kph_to_mps, effective_distance, clamp
+from runtime.braking_v0 import (BrakingConfig, clamp, effective_distance,
+                                kph_to_mps)
 
 """Braking ERA implementation.
 
@@ -49,7 +50,11 @@ class EraCurve:
             # esperamos: speed_kph, decel_service_mps2
             for row in rd:
                 sk = row.get("speed_kph")
-                a = row.get("decel_service_mps2") or row.get("decel_mps2") or row.get("A")
+                a = (
+                    row.get("decel_service_mps2")
+                    or row.get("decel_mps2")
+                    or row.get("A")
+                )
                 if sk is None or a is None:
                     continue
                 try:
@@ -69,7 +74,9 @@ class EraCurve:
         a = _lin_interp(v_mps, self.speeds_mps, self.decel_mps2)
         return max(self.min_decel_mps2, float(a))
 
-    def braking_distance(self, v0_kph: float, v_lim_kph: float, dv_mps: float = 0.2) -> float:
+    def braking_distance(
+        self, v0_kph: float, v_lim_kph: float, dv_mps: float = 0.2
+    ) -> float:
         """Distancia para ir de v0→v_lim integrando d = ∫ v/a(v) dv. (metros)"""
         v0 = kph_to_mps(max(v0_kph, v_lim_kph))
         vlim = kph_to_mps(v_lim_kph)
@@ -87,7 +94,9 @@ class EraCurve:
             v_hi = v_lo
         return d
 
-    def v_safe_for_distance(self, d_eff_m: float, v_lim_kph: float, vmax_kph: float = 400.0) -> float:
+    def v_safe_for_distance(
+        self, d_eff_m: float, v_lim_kph: float, vmax_kph: float = 400.0
+    ) -> float:
         """Máxima v0_kph tal que la distancia para frenar a v_lim_kph ≤ d_eff_m (búsqueda binaria)."""
         lo = v_lim_kph
         hi = max(lo + 0.5, float(vmax_kph))
@@ -124,22 +133,31 @@ def compute_target_speed_kph_era(
     if isinstance(cfg, dict):
         cfg = BrakingConfig(
             margin_kph=float(cfg.get("v_margin_kph", cfg.get("margin_kph", 3.0))),
-            max_service_decel=float(cfg.get("a_service_mps2", cfg.get("max_service_decel", 0.7))),
-            reaction_time_s=float(cfg.get("t_react_s", cfg.get("reaction_time_s", 0.6))),
+            max_service_decel=float(
+                cfg.get("a_service_mps2", cfg.get("max_service_decel", 0.7))
+            ),
+            reaction_time_s=float(
+                cfg.get("t_react_s", cfg.get("reaction_time_s", 0.6))
+            ),
         )
 
     # Si no hay curva, delegar a la versión v0 (vectorizada)
     if curve is None:
         try:
-            from runtime.braking_v0 import compute_target_speed_kph as _compute_v0
             import numpy as _np
+
+            from runtime.braking_v0 import \
+                compute_target_speed_kph as _compute_v0
         except Exception:
             # no debería pasar, pero en caso de import fallido devolvemos crucero seguro
             return v_now_kph, "CRUISE"
 
         v_obj_arr = _compute_v0(
             _np.asarray([v_now_kph], dtype=float),
-            _np.asarray([dist_next_limit_m if dist_next_limit_m is not None else _np.nan], dtype=float),
+            _np.asarray(
+                [dist_next_limit_m if dist_next_limit_m is not None else _np.nan],
+                dtype=float,
+            ),
             _np.asarray([next_limit_kph]) if next_limit_kph is not None else None,
             cfg,
         )

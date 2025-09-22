@@ -4,10 +4,12 @@ import argparse
 from dataclasses import replace
 from pathlib import Path
 from typing import Optional
+
 import numpy as np
 import pandas as pd
-from runtime.braking_v0 import BrakingConfig, compute_target_speed_kph
+
 from runtime.braking_era import EraCurve, compute_target_speed_kph_era
+from runtime.braking_v0 import BrakingConfig, compute_target_speed_kph
 from runtime.profiles import load_braking_profile, load_profile_extras
 
 """
@@ -30,7 +32,9 @@ def _pick_series(df: pd.DataFrame, *cands: str) -> Optional[pd.Series]:
 def _speed_kph(df: pd.DataFrame) -> pd.Series:
     s = _pick_series(df, "v_kmh", "speed_kph", "kph", "speed_kmh")
     if s is None:
-        raise KeyError("No se encontró columna de velocidad (v_kmh/speed_kph/kph/speed_kmh)")
+        raise KeyError(
+            "No se encontró columna de velocidad (v_kmh/speed_kph/kph/speed_kmh)"
+        )
     return s.astype(float)
 
 
@@ -40,12 +44,23 @@ def main() -> None:
     ap.add_argument("--dist", required=True, type=Path)
     ap.add_argument("--events", required=False, type=Path)
     ap.add_argument("--out", required=True, type=Path)
-    ap.add_argument("--profile", type=str, default=None, help="Ruta a profiles/<loco>.json")
-    ap.add_argument("--era-curve", type=str, default=None, help="CSV con speed_kph,decel_service_mps2")
+    ap.add_argument(
+        "--profile", type=str, default=None, help="Ruta a profiles/<loco>.json"
+    )
+    ap.add_argument(
+        "--era-curve",
+        type=str,
+        default=None,
+        help="CSV con speed_kph,decel_service_mps2",
+    )
     # Defaults a None para distinguir no especificado vs valor por defecto
     ap.add_argument("--A", type=float, default=None, help="Deceleración [m/s^2]")
-    ap.add_argument("--margin-kph", type=float, default=None, help="Margen bajo el límite [km/h]")
-    ap.add_argument("--reaction", type=float, default=None, help="Tiempo de reacción [s]")
+    ap.add_argument(
+        "--margin-kph", type=float, default=None, help="Margen bajo el límite [km/h]"
+    )
+    ap.add_argument(
+        "--reaction", type=float, default=None, help="Tiempo de reacción [s]"
+    )
     args = ap.parse_args()
 
     df_log = _read_csv_auto(args.log)
@@ -60,7 +75,9 @@ def main() -> None:
 
     if key is not None:
         # Mantener del .dist solo columnas relevantes para evitar sufijos _x/_y
-        keep_cols = [c for c in ("dist_next_limit_m", "next_limit_kph") if c in df_dist.columns]
+        keep_cols = [
+            c for c in ("dist_next_limit_m", "next_limit_kph") if c in df_dist.columns
+        ]
         right = df_dist[[key] + keep_cols].copy()
         left = df_log.copy()
         df = pd.merge_asof(
@@ -76,9 +93,17 @@ def main() -> None:
         if len(df_log) != len(df_dist):
             # reindexar por la longitud mínima
             n = min(len(df_log), len(df_dist))
-            df = pd.concat([df_log.iloc[:n].reset_index(drop=True), df_dist.iloc[:n].reset_index(drop=True)], axis=1)
+            df = pd.concat(
+                [
+                    df_log.iloc[:n].reset_index(drop=True),
+                    df_dist.iloc[:n].reset_index(drop=True),
+                ],
+                axis=1,
+            )
         else:
-            df = pd.concat([df_log.reset_index(drop=True), df_dist.reset_index(drop=True)], axis=1)
+            df = pd.concat(
+                [df_log.reset_index(drop=True), df_dist.reset_index(drop=True)], axis=1
+            )
 
     v_kph = _speed_kph(df)
     dist = _pick_series(df, "dist_next_limit_m")
@@ -127,7 +152,9 @@ def main() -> None:
                 # Sin límite a la vista: mantener
                 v_t, ph = v_now, "CRUISE"
             else:
-                v_t, ph = compute_target_speed_kph_era(v_now, lim_val, d_opt, curve=curve, cfg=cfg)
+                v_t, ph = compute_target_speed_kph_era(
+                    v_now, lim_val, d_opt, curve=curve, cfg=cfg
+                )
             tgt.append(v_t)
             phase.append(ph)
         v_max_kph = np.asarray(tgt, dtype=float)
@@ -139,7 +166,9 @@ def main() -> None:
             cfg,
         )
 
-    needs_brake = (v_kph.to_numpy(dtype=float, copy=False) > (v_max_kph + 0.1)).astype(int)
+    needs_brake = (v_kph.to_numpy(dtype=float, copy=False) > (v_max_kph + 0.1)).astype(
+        int
+    )
 
     # Ensamblar salida: conservar columnas del log y añadir controles/dist/límite
     out_df = df_log.copy()

@@ -106,4 +106,3 @@ jobs:
         with:
           name: safety-diagnostics
           path: artifacts/
-

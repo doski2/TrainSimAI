@@ -1,6 +1,7 @@
 import sqlite3
 import time
 from pathlib import Path
+
 import pytest
 
 
@@ -27,5 +28,8 @@ def ensure_test_db():
             """
         )
         now = time.time()
-        cur.execute("INSERT INTO telemetry (t_wall, odom_m, speed_kph) VALUES (?, ?, ?)", (now, 0.0, 0.0))
+        cur.execute(
+            "INSERT INTO telemetry (t_wall, odom_m, speed_kph) VALUES (?, ?, ?)",
+            (now, 0.0, 0.0),
+        )
         conn.commit()

@@ -1,9 +1,11 @@
 from __future__ import annotations
+
 import argparse
 from pathlib import Path
+
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 
 
 def _load_csv(p: Path) -> pd.DataFrame:
@@ -65,7 +67,7 @@ def _segment_events(df: pd.DataFrame) -> pd.DataFrame:
         evs.append((start, len(df) - 1, cur_lim))
     rows = []
     for eid, (s, e, lim) in enumerate(evs, start=1):
-        seg = df.iloc[s:e + 1]
+        seg = df.iloc[s : e + 1]
         d_start = float(seg["dist_next_limit_m"].max())
         d_min = float(seg["dist_next_limit_m"].min())
         arrival = seg[seg["dist_next_limit_m"] <= 5]
@@ -88,7 +90,11 @@ def _segment_events(df: pd.DataFrame) -> pd.DataFrame:
                 arrival_speed = float("nan")
         ok = bool(arrival_speed <= float(lim) + 0.5) if arrived else False
         last50 = seg[seg["dist_next_limit_m"] <= 50]
-        avg_margin = float((last50["next_limit_kph"] - last50["speed_kph"]).mean()) if len(last50) else float("nan")
+        avg_margin = (
+            float((last50["next_limit_kph"] - last50["speed_kph"]).mean())
+            if len(last50)
+            else float("nan")
+        )
         if "speed_kph" in seg.columns and "brake" in seg.columns:
             m_over = seg["speed_kph"] > seg["next_limit_kph"] + 1.5
             overs = int(m_over.sum())
@@ -133,7 +139,9 @@ def _compute_report(df: pd.DataFrame) -> dict:
         if c in df.columns:
             rep[f"nan_{c}"] = int(df[c].isna().sum())
     if all(c in df.columns for c in ["speed_kph", "next_limit_kph", "brake"]):
-        mask_over = (df["next_limit_kph"].notna()) & (df["speed_kph"] > df["next_limit_kph"] + 1.5)
+        mask_over = (df["next_limit_kph"].notna()) & (
+            df["speed_kph"] > df["next_limit_kph"] + 1.5
+        )
         rep["overspeed_cases"] = int(mask_over.sum())
         rep["overspeed_cases_with_brake"] = int((mask_over & (df["brake"] > 0.0)).sum())
     # monotonicidad distancia
@@ -175,9 +183,15 @@ def _compute_kpis(df: pd.DataFrame, rep: dict, ev_df: pd.DataFrame | None) -> di
     # mean_margin_last50_kph: media global en muestras con dist<=50 m
     need = {"next_limit_kph", "speed_kph", "dist_next_limit_m"}
     if need.issubset(df.columns):
-        m = df["dist_next_limit_m"].le(50) & df["next_limit_kph"].notna() & df["speed_kph"].notna()
+        m = (
+            df["dist_next_limit_m"].le(50)
+            & df["next_limit_kph"].notna()
+            & df["speed_kph"].notna()
+        )
         if m.any():
-            margins = (df.loc[m, "next_limit_kph"] - df.loc[m, "speed_kph"]).astype(float)
+            margins = (df.loc[m, "next_limit_kph"] - df.loc[m, "speed_kph"]).astype(
+                float
+            )
             kpi["mean_margin_last50_kph"] = float(margins.mean())
     return kpi
 
@@ -245,7 +259,9 @@ def main():
     ap = argparse.ArgumentParser(description="Informe de sesión ctrl_live")
     ap.add_argument("--in", dest="inp", help="Ruta al ctrl_live_*.csv")
     ap.add_argument("--csv", dest="csv", help="(compat) Ruta al ctrl_live_*.csv")
-    ap.add_argument("--kpi-out", default="data/kpi_latest.txt", help="Ruta de salida KPI (txt)")
+    ap.add_argument(
+        "--kpi-out", default="data/kpi_latest.txt", help="Ruta de salida KPI (txt)"
+    )
     ap.add_argument("--no-plots", action="store_true", help="No generar PNGs")
     args = ap.parse_args()
     inp = args.inp or args.csv
@@ -266,7 +282,9 @@ def main():
         _plots(df, in_path)
     print(f"[session_report] txt={rep_txt}")
     if ev_df is not None and not ev_df.empty:
-        print(f"[session_report] events_csv={in_path.with_name(in_path.stem + '_events.csv')}")
+        print(
+            f"[session_report] events_csv={in_path.with_name(in_path.stem + '_events.csv')}"
+        )
     # KPI out
     kpi = _compute_kpis(df, rep, ev_df)
     kpi_path = Path(args.kpi_out)

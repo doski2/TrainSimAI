@@ -107,4 +107,3 @@ end
 function MarkerPassed(name)
   emit({ type = "marker_pass", name = tostring(name) })
 end
-

@@ -1,7 +1,8 @@
 import time
-# no extra imports needed
 
 from runtime.control_loop import ControlLoop
+
+# no extra imports needed
 
 
 def make_fake_csv(path, t_wall):

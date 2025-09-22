@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Dict, Any
-import copy
 
+import copy
+from typing import Any, Dict
 
 # Normaliza eventos crudos (LUA o heurísticas) a un modelo estable v1
 

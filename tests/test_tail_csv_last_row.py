@@ -1,6 +1,8 @@
 from __future__ import annotations
+
 from pathlib import Path
-from runtime.control_loop import tail_csv_last_row, _to_float_loose
+
+from runtime.control_loop import _to_float_loose, tail_csv_last_row
 
 
 def test_tail_csv_last_row_semicolon(tmp_path: Path):

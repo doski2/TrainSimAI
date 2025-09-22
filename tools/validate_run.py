@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import csv
 import json
 import os
@@ -6,7 +7,9 @@ import sys
 from collections import Counter, deque
 
 CSV_PATH = sys.argv[1] if len(sys.argv) > 1 else os.path.join("data", "runs", "run.csv")
-EVT_PATH = sys.argv[2] if len(sys.argv) > 2 else os.path.join("data", "events", "events.jsonl")
+EVT_PATH = (
+    sys.argv[2] if len(sys.argv) > 2 else os.path.join("data", "events", "events.jsonl")
+)
 
 MAIN_FIELDS = {
     "provider",
