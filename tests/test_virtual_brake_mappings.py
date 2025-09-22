@@ -1,9 +1,5 @@
 import time
 
-from typing import Tuple
-
-from ingestion.rd_fake import FakeRailDriver
-
 
 def test_virtual_brake_and_engine_brake_detected(tmp_path, make_client):
     # keep test filesystem isolated

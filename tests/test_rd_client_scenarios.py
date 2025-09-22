@@ -1,5 +1,4 @@
 import time
-from ingestion.rd_fake import FakeRailDriver
 
 
 def test_ack_recovery_before_max_retries(monkeypatch, make_client):
