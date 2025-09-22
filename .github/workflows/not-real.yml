@@ -30,14 +30,18 @@ jobs:
           python -m pip install ruff==0.12.1
 
       - name: Run tests (not-real)
+        shell: pwsh
         run: |
           ruff check .
           python -m pip install pytest
-          python -m pytest -q -m "not real"
+          # Run pytest, produce junit xml and capture console output to pytest.log
+          python -m pytest -q -m "not real" --junitxml=pytest-results.xml | Tee-Object -FilePath pytest.log
 
       - name: Upload pytest results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: pytest-not-real-report
-          path: .pytest_cache
+          path: |
+            pytest-results.xml
+            pytest.log
