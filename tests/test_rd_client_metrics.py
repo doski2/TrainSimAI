@@ -1,14 +1,12 @@
 import time
 import importlib
-from ingestion.rd_fake import FakeRailDriver
-from ingestion.rd_client import RDClient, RD_RETRIES, RD_EMERGENCY, RD_ACK_LATENCY, RD_EMERGENCY_GAUGE
+from ingestion.rd_client import RD_RETRIES, RD_EMERGENCY, RD_ACK_LATENCY, RD_EMERGENCY_GAUGE
 
 
-def test_metrics_presence_and_behavior(tmp_path):
-    fake = FakeRailDriver()
-    client = RDClient(poll_dt=0.01)
-    client.rd = fake
-    client.ctrl_index_by_name = {name: idx for idx, name in fake.get_controller_list()}
+def test_metrics_presence_and_behavior(tmp_path, make_client):
+    client, fake = make_client(poll_dt=0.01)
+    client._ack_timeout = 0.01
+    client._max_retries = 1
     client._ack_timeout = 0.01
     client._max_retries = 1
 

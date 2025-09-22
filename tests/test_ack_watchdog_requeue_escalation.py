@@ -2,24 +2,15 @@ import time
 
 import pytest
 
-from ingestion.rd_fake import FakeRailDriver
-from ingestion.rd_client import RDClient
-
-
 @pytest.mark.safety
-def test_ack_watchdog_retries_and_escalates(monkeypatch, tmp_path):
+def test_ack_watchdog_retries_and_escalates(monkeypatch, tmp_path, make_client):
     """Ensure the ack watchdog requeues attempts, records retries and escalates to emergency
     when the fake driver never applies the value.
     """
     # NOTE: test created to validate ack-watchdog behaviour (no-op comment to allow PR creation)
     monkeypatch.chdir(tmp_path)
 
-    rd = FakeRailDriver()
-    # short intervals and enabled watchdog for fast deterministic test
-    client = RDClient(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
-    # inject our fake driver and mapping
-    client.rd = rd
-    client.ctrl_index_by_name = {name: idx for idx, name in rd.get_controller_list()}
+    client, rd = make_client(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
 
     # make driver ignore sets (no ack)
     def _no_op(index_or_name, value):

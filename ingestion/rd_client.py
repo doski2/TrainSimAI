@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sys
 import time
-from typing import Any, Dict, Iterable, Iterator, List
+from typing import Any, Dict, Iterable, Iterator, List, Optional
 from queue import Queue, Empty
 from threading import Thread, Event
 import platform
@@ -214,8 +214,8 @@ class RDClient:
     # Class-level attribute annotations to help static analysis (attributes
     # are populated in __init__ but declaring them here avoids "unknown"
     # attribute warnings from type checkers).
-    rd: "RailDriver"
-    listener: "Listener"
+    rd: Optional[object]
+    listener: Optional[object]
     ctrl_index_by_name: Dict[str, int]
     _last_geo: Dict[str, Any]
     poll_dt: float
@@ -226,7 +226,8 @@ class RDClient:
         self,
         poll_dt: float = 0.2,
         poll_hz: float | None = None,
-        dll_location: str | None = None,
+    dll_location: str | None = None,
+    rd: object | None = None,
         control_aliases: dict | None = None,
         ack_watchdog: bool | int = False,
         ack_watchdog_interval: float = 0.1,
@@ -242,78 +243,91 @@ class RDClient:
         # Optionally inject a custom alias mapping for controls (useful for tests)
         self._control_aliases = control_aliases
 
-        # Seleccionar la DLL adecuada para evitar WinError 193 (arquitecturas distintas)
-        if USE_FAKE:
-            # Alias RailDriver apunta al FakeRailDriver cuando USE_FAKE=True
-            self.rd = RailDriver()
-        else:
-            # Resolver ubicación de DLL adecuada y pasarla explícitamente
-            dll_path = self.dll_location or _locate_raildriver_dll()
-            # Si el usuario pasó un directorio, elige el nombre correcto según arquitectura
-            try:
-                if dll_path and os.path.isdir(dll_path):
-                    base = Path(dll_path)
-                    dll_path = str((_prepare_dll_search_path(base)))
-            except Exception:
-                # Si falla (carpeta sin DLL), dejamos que el fallback actúe más abajo
-                dll_path = None
-            if not dll_path:
-                # Fallback: reglas de entorno + ruta por defecto de Steam
+        # Allow caller to inject an already-constructed RailDriver (tests, embedded)
+        # If provided, use it and defer any driver-dependent initialization to
+        # `attach_raildriver()`. If not provided, fall back to the previous
+        # behaviour (attempt to locate and instantiate RailDriver) for
+        # backward-compatibility when running on a real machine.
+        self.rd = rd  # type: ignore[assignment]
+        self._deferred_attach = False
+        if self.rd is None:
+            # Seleccionar la DLL adecuada para evitar WinError 193 (arquitecturas distintas)
+            if USE_FAKE:
+                # Alias RailDriver apunta al FakeRailDriver cuando USE_FAKE=True
+                self.rd = RailDriver()
+            else:
+                # Resolver ubicación de DLL adecuada y pasarla explícitamente
+                dll_path = self.dll_location or _locate_raildriver_dll()
+                # Si el usuario pasó un directorio, elige el nombre correcto según arquitectura
                 try:
-                    candidate = _prepare_dll_search_path(_resolve_plugins_dir())
-                    dll_path = str(candidate)
+                    if dll_path and os.path.isdir(dll_path):
+                        base = Path(dll_path)
+                        dll_path = str((_prepare_dll_search_path(base)))
                 except Exception:
+                    # Si falla (carpeta sin DLL), dejamos que el fallback actúe más abajo
                     dll_path = None
-            # Diagnóstico: mostrar la DLL elegida (útil para WinError 193)
-            try:
-                if dll_path:
-                    self.logger.debug(
-                        "using RailDriver DLL: %s", dll_path
-                    )
-            except Exception:
-                self.logger.exception("error logging dll path")
-            # Registrar el directorio de la DLL en el buscador de Windows (Py 3.8+)
-            try:
-                if dll_path:
-                    dll_dir = os.path.dirname(dll_path)
-                    if dll_dir and hasattr(os, "add_dll_directory"):
-                        os.add_dll_directory(dll_dir)  # type: ignore[attr-defined]
-                elif self.dll_location and hasattr(os, "add_dll_directory"):
-                    os.add_dll_directory(self.dll_location)  # type: ignore[attr-defined]
-            except Exception:
-                # Si falla, continuamos sin registrar ruta explícita
-                pass
-            # Instanciar RailDriver indicando ruta si la conocemos; tolerar diferentes firmas
-            try:
-                if dll_path:
+                if not dll_path:
+                    # Fallback: reglas de entorno + ruta por defecto de Steam
                     try:
-                        self.rd = RailDriver(dll_location=dll_path)  # type: ignore[call-arg]
-                    except TypeError:
-                        # Otros forks aceptan dll_path como nombre de kw
-                        self.rd = RailDriver(dll_path=dll_path)  # type: ignore[call-arg]
-                else:
-                    self.rd = RailDriver()
-            except TypeError:
-                # Fallback posicional
-                if dll_path:
-                    self.rd = RailDriver(dll_path)  # type: ignore[misc]
-                else:
-                    self.rd = RailDriver()
+                        candidate = _prepare_dll_search_path(_resolve_plugins_dir())
+                        dll_path = str(candidate)
+                    except Exception:
+                        dll_path = None
+                # Diagnóstico: mostrar la DLL elegida (útil para WinError 193)
+                try:
+                    if dll_path:
+                        self.logger.debug(
+                            "using RailDriver DLL: %s", dll_path
+                        )
+                except Exception:
+                    self.logger.exception("error logging dll path")
+                # Registrar el directorio de la DLL en el buscador de Windows (Py 3.8+)
+                try:
+                    if dll_path:
+                        dll_dir = os.path.dirname(dll_path)
+                        if dll_dir and hasattr(os, "add_dll_directory"):
+                            os.add_dll_directory(dll_dir)  # type: ignore[attr-defined]
+                    elif self.dll_location and hasattr(os, "add_dll_directory"):
+                        os.add_dll_directory(self.dll_location)  # type: ignore[attr-defined]
+                except Exception:
+                    # Si falla, continuamos sin registrar ruta explícita
+                    pass
+                # Instanciar RailDriver indicando ruta si la conocemos; tolerar diferentes firmas
+                try:
+                    if dll_path:
+                        try:
+                            self.rd = RailDriver(dll_location=dll_path)  # type: ignore[call-arg]
+                        except TypeError:
+                            # Otros forks aceptan dll_path como nombre de kw
+                            self.rd = RailDriver(dll_path=dll_path)  # type: ignore[call-arg]
+                    else:
+                        self.rd = RailDriver()
+                except TypeError:
+                    # Fallback posicional
+                    if dll_path:
+                        self.rd = RailDriver(dll_path)  # type: ignore[misc]
+                    else:
+                        self.rd = RailDriver()
         # Necesario para intercambiar datos con TS
-        try:
-            self.rd.set_rail_driver_connected(True)  # type: ignore[attr-defined]
-        except Exception:
-            # Versiones antiguas ignoran el parámetro; continuamos.
-            pass
+        # If rd was injected we defer driver-dependent initialization until
+        # `attach_raildriver()` is called. If we created the driver here, mark
+        # that attach should run now.
+        if self.rd is not None:
+            try:
+                self.rd.set_rail_driver_connected(True)  # type: ignore[attr-defined]
+            except Exception:
+                # Versiones antiguas ignoran el parámetro; continuamos.
+                pass
+        else:
+            # no driver available; keep flag so attach can be used later
+            self._deferred_attach = True
 
-        # Índices cacheados por nombre para lecturas directas cuando conviene
-        # Build a name->index mapping explicitly so mypy can infer types
-        self.ctrl_index_by_name = {}
-        for idx, nm in self.rd.get_controller_list():  # type: ignore[attr-defined]
-            self.ctrl_index_by_name[str(nm)] = int(idx)
-
-        # Listener para cambios y snapshots unificados
-        self.listener = Listener(self.rd, interval=self.poll_dt)  # type: ignore[call-arg]
+        # Prepare driver-independent runtime state. If a driver was injected or
+        # created above, perform the driver-dependent initialization in
+        # `attach_raildriver()`. This avoids constructing platform-specific
+        # resources during import or in test environments.
+        self.ctrl_index_by_name: Dict[str, int] = {}
+        self.listener = None
         # Caché de la última geo conocida para rellenar huecos momentáneos
         self._last_geo: Dict[str, Any] = {
             "lat": None,
@@ -321,12 +335,16 @@ class RDClient:
             "heading": None,
             "gradient": None,
         }
-        # Suscribir todos los controles disponibles (las especiales se evalúan siempre)
+
+        # If a driver object is available now (we created it above), attach it
+        # immediately; otherwise tests or consumers can call `attach_raildriver`
+        # with an injected driver.
         try:
-            self.listener.subscribe(list(self.ctrl_index_by_name.keys()))  # type: ignore[attr-defined]
+            if self.rd is not None:
+                self.attach_raildriver(self.rd)
         except Exception:
-            # Si cambia de locomotora y hay controles ausentes, se puede re-suscribir más tarde
-            pass
+            # avoid failing construction; tests can still attach later
+            self.logger.exception("attach_raildriver failed during __init__")
 
         # Safety runtime state
         # per-control last send timestamp for rate limiting
@@ -398,6 +416,82 @@ class RDClient:
 
             self._ack_worker = Thread(target=_ack_worker_fn, daemon=True)
             self._ack_worker.start()
+
+    def attach_raildriver(self, rd_obj: object) -> None:
+        """Perform driver-dependent initialization.
+
+        This method can be called explicitly by tests to inject a FakeRailDriver
+        or by production code after the RD is available. It's safe to call
+        multiple times (idempotent-ish).
+        """
+        try:
+            self.rd = rd_obj  # type: ignore[assignment]
+            try:
+                self.rd.set_rail_driver_connected(True)  # type: ignore[attr-defined]
+            except Exception:
+                pass
+            # Build a name->index mapping explicitly so mypy can infer types
+            self.ctrl_index_by_name = {}
+            for idx, nm in self.rd.get_controller_list():  # type: ignore[attr-defined]
+                try:
+                    self.ctrl_index_by_name[str(nm)] = int(idx)
+                except Exception:
+                    continue
+            # Listener para cambios y snapshots unificados
+            try:
+                self.listener = Listener(self.rd, interval=self.poll_dt)  # type: ignore[call-arg]
+                try:
+                    self.listener.subscribe(list(self.ctrl_index_by_name.keys()))  # type: ignore[attr-defined]
+                except Exception:
+                    pass
+            except Exception:
+                # Some driver implementations may not support Listener in tests
+                self.listener = None
+            # Populate limits from driver if possible
+            try:
+                for name in self.ctrl_index_by_name:
+                    try:
+                        mi = float(self.rd.get_min_controller_value(name))  # type: ignore[attr-defined]
+                        ma = float(self.rd.get_max_controller_value(name))  # type: ignore[attr-defined]
+                        self._limits[name] = (mi, ma)
+                    except Exception:
+                        continue
+            except Exception:
+                pass
+        except Exception:
+            # Best effort: don't raise from attach
+            self.logger.exception("failed to attach raildriver")
+
+    def shutdown(self) -> None:
+        """Best-effort shutdown: stop ack worker and listener threads.
+
+        Tests should call this to ensure background threads stop cleanly.
+        """
+        try:
+            if hasattr(self, "_ack_worker_stop") and self._ack_worker_stop is not None:
+                try:
+                    self._ack_worker_stop.set()
+                except Exception:
+                    pass
+            if hasattr(self, "_ack_worker") and self._ack_worker is not None:
+                try:
+                    # join briefly if possible
+                    self._ack_worker.join(timeout=0.2)
+                except Exception:
+                    pass
+        except Exception:
+            pass
+        try:
+            if getattr(self, "listener", None) is not None:
+                try:
+                    # Listener implementations may provide a stop/close method
+                    stopfn = getattr(self.listener, "stop", None)
+                    if callable(stopfn):
+                        stopfn()
+                except Exception:
+                    pass
+        except Exception:
+            pass
 
         # Start Prometheus exporter if requested via env (do it here to avoid
         # side-effects at import time in tests and tooling).

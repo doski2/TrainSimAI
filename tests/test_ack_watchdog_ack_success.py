@@ -2,19 +2,12 @@ import time
 
 import pytest
 
-from ingestion.rd_fake import FakeRailDriver
-from ingestion.rd_client import RDClient
-
-
 @pytest.mark.safety
-def test_ack_watchdog_no_retry_on_ack(monkeypatch, tmp_path):
+def test_ack_watchdog_no_retry_on_ack(monkeypatch, tmp_path, make_client):
     """If the RD applies the value immediately, watchdog should not record retries or escalate."""
     monkeypatch.chdir(tmp_path)
 
-    rd = FakeRailDriver()
-    client = RDClient(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
-    client.rd = rd
-    client.ctrl_index_by_name = {name: idx for idx, name in rd.get_controller_list()}
+    client, rd = make_client(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
 
     # normal set implementation: returns ack
     # shorten timeouts
