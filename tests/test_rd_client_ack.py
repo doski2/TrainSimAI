@@ -1,19 +1,9 @@
 import time
 import json
-from ingestion.rd_fake import FakeRailDriver
-from ingestion.rd_client import RDClient
-
-
-def test_ack_and_emergency_on_missing_ack(tmp_path, monkeypatch):
+def test_ack_and_emergency_on_missing_ack(tmp_path, monkeypatch, make_client):
     """Simulate a driver that delays applying controller writes so ack fails and triggers emergency_stop."""
     # Create fake driver with controllable delay
-    fake = FakeRailDriver()
-    # set short ack timeout for test
-    client = RDClient(poll_dt=0.01, control_aliases=None)
-    # Inject our fake raildriver instance
-    client.rd = fake
-    # rebuild indices
-    client.ctrl_index_by_name = {name: idx for idx, name in fake.get_controller_list()}
+    client, fake = make_client(poll_dt=0.01, control_aliases=None)
     # set very small ack timeout and max_retries=1 to trigger quickly
     client._ack_timeout = 0.02
     client._max_retries = 1

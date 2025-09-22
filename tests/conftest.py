@@ -1,11 +1,28 @@
 import sys
 from pathlib import Path
-
-# Seguridad: bloquea tests 'real' si no está el entorno adecuado
 import os
 
-# pyright: reportMissingImports=false
 import pytest
+
+from ingestion.rd_fake import FakeRailDriver
+
+
+@pytest.fixture
+def fake_rd():
+    """Return a fresh FakeRailDriver instance for tests."""
+    return FakeRailDriver()
+
+
+@pytest.fixture
+def make_client(fake_rd):
+    """Factory that returns an RDClient with the fake driver attached."""
+    from ingestion.rd_client import RDClient
+
+    def _make(**kwargs):
+        c = RDClient(**kwargs, rd=fake_rd)
+        return c, fake_rd
+
+    return _make
 
 
 def pytest_runtest_setup(item):

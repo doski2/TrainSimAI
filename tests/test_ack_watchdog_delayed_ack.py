@@ -2,19 +2,12 @@ import time
 
 import pytest
 
-from ingestion.rd_fake import FakeRailDriver
-from ingestion.rd_client import RDClient
-
-
 @pytest.mark.safety
-def test_ack_watchdog_clears_retries_when_ack_arrives(monkeypatch, tmp_path):
+def test_ack_watchdog_clears_retries_when_ack_arrives(monkeypatch, tmp_path, make_client):
     """If ACK arrives after some retries, the retry counts should be cleared and no emergency should remain."""
     monkeypatch.chdir(tmp_path)
 
-    rd = FakeRailDriver()
-    client = RDClient(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
-    client.rd = rd
-    client.ctrl_index_by_name = {name: idx for idx, name in rd.get_controller_list()}
+    client, rd = make_client(poll_dt=0.01, control_aliases=None, ack_watchdog=True, ack_watchdog_interval=0.01)
 
     # Instead of modifying driver's set method, simulate that an external
     # process applies the requested value after a short delay (ACK arrival).

@@ -26,10 +26,9 @@ def test_emergency_path_isolated(monkeypatch, tmp_path):
 
     fake = FakeRD()
 
-    # We construct a minimal RDClient instance but monkeypatch internals to
-    # avoid real IO. Use the real class to ensure compatibility with our shim.
-    rc = RDClient(poll_dt=1.0)
-    rc.rd = cast(Any, fake)
+    # Construct a minimal RDClient instance but inject our fake RD to avoid
+    # real IO during construction.
+    rc = RDClient(poll_dt=1.0, rd=cast(Any, fake))
     # ensure no indices mapped so set attempts will escalate
     rc.ctrl_index_by_name = {}
     # short retry policy for test
@@ -78,8 +77,7 @@ def test_ack_watchdog_enqueue(monkeypatch):
 
     from ingestion.rd_client import RDClient
 
-    rc = RDClient(poll_dt=1.0)
-    rc.rd = cast(Any, FakeRD())
+    rc = RDClient(poll_dt=1.0, rd=cast(Any, FakeRD()))
     # map a control name to an integer index so set path uses index-based call
     rc.ctrl_index_by_name = {"Throttle": 1}
     rc._max_retries = 3
@@ -108,8 +106,7 @@ def test_retry_exhaustion_triggers_emergency(monkeypatch):
 
     from ingestion.rd_client import RDClient
 
-    rc = RDClient(poll_dt=1.0)
-    rc.rd = cast(Any, FakeRD())
+    rc = RDClient(poll_dt=1.0, rd=cast(Any, FakeRD()))
     # provide a mapping so shim tries index-based calls
     rc.ctrl_index_by_name = {"Brake": 2}
     rc._max_retries = 0
