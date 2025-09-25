@@ -28,9 +28,7 @@ def test_real_smoke_check():
     This avoids noisy failures when running on runners that are not prepared.
     """
     if not (_has_rd_dlls() or _has_rd_endpoint()):
-        pytest.skip(
-            "Skipping real tests: no TSC_RD_DLL_DIR/RAILWORKS_PLUGINS or TSC_RD configured on this runner"
-        )
+        pytest.skip("Skipping real tests: no TSC_RD_DLL_DIR/RAILWORKS_PLUGINS or TSC_RD configured on this runner")
 
     # Basic import sanity check (do not raise if it imports but cannot connect)
     try:

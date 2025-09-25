@@ -86,9 +86,7 @@ def compute_target_speed_kph(
     else:
         lim_arr = np.asarray(next_limit_kph, dtype=float)
     s_eff = np.maximum(0.0, dist - v_ms * float(cfg.reaction_time_s))
-    lim_adj_ms = np.maximum(
-        0.0, (np.nan_to_num(lim_arr, nan=np.inf) - float(cfg.margin_kph)) / 3.6
-    )
+    lim_adj_ms = np.maximum(0.0, (np.nan_to_num(lim_arr, nan=np.inf) - float(cfg.margin_kph)) / 3.6)
     v_max_ms = np.sqrt(
         np.clip(
             lim_adj_ms**2 + 2.0 * float(cfg.max_service_decel) * s_eff,

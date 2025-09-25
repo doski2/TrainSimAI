@@ -18,9 +18,7 @@ class RunStore:
         self.path = Path(db_path)
         self.path.parent.mkdir(parents=True, exist_ok=True)
         # abrir con check_same_thread=False para permitir accesos desde hilos diferentes
-        self.con = sqlite3.connect(
-            self.path.as_posix(), isolation_level=None, check_same_thread=False
-        )
+        self.con = sqlite3.connect(self.path.as_posix(), isolation_level=None, check_same_thread=False)
         # aplicar pragmas de robustez
         # journal_mode: preferimos WAL para múltiples lectores concurrentes
         try:
@@ -65,9 +63,7 @@ class RunStore:
             )
             """
         )
-        self.con.execute(
-            "CREATE INDEX IF NOT EXISTS ix_telemetry_twall ON telemetry(t_wall)"
-        )
+        self.con.execute("CREATE INDEX IF NOT EXISTS ix_telemetry_twall ON telemetry(t_wall)")
 
     def insert_row(self, row: Dict[str, Any]) -> None:
         meta = row.get("meta") or {}

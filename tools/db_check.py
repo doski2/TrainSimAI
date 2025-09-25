@@ -52,9 +52,7 @@ def inspect_db(path: Path, stale_threshold: float = 30.0) -> int:
             print(f"[db_check] Journal mode: {journal_mode}")
 
             # telemetry table exists?
-            cur.execute(
-                "SELECT count(*) FROM sqlite_master WHERE type='table' AND name='telemetry'"
-            )
+            cur.execute("SELECT count(*) FROM sqlite_master WHERE type='table' AND name='telemetry'")
             has_tbl = (cur.fetchone() or [0])[0] > 0
             if not has_tbl:
                 print("[db_check] DB existe pero NO hay tabla telemetry")

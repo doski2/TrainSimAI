@@ -16,9 +16,7 @@ def fail(msg: str) -> None:
 
 def main() -> None:
     if len(sys.argv) != 2:
-        print(
-            "Uso: python tools/validate_profile.py profiles/DTG.Dresden.DB_BR146.2.json"
-        )
+        print("Uso: python tools/validate_profile.py profiles/DTG.Dresden.DB_BR146.2.json")
         sys.exit(1)
     path = Path(sys.argv[1])
     if not path.exists():

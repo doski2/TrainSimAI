@@ -14,9 +14,7 @@ except Exception:  # pragma: no cover
         return evt
 
 
-def load_offset(
-    state_path: Path | str, bus_path: Path | str, from_start: bool = False
-) -> int:
+def load_offset(state_path: Path | str, bus_path: Path | str, from_start: bool = False) -> int:
     """Load last read byte offset for the LUA bus file.
 
     Behavior:

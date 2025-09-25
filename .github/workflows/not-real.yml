@@ -12,6 +12,8 @@ jobs:
     runs-on: windows-latest
     env:
       PYTHONIOENCODING: 'utf-8'
+      # Force fake RD on hosted runners to avoid attempting to load native DLLs
+      TSC_FAKE_RD: '1'
     steps:
       - uses: actions/checkout@v4
       - name: Disable CRLF conversion
@@ -27,6 +29,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install pre-commit
+      - name: Pre-commit diagnostics
+        shell: pwsh
+        run: |
+          Write-Host "--- pre-commit config ---"
+          Get-Content .pre-commit-config.yaml
+          Write-Host "--- installed hook revisions (pre-commit will use remote revs) ---"
+          Get-Content .pre-commit-config.yaml | Select-String -Pattern "rev:"
+          Write-Host "--- black/isort versions (local environment) ---"
+          python -c "import black, isort, pkgutil; print('black', getattr(black, '__version__', 'unknown')); print('isort', getattr(isort, '__version__', 'unknown'))" || true
       - name: Run pre-commit checks
         shell: pwsh
         run: pre-commit run --all-files --show-diff-on-failure

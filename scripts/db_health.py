@@ -11,12 +11,8 @@ from storage import db_check
 
 
 def run(argv: list[str] | None = None) -> int:
-    p = argparse.ArgumentParser(
-        prog="db_health", description="DB health checks for TrainSimAI (SQLite)"
-    )
-    p.add_argument(
-        "db", nargs="?", default="data/run.db", help="Path to sqlite DB file"
-    )
+    p = argparse.ArgumentParser(prog="db_health", description="DB health checks for TrainSimAI (SQLite)")
+    p.add_argument("db", nargs="?", default="data/run.db", help="Path to sqlite DB file")
     p.add_argument("--pretty", action="store_true", help="Pretty-print JSON output")
     args = p.parse_args(argv)
     db_path = Path(args.db)

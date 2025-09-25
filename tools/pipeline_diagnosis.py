@@ -61,9 +61,7 @@ def check_key_files() -> None:
             size_mb = stat.st_size / (1024 * 1024)
             age_hours = (time.time() - stat.st_mtime) / 3600
             status = "🟢" if age_hours < 1 else "🟡" if age_hours < 24 else "🔴"
-            print(
-                f"{status} {file_path}: {size_mb:.2f} MB, modificado hace {age_hours:.1f}h"
-            )
+            print(f"{status} {file_path}: {size_mb:.2f} MB, modificado hace {age_hours:.1f}h")
         else:
             print(f"❌ {file_path}: NO EXISTE")
 

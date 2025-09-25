@@ -15,9 +15,7 @@ def _choose_col(df: pd.DataFrame, candidates: List[str], name: str) -> str:
     for c in candidates:
         if c.lower() in cols_map:
             return cols_map[c.lower()]
-    raise SystemExit(
-        f"[validate_kpi] No se encontró columna '{name}'. Prueba con --{name.replace('_', '-')}-col"
-    )
+    raise SystemExit(f"[validate_kpi] No se encontró columna '{name}'. Prueba con --{name.replace('_', '-')}-col")
 
 
 def _segments_by_limit(df: pd.DataFrame, limit_col: str) -> List[Tuple[int, int]]:
@@ -79,12 +77,7 @@ def compute_kpis(
     for i0, i1 in segs:
         d_raw = df.iloc[i0:i1][dist_col].to_numpy()
         if smooth_win and smooth_win > 1:
-            d = (
-                pd.Series(d_raw)
-                .rolling(smooth_win, center=True, min_periods=1)
-                .median()
-                .to_numpy()
-            )
+            d = pd.Series(d_raw).rolling(smooth_win, center=True, min_periods=1).median().to_numpy()
         else:
             d = d_raw
         dd = np.diff(d)
@@ -99,18 +92,14 @@ def compute_kpis(
                     j += 1
                 if run >= bump_confirm_samples:
                     bumps += 1
-                    bump_locs.append(
-                        i0 + i + 1
-                    )  # índice (fila) en df donde se manifiesta el bump
+                    bump_locs.append(i0 + i + 1)  # índice (fila) en df donde se manifiesta el bump
                     i = j
                     continue
             i += 1
 
     # --- 2) Margen medio últimos 'window_m' metros (v - limit) con 0 <= dist <= window_m
     win = df[(df[dist_col] >= 0) & (df[dist_col] <= window_m)].copy()
-    mean_margin_last50 = (
-        float((win[v_col] - win[limit_col]).mean()) if not win.empty else float("nan")
-    )
+    mean_margin_last50 = float((win[v_col] - win[limit_col]).mean()) if not win.empty else float("nan")
 
     # --- 3) Arrivals OK: detectar cruces al umbral 'arrival_dist_m' y evaluar velocidad
     # Evento: una muestra entra en [0, arrival_dist_m] desde > arrival_dist_m.
@@ -134,14 +123,10 @@ def compute_kpis(
 
     return {
         "arrivals": float(arrivals),
-        "arrivals_ok": (
-            float(arrivals_ok) if arrivals_ok == arrivals_ok else float("nan")
-        ),
+        "arrivals_ok": (float(arrivals_ok) if arrivals_ok == arrivals_ok else float("nan")),
         "monotonicity_bumps": float(bumps),
         "mean_margin_last50_kph": (
-            float(mean_margin_last50)
-            if mean_margin_last50 == mean_margin_last50
-            else float("nan")
+            float(mean_margin_last50) if mean_margin_last50 == mean_margin_last50 else float("nan")
         ),
         "bump_locs": bump_locs,
     }
@@ -219,9 +204,7 @@ def main():
     if k["monotonicity_bumps"] > args.max_bumps:
         print(f"[KPI][FAIL] monotonicity_bumps > {args.max_bumps}")
         ok = False
-    if not (
-        args.target_margin_min <= k["mean_margin_last50_kph"] <= args.target_margin_max
-    ):
+    if not (args.target_margin_min <= k["mean_margin_last50_kph"] <= args.target_margin_max):
         # Split long message to satisfy line-length linters
         msg = (
             f"[KPI][WARN] mean_margin_last50_kph fuera del objetivo "

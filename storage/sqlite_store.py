@@ -19,9 +19,7 @@ class RunStore:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         # autocommit mode, allow access from threads
-        self.con = sqlite3.connect(
-            str(self.db_path), isolation_level=None, check_same_thread=False
-        )
+        self.con = sqlite3.connect(str(self.db_path), isolation_level=None, check_same_thread=False)
         self._ensure_schema()
 
     def _ensure_schema(self) -> None:
@@ -38,9 +36,7 @@ class RunStore:
             )
             """
         )
-        cur.execute(
-            "CREATE INDEX IF NOT EXISTS ix_telemetry_twall ON telemetry(t_wall)"
-        )
+        cur.execute("CREATE INDEX IF NOT EXISTS ix_telemetry_twall ON telemetry(t_wall)")
         cur.close()
 
     def insert_row(self, row: Dict[str, Any]) -> None:

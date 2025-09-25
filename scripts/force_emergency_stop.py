@@ -16,9 +16,7 @@ args = ap.parse_args()
 
 Path("data").mkdir(parents=True, exist_ok=True)
 Path("data/control_status.json").write_text(
-    json.dumps(
-        {"mode": "manual", "takeover": True, "reason": args.reason, "ts": time.time()}
-    ),
+    json.dumps({"mode": "manual", "takeover": True, "reason": args.reason, "ts": time.time()}),
     encoding="utf-8",
 )
 print("Emergency stop requested (written to data/control_status.json)")

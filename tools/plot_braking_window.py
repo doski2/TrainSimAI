@@ -22,9 +22,7 @@ def main(v_now: float, limit: float, dmax: float, step: float, profile: str) -> 
         cfg = BrakingConfig()
 
     extras = load_profile_extras(profile) if profile else {}
-    era_csv: Optional[str] = (
-        extras.get("era_curve_csv") if isinstance(extras, dict) else None
-    )
+    era_csv: Optional[str] = extras.get("era_curve_csv") if isinstance(extras, dict) else None
     if not era_csv:
         print("Profile does not include 'era_curve_csv' in extras", file=sys.stderr)
         return

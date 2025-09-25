@@ -57,18 +57,12 @@ class RDAdapter:
 
         # Config desde entorno
         self._names: Dict[str, str] = {
-            "throttle": os.environ.get(
-                "TSC_RD_THROTTLE_NAME", DEFAULT_CONTROL_NAMES["throttle"]
-            ),
-            "brake": os.environ.get(
-                "TSC_RD_BRAKE_NAME", DEFAULT_CONTROL_NAMES["brake"]
-            ),
+            "throttle": os.environ.get("TSC_RD_THROTTLE_NAME", DEFAULT_CONTROL_NAMES["throttle"]),
+            "brake": os.environ.get("TSC_RD_BRAKE_NAME", DEFAULT_CONTROL_NAMES["brake"]),
         }
         self._invert_throttle = os.environ.get("TSC_RD_INVERT_THROTTLE", "0") == "1"
         self._invert_brake = os.environ.get("TSC_RD_INVERT_BRAKE", "0") == "1"
-        self._scale_01 = (
-            os.environ.get("TSC_RD_SCALE_01", "1") == "1"
-        )  # por defecto 0..1
+        self._scale_01 = os.environ.get("TSC_RD_SCALE_01", "1") == "1"  # por defecto 0..1
         try:
             self._eps = float(os.environ.get("TSC_RD_EPS", "0.01"))
         except Exception:

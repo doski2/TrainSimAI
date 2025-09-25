@@ -26,7 +26,5 @@ def test_jerk_limits_rate_and_output():
     # La variación de tasa está acotada por max_jerk_per_s2
     dr = [rates[i] - rates[i - 1] for i in range(1, len(rates))]
     # ignorar variaciones cuando la salida está saturada a 1.0 (clamp)
-    filtered = [
-        dr[i - 1] for i in range(1, len(ys)) if ys[i] < 0.999 and ys[i - 1] < 0.999
-    ]
+    filtered = [dr[i - 1] for i in range(1, len(ys)) if ys[i] < 0.999 and ys[i - 1] < 0.999]
     assert all(abs(x) <= 2.0 * dt + 1e-6 for x in filtered)

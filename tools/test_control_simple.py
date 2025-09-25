@@ -119,9 +119,7 @@ def test_simple_control_loop() -> None:
                     data = self.read_last_telemetry()
                     if data:
                         age = time.time() - data["t_wall"] if data["t_wall"] else 9999
-                        print(
-                            f"  Iteración {i + 1}: speed={data['speed_kph']} kph, age={age:.1f}s"
-                        )
+                        print(f"  Iteración {i + 1}: speed={data['speed_kph']} kph, age={age:.1f}s")
                     else:
                         print(f"  Iteración {i + 1}: Sin datos")
                     time.sleep(1)
@@ -165,9 +163,7 @@ def main() -> None:
     print("\n" + "=" * 50)
     if basic_ok:
         print("RESULTADO: Tests básicos EXITOSOS")
-        print(
-            "SIGUIENTE PASO: Probar control_loop completo después de arreglar argparse"
-        )
+        print("SIGUIENTE PASO: Probar control_loop completo después de arreglar argparse")
     else:
         print("RESULTADO: Hay problemas básicos que resolver primero")
 

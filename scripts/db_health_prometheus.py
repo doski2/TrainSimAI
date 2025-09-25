@@ -47,9 +47,7 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
             retries = int(res.get("retries", {}).get("count", 0))
         except Exception:
             retries = 0
-        f.write(
-            "# HELP trainsim_db_retry_count_total Number of DB retry attempts seen during checks\n"
-        )
+        f.write("# HELP trainsim_db_retry_count_total Number of DB retry attempts seen during checks\n")
         f.write("# TYPE trainsim_db_retry_count_total counter\n")
         f.write(f'trainsim_db_retry_count_total{{db="{db_path}"}} {retries}\n')
         # Export control status metrics if available
@@ -70,9 +68,7 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
                     telem_age = now - float(last_telemetry)
             except Exception:
                 telem_age = None
-            f.write(
-                "# HELP trainsim_control_last_command_timestamp last command epoch timestamp (s)\n"
-            )
+            f.write("# HELP trainsim_control_last_command_timestamp last command epoch timestamp (s)\n")
             f.write("# TYPE trainsim_control_last_command_timestamp gauge\n")
             try:
                 if lct is not None:
@@ -81,23 +77,18 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
                     )
             except Exception:
                 pass
-            f.write(
-                "# HELP trainsim_control_last_ack_timestamp last ack epoch timestamp (s)\n"
-            )
+            f.write("# HELP trainsim_control_last_ack_timestamp last ack epoch timestamp (s)\n")
             f.write("# TYPE trainsim_control_last_ack_timestamp gauge\n")
             try:
                 if lat is not None:
                     ack_line = (
-                        f'trainsim_control_last_ack_timestamp{{instance="{instance}",mode="{mode}"}} '
-                        f"{float(lat)}\n"
+                        f'trainsim_control_last_ack_timestamp{{instance="{instance}",mode="{mode}"}} ' f"{float(lat)}\n"
                     )
                     f.write(ack_line)
             except Exception:
                 pass
             # command latency (time since last command)
-            f.write(
-                "# HELP trainsim_control_command_latency_seconds Time since last command was issued (s)\n"
-            )
+            f.write("# HELP trainsim_control_command_latency_seconds Time since last command was issued (s)\n")
             f.write("# TYPE trainsim_control_command_latency_seconds gauge\n")
             try:
                 if lct is not None:
@@ -110,9 +101,7 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
             except Exception:
                 pass
             # telemetry age
-            f.write(
-                "# HELP trainsim_control_telemetry_age_seconds Age of last telemetry sample (s)\n"
-            )
+            f.write("# HELP trainsim_control_telemetry_age_seconds Age of last telemetry sample (s)\n")
             f.write("# TYPE trainsim_control_telemetry_age_seconds gauge\n")
             try:
                 if telem_age is not None:
@@ -123,15 +112,12 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
                     f.write(telem_line)
             except Exception:
                 pass
-            f.write(
-                "# HELP trainsim_control_last_command_value last command value (0..1)\n"
-            )
+            f.write("# HELP trainsim_control_last_command_value last command value (0..1)\n")
             f.write("# TYPE trainsim_control_last_command_value gauge\n")
             try:
                 if lcv is not None:
                     lcv_line = (
-                        f'trainsim_control_last_command_value{{instance="{instance}",mode="{mode}"}} '
-                        f"{float(lcv)}\n"
+                        f'trainsim_control_last_command_value{{instance="{instance}",mode="{mode}"}} ' f"{float(lcv)}\n"
                     )
                     f.write(lcv_line)
             except Exception:
@@ -145,10 +131,7 @@ def render_prom_file(db_path: str | Path, out_path: str | Path) -> None:
                     status_val = 2
                 elif stale:
                     status_val = 1
-                status_line = (
-                    f'trainsim_control_status{{instance="{instance}",mode="{mode}"}} '
-                    f"{int(status_val)}\n"
-                )
+                status_line = f'trainsim_control_status{{instance="{instance}",mode="{mode}"}} ' f"{int(status_val)}\n"
                 f.write(status_line)
             except Exception:
                 pass

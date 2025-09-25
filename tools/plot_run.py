@@ -61,11 +61,7 @@ def read_run_csv(path: str) -> Dict[str, List[Any]]:
             t_ing.append(tg)
             # velocidad
             try:
-                vk = float(
-                    row.get("v_kmh")
-                    or (row.get("SpeedometerKPH") or 0.0)
-                    or (row.get("speed_kph") or 0.0)
-                )
+                vk = float(row.get("v_kmh") or (row.get("SpeedometerKPH") or 0.0) or (row.get("speed_kph") or 0.0))
             except Exception:
                 vk = None
             v_kmh.append(vk)
@@ -125,9 +121,7 @@ def nearest_idx(seq: Sequence[Optional[float]], val: float) -> int:
     return best_i
 
 
-def build_event_table(
-    events: List[Dict[str, Any]], run: Mapping[str, List[Optional[float]]]
-) -> List[Dict[str, Any]]:
+def build_event_table(events: List[Dict[str, Any]], run: Mapping[str, List[Optional[float]]]) -> List[Dict[str, Any]]:
     table = []
     for e in events:
         t = e.get("t_ingame") or e.get("time")
@@ -315,10 +309,7 @@ def plot_speed_vs_odom(
     # Sombreado (axvspan) para zonas donde approach_active=1
     if "approach_active" in run:
         try:
-            mask = [
-                int(x) if x not in (None, "") else 0
-                for x in run.get("approach_active", [0] * len(run["odom"]))
-            ]
+            mask = [int(x) if x not in (None, "") else 0 for x in run.get("approach_active", [0] * len(run["odom"]))]
             s = None
             for i, m in enumerate(mask):
                 if m and s is None:
@@ -331,13 +322,9 @@ def plot_speed_vs_odom(
                         raw1 = run["odom"][e]
                         x0 = None
                         x1 = None
-                        if raw0 is not None and not (
-                            isinstance(raw0, float) and math.isnan(raw0)
-                        ):
+                        if raw0 is not None and not (isinstance(raw0, float) and math.isnan(raw0)):
                             x0 = float(raw0)
-                        if raw1 is not None and not (
-                            isinstance(raw1, float) and math.isnan(raw1)
-                        ):
+                        if raw1 is not None and not (isinstance(raw1, float) and math.isnan(raw1)):
                             x1 = float(raw1)
                         # fallback a índices si no hay coordenadas de odómetro válidas
                         if x0 is None:
@@ -443,9 +430,7 @@ def main():
         try:
             import pandas as pd
         except Exception:
-            raise RuntimeError(
-                "Se solicitó --pandas pero no está disponible 'pandas' en el entorno"
-            )
+            raise RuntimeError("Se solicitó --pandas pero no está disponible 'pandas' en el entorno")
         # construir DataFrame simple (index incremental)
         df = pd.DataFrame(run)
         df.index = pd.RangeIndex(start=0, stop=len(df))

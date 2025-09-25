@@ -5,9 +5,7 @@ import pandas as pd
 import pytest
 
 
-@pytest.mark.skipif(
-    False, reason="always run; will skip internally if helper not present"
-)
+@pytest.mark.skipif(False, reason="always run; will skip internally if helper not present")
 def test_dist_from_getdata_probes_alignment(tmp_path: Path):
     # 1) DataFrame de ejemplo (como run.csv) con t_wall
     df = pd.DataFrame(
@@ -40,9 +38,7 @@ def test_dist_from_getdata_probes_alignment(tmp_path: Path):
     try:
         from tools.dist_next_limit import dist_from_getdata_probes
     except Exception:
-        pytest.skip(
-            "tools.dist_next_limit.dist_from_getdata_probes no disponible en esta rama"
-        )
+        pytest.skip("tools.dist_next_limit.dist_from_getdata_probes no disponible en esta rama")
 
     s = dist_from_getdata_probes(df, ev_path)
     assert s is not None

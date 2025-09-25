@@ -8,9 +8,7 @@ from typing import Any, Dict, Optional
 from runtime.braking_v0 import BrakingConfig
 
 
-def load_braking_profile(
-    path: str | Path, base: Optional[BrakingConfig] = None
-) -> BrakingConfig:
+def load_braking_profile(path: str | Path, base: Optional[BrakingConfig] = None) -> BrakingConfig:
     """
     Carga parámetros de frenada desde un JSON.
     Estructura esperada:
@@ -57,11 +55,7 @@ def load_profile_extras(path: str | Path) -> dict:
     # incluir bloque 'braking' si existe (nombres y estructura pueden variar)
     if "braking" in obj and isinstance(obj["braking"], dict):
         extras["braking"] = obj["braking"]
-    elif (
-        isinstance(data, dict)
-        and "braking" in data
-        and isinstance(data["braking"], dict)
-    ):
+    elif isinstance(data, dict) and "braking" in data and isinstance(data["braking"], dict):
         extras["braking"] = data["braking"]
     return extras
 

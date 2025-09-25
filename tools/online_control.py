@@ -140,9 +140,7 @@ class SplitPID:
         self.kp_th = float(kp_th)
         self.kp_br = float(kp_br)
 
-    def update(
-        self, v_target_kph: float, v_now_kph: float, dt: float
-    ) -> tuple[float, float]:
+    def update(self, v_target_kph: float, v_now_kph: float, dt: float) -> tuple[float, float]:
         e = float(v_target_kph) - float(v_now_kph)
         if e >= 0:
             th = clamp01(self.kp_th * e)
@@ -154,9 +152,7 @@ class SplitPID:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(
-        description="Control online a partir de run.csv y eventos"
-    )
+    ap = argparse.ArgumentParser(description="Control online a partir de run.csv y eventos")
     ap.add_argument("--run", type=Path, default=Path("data/run.csv"))
     ap.add_argument("--events", type=Path, default=Path("data/events.jsonl"))
     ap.add_argument("--out", type=Path, default=Path("data/run.ctrl_online.csv"))
@@ -201,9 +197,7 @@ def main() -> None:
     curve = EraCurve.from_csv(era_curve_path) if era_curve_path else None
 
     # Estado de eventos y rate limiters
-    ev_stream = NonBlockingEventStream(
-        events_path, from_end=bool(args.start_events_from_end)
-    )
+    ev_stream = NonBlockingEventStream(events_path, from_end=bool(args.start_events_from_end))
     rl_th = RateLimiter(max_delta_per_s=0.8)
     rl_br = RateLimiter(max_delta_per_s=1.2)
     # pid eliminado: no se utiliza
@@ -319,25 +313,15 @@ def main() -> None:
             v_tgt = float(
                 compute_target_speed_kph(
                     np.asarray([speed_kph]),
-                    np.asarray(
-                        [dist_next_limit_m if dist_next_limit_m is not None else np.nan]
-                    ),
-                    (
-                        np.asarray([next_limit_kph])
-                        if next_limit_kph is not None
-                        else None
-                    ),
+                    np.asarray([dist_next_limit_m if dist_next_limit_m is not None else np.nan]),
+                    (np.asarray([next_limit_kph]) if next_limit_kph is not None else None),
                     cfg,
                 )[0]
             )
             phase = (
                 "BRAKE"
                 if v_tgt < speed_kph - cfg.coast_band_kph
-                else (
-                    "COAST"
-                    if abs(v_tgt - speed_kph) <= cfg.coast_band_kph
-                    else "CRUISE"
-                )
+                else ("COAST" if abs(v_tgt - speed_kph) <= cfg.coast_band_kph else "CRUISE")
             )
 
         # Failsafe: si algo devolviera NaN, usar velocidad actual

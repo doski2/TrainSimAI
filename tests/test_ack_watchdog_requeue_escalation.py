@@ -44,9 +44,5 @@ def test_ack_watchdog_retries_and_escalates(monkeypatch, tmp_path, make_client):
             time.sleep(0.05)
         time.sleep(0.02)
 
-    assert (
-        client._retry_counts.get("VirtualBrake", 0) >= 1
-    ), "watchdog did not record retries"
-    assert (
-        client._emergency_active
-    ), "watchdog did not escalate to emergency after retries"
+    assert client._retry_counts.get("VirtualBrake", 0) >= 1, "watchdog did not record retries"
+    assert client._emergency_active, "watchdog did not escalate to emergency after retries"

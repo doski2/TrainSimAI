@@ -38,9 +38,7 @@ def _all_objs(env: Dict[str, Any]):
         yield k, v
 
 
-def scan_for_rd(
-    locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]
-) -> Tuple[Optional[Any], str]:
+def scan_for_rd(locals_dict: Dict[str, Any], globals_dict: Dict[str, Any]) -> Tuple[Optional[Any], str]:
     """
     Busca el objeto RailDriver. Primero por alias comunes; luego escanea todo en
     busca de un objeto con método conocido.
@@ -118,9 +116,7 @@ def _clamp01(x: Optional[float]) -> Optional[float]:
         return None
 
 
-def send_to_rd(
-    rd_obj: Any, throttle: Optional[float], brake: Optional[float]
-) -> Tuple[bool, bool, str, str]:
+def send_to_rd(rd_obj: Any, throttle: Optional[float], brake: Optional[float]) -> Tuple[bool, bool, str, str]:
     """
     Envía a RailDriver probando múltiples métodos.
     Devuelve: (throttle_sent, brake_sent, throttle_method, brake_method)
@@ -137,9 +133,7 @@ def send_to_rd(
     # Combined method primero
     if hasattr(rd_obj, "setCombinedThrottleBrake"):
         try:
-            rd_obj.setCombinedThrottleBrake(
-                thr if thr is not None else 0.0, brk if brk is not None else 0.0
-            )
+            rd_obj.setCombinedThrottleBrake(thr if thr is not None else 0.0, brk if brk is not None else 0.0)
             return (
                 True if thr is not None else False,
                 True if brk is not None else False,

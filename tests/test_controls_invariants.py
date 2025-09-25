@@ -9,9 +9,7 @@ def test_aliases_map_uniquely():
             key = a.lower()
             if key in rev:
                 # allowed only if it points to the same canonical
-                assert (
-                    rev[key] == canon
-                ), f"alias {a} appears in multiple canonicals ({rev[key]} vs {canon})"
+                assert rev[key] == canon, f"alias {a} appears in multiple canonicals ({rev[key]} vs {canon})"
             else:
                 rev[key] = canon
 

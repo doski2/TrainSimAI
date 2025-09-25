@@ -102,9 +102,7 @@ def write_rd_provider(spec: str, path: Path) -> None:
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser(
-        description="Detecta automaticamente el proveedor RailDriver (TSC_RD)."
-    )
+    ap = argparse.ArgumentParser(description="Detecta automaticamente el proveedor RailDriver (TSC_RD).")
     ap.add_argument(
         "--modules",
         nargs="*",

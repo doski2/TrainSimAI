@@ -22,9 +22,7 @@ def test_apply_brake_clamps_and_returns():
 
 
 def test_stale_data_detection():
-    cl = ControlLoop(
-        source="csv", run_csv="data/runs/run.csv", hz=1, stale_data_threshold=0.5
-    )
+    cl = ControlLoop(source="csv", run_csv="data/runs/run.csv", hz=1, stale_data_threshold=0.5)
     # data with missing t_wall -> stale
     assert cl.is_data_stale({}) is True
     # data with future t_wall -> fresh

@@ -31,9 +31,7 @@ def writer_thread(db_path: str, stop_at: float, stats: dict, tid: int, interval:
     except Exception:
         pass
     # ensure table (short SQL on one line but within limit)
-    cur.execute(
-        "CREATE TABLE IF NOT EXISTS telemetry (t_wall REAL, odom_m REAL, speed_kph REAL)"
-    )
+    cur.execute("CREATE TABLE IF NOT EXISTS telemetry (t_wall REAL, odom_m REAL, speed_kph REAL)")
     conn.commit()
     while time.time() < stop_at:
         try:

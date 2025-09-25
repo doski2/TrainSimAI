@@ -29,9 +29,7 @@ class CSVLogger:
         self.path = Path(path).resolve()
         self.delimiter = delimiter
         self.fieldnames: List[str] | None = None
-        self._base_order: List[str] = list(
-            dict.fromkeys([str(x) for x in (base_order or [])])
-        )
+        self._base_order: List[str] = list(dict.fromkeys([str(x) for x in (base_order or [])]))
         # prepare dir
         if self.path.parent:
             os.makedirs(self.path.parent, exist_ok=True)

@@ -3,6 +3,7 @@
     "TrainBrakeControl",
     "TrainBrake",
     "VirtualBrake",
+    "VirtualEngineBrakeControl",
     "LocoBrakeControl",
     "EngineBrake",
     "DynamicBrake",

@@ -136,12 +136,8 @@ def run(
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument(
-        "--duration", type=float, default=0.0, help="segundos; 0 = infinito"
-    )
-    ap.add_argument(
-        "--interval", type=float, default=0.25, help="segundos entre lecturas"
-    )
+    ap.add_argument("--duration", type=float, default=0.0, help="segundos; 0 = infinito")
+    ap.add_argument("--interval", type=float, default=0.25, help="segundos entre lecturas")
     ap.add_argument("--quiet", action="store_true", help="menos logs")
     args = ap.parse_args()
     try:
