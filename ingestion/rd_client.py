@@ -961,6 +961,21 @@ class RDClient:
 
     def _common_controls(self) -> List[str]:
         names = set(self.ctrl_index_by_name.keys())
+
+        # normalization helpers: canonicalize names for matching
+        def canon_name(n: str) -> str:
+            # strip common suffixes like 'Hz' and normalize case
+            nn = n
+            # remove trailing Hz markers (1000Hz / 500Hz) and underscores variations
+            nn = re.sub(r"(?i)hz$", "", nn)
+            nn = re.sub(r"(?i)_hz$", "", nn)
+            return nn.lower()
+
+        # build a canonical map: canon -> [originals]
+        canon_map: Dict[str, List[str]] = {}
+        for n in names:
+            c = canon_name(n)
+            canon_map.setdefault(c, []).append(n)
         # Try to delegate to the centralized controls mapping when available.
         try:
             # local import to avoid cycles
@@ -990,6 +1005,22 @@ class RDClient:
         except Exception:
             # Fall back to the historical heuristic below
             pass
+
+        # Attempt to load suggested aliases from profiles/suggested_aliases.json
+        suggested_aliases = {}
+        try:
+            p = (
+                Path(__file__).resolve().parent.parent
+                / "profiles"
+                / "suggested_aliases.json"
+            )
+            if p.exists():
+                import json
+
+                with p.open("r", encoding="utf-8") as fh:
+                    suggested_aliases = json.load(fh)
+        except Exception:
+            suggested_aliases = {}
 
         # Alias / variantes habituales y útiles
         preferred = {
@@ -1045,6 +1076,17 @@ class RDClient:
             re.I,
         )
         chosen_set = {n for n in names if (n in preferred or rx.match(n))}
+
+        # If suggested_aliases defines groups like 'brake'/'throttle', prefer those
+        try:
+            for group, aliases in suggested_aliases.items():
+                for a in aliases:
+                    # accept if any alias present in names (case-insensitive canonical match)
+                    for cand in canon_map.get(canon_name(a), []):
+                        chosen_set.add(cand)
+        except Exception:
+            pass
+
         return sorted(list(chosen_set))
 
     # -------- Superset de campos para “comprimir” el CSV ----------------------
@@ -1104,6 +1146,7 @@ def _make_rd():
 
     # Si no hay inyección, o faltan candidatos concretos, intentar el mapping central
     if brake_candidates is None or throttle_candidates is None:
+        # Try profiles.controls first
         try:
             from profiles import controls as _controls  # type: ignore
 
@@ -1112,7 +1155,25 @@ def _make_rd():
             if throttle_candidates is None:
                 throttle_candidates = _controls.CONTROLS.get("throttle", [])
         except Exception:
-            # Fallback: listas históricas para compatibilidad
+            # fallback: try suggested_aliases from profiles dir
+            try:
+                p = (
+                    Path(__file__).resolve().parent.parent
+                    / "profiles"
+                    / "suggested_aliases.json"
+                )
+                if p.exists():
+                    import json
+
+                    with p.open("r", encoding="utf-8") as fh:
+                        suggested = json.load(fh)
+                    if brake_candidates is None and "brake" in suggested:
+                        brake_candidates = list(suggested.get("brake") or [])
+                    if throttle_candidates is None and "throttle" in suggested:
+                        throttle_candidates = list(suggested.get("throttle") or [])
+            except Exception:
+                pass
+            # Final fallback: lists historically used
             if brake_candidates is None:
                 brake_candidates = [
                     "TrainBrakeControl",

@@ -1,6 +1,6 @@
 haz test de todo ruff/flake
 corregir los fallos
-revisa el proyecto entero y dime si ves algo que cambiar y nos falta actualizar la documentacion siguiente paso
+revisa el proyecto entero y dime si ves algo que cambiar y si nos falta actualizar la documentacion siguiente paso
 
 podemos cerrar el tema frenado v0?-micro parches-probar session entera-
 revisar y borrar archivo cada uno por uno  algunos no se reinician se acumulan
