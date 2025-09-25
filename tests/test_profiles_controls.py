@@ -20,10 +20,11 @@ def test_canonicalize_variants():
 def test_rdclient_common_controls_prefers_canonical(monkeypatch):
     # Ensure RDClient uses the canonical mapping when available
     rd_mod = importlib.import_module("ingestion.rd_client")
-    # Force fake usage to avoid instantiating real drivers in CI/local
-    monkeypatch.setattr(rd_mod, "USE_FAKE", True)
+    # Inject fake RailDriver to avoid loading native DLL during RDClient construction
+    from ingestion import rd_fake
 
-    client = rd_mod.RDClient(poll_dt=0.01)
+    fake_rd = rd_fake.FakeRailDriver()
+    client = rd_mod.RDClient(poll_dt=0.01, rd=fake_rd)
 
     # Simulate a driver exposing a set of names (mixed variants)
     client.ctrl_index_by_name = {
