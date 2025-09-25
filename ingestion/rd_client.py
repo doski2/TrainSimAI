@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import logging
 import os
@@ -23,18 +23,10 @@ try:
         "Number of attempts to set missing controls",
     )
     RD_ACKS = Counter("trainsim_rd_acks_total", "Number of RD acks observed")
-    RD_RETRIES = Counter(
-        "trainsim_rd_retries_total", "Number of RD retries due to missing ack or errors"
-    )
-    RD_EMERGENCY = Counter(
-        "trainsim_rd_emergencystops_total", "Number of emergency stops triggered"
-    )
-    RD_ACK_LATENCY = Histogram(
-        "trainsim_rd_ack_latency_seconds", "Ack latency in seconds"
-    )
-    RD_EMERGENCY_GAUGE = Gauge(
-        "trainsim_rd_emergency_state", "Current emergency state (0/1)"
-    )
+    RD_RETRIES = Counter("trainsim_rd_retries_total", "Number of RD retries due to missing ack or errors")
+    RD_EMERGENCY = Counter("trainsim_rd_emergencystops_total", "Number of emergency stops triggered")
+    RD_ACK_LATENCY = Histogram("trainsim_rd_ack_latency_seconds", "Ack latency in seconds")
+    RD_EMERGENCY_GAUGE = Gauge("trainsim_rd_emergency_state", "Current emergency state (0/1)")
 except Exception:
     RD_SET_CALLS = None  # type: ignore
     RD_ERRORS = None  # type: ignore
@@ -66,16 +58,41 @@ def _maybe_start_prometheus_exporter() -> None:
                 return
         try:
             start_http_server(p)
-            logging.getLogger("ingestion.rd_client").info(
-                "Prometheus exporter started on port %s", p
-            )
+            logging.getLogger("ingestion.rd_client").info("Prometheus exporter started on port %s", p)
         except Exception:
-            logging.getLogger("ingestion.rd_client").exception(
-                "Failed to start Prometheus exporter on %s", p
-            )
+            logging.getLogger("ingestion.rd_client").exception("Failed to start Prometheus exporter on %s", p)
     except Exception:
         # prometheus_client not available or import failed
         return
+
+
+def _norm_ctrl_name(name: str) -> str:
+    """Normaliza un nombre de control para comparación robusta.
+
+    - lower-case
+    - quita sufijo 'hz'
+    - elimina caracteres no alfanuméricos
+    """
+    if not name:
+        return ""
+    s = name.lower()
+    s = s.replace("hz", "")
+    s = re.sub(r"[^a-z0-9]", "", s)
+    return s
+
+
+def _load_suggested_aliases() -> Dict[str, List[str]]:
+    """Carga `profiles/suggested_aliases.json` si existe, devuelve dict vacío si no."""
+    try:
+        p = Path(__file__).resolve().parents[1] / "profiles" / "suggested_aliases.json"
+        if p.exists():
+            import json as _json
+
+            with p.open("r", encoding="utf-8") as fh:
+                return _json.load(fh)
+    except Exception:
+        pass
+    return {}
 
 
 # NOTE: Starting an HTTP exporter at module import can cause surprising side-effects
@@ -110,10 +127,8 @@ if not USE_FAKE:
     if _os.environ.get("TSC_FAKE_RD") == "1":
         USE_FAKE = True
 if USE_FAKE:
-    from ingestion.rd_fake import \
-        FakeListener as Listener  # type: ignore  # noqa: E402, F811
-    from ingestion.rd_fake import \
-        FakeRailDriver as RailDriver  # type: ignore  # noqa: E402, F811
+    from ingestion.rd_fake import FakeListener as Listener  # type: ignore  # noqa: E402, F811
+    from ingestion.rd_fake import FakeRailDriver as RailDriver  # type: ignore  # noqa: E402, F811
 
 
 # Claves especiales disponibles en Listener (no se suscriben; se evalúan siempre)
@@ -212,9 +227,7 @@ def _prepare_dll_search_path(base: Path) -> Path:
                 f"Tu Python es {arch}-bit. Instala la DLL correcta o usa Python de otra arquitectura. "
                 f"También puedes definir TSC_RD_DLL_DIR/RAILWORKS_PLUGINS."
             )
-        raise FileNotFoundError(
-            f"No se encontró {want.name} en {base}. Define RAILWORKS_PLUGINS o TSC_RD_DLL_DIR."
-        )
+        raise FileNotFoundError(f"No se encontró {want.name} en {base}. Define RAILWORKS_PLUGINS o TSC_RD_DLL_DIR.")
     try:
         if hasattr(os, "add_dll_directory"):
             os.add_dll_directory(str(base))  # type: ignore[attr-defined]
@@ -393,9 +406,7 @@ class RDClient:
             def _ack_worker_fn():
                 while not self._ack_worker_stop.is_set():
                     try:
-                        name, expected, attempts = self._ack_queue.get(
-                            timeout=self._ack_watchdog_interval
-                        )
+                        name, expected, attempts = self._ack_queue.get(timeout=self._ack_watchdog_interval)
                     except Empty:
                         continue
                     # attempt to confirm; if not confirmed, requeue or escalate
@@ -755,9 +766,7 @@ class RDClient:
             # !Time suele venir como datetime.time o [h,m,s]
             tval = snap["!Time"]
             if isinstance(tval, (list, tuple)) and len(tval) >= 3:
-                out["time_ingame_h"], out["time_ingame_m"], out["time_ingame_s"] = tval[
-                    :3
-                ]
+                out["time_ingame_h"], out["time_ingame_m"], out["time_ingame_s"] = tval[:3]
             else:
                 out["time_ingame"] = str(tval)
         else:
@@ -961,34 +970,40 @@ class RDClient:
 
     def _common_controls(self) -> List[str]:
         names = set(self.ctrl_index_by_name.keys())
-        # Try to delegate to the centralized controls mapping when available.
+        # prepare normalized map: norm -> original names
+        norm_map: Dict[str, List[str]] = {}
+        for n in names:
+            k = _norm_ctrl_name(n)
+            norm_map.setdefault(k, []).append(n)
+        # Prefer the centralized canonical mapping when available.
         try:
             # local import to avoid cycles
             from profiles import controls as _controls  # type: ignore
 
-            out: List[str] = []
-            # First, include any aliases from the canonical mapping that exist on this loco
-            for aliases in _controls.CONTROLS.values():
-                for a in aliases:
-                    if a in names:
-                        out.append(a)
+            chosen: List[str] = []
 
-            # Also include any names that canonicalize to a known canonical control
-            # but may not be listed explicitly in CONTROLS (robustness for variants)
+            # 1) If a control name on the driver canonicalizes to something known,
+            #    prefer the original driver name (keeps native names readable)
             for n in names:
                 try:
                     canon = _controls.canonicalize(n)
                 except Exception:
                     canon = None
                 if canon is not None:
-                    # prefer the original name as present on the driver
-                    out.append(n)
+                    chosen.append(n)
 
-            chosen = [n for n in out if n in names]
+            # 2) Additionally, include any explicit aliases from CONTROLS that
+            #    appear verbatim on the driver (covers canonical lists)
+            for aliases in _controls.CONTROLS.values():
+                for a in aliases:
+                    if a in names:
+                        chosen.append(a)
+
+            # If we found anything using the centralized map, return it.
             if chosen:
                 return sorted(set(chosen))
         except Exception:
-            # Fall back to the historical heuristic below
+            # If profiles.controls isn't available, continue to fallback heuristics
             pass
 
         # Alias / variantes habituales y útiles
@@ -1044,7 +1059,25 @@ class RDClient:
             r"^(PZB_|Sifa|AFB|LZB_|BrakePipe|TrainBrake|VirtualBrake|VirtualEngineBrake|Headlights|CabLight|Doors)",
             re.I,
         )
-        chosen_set = {n for n in names if (n in preferred or rx.match(n))}
+
+        # use normalized matching: if normalized name matches a preferred normalized
+        preferred_norms = {_norm_ctrl_name(p) for p in preferred}
+        chosen_set = set()
+        for n in names:
+            if n in preferred or rx.match(n):
+                chosen_set.add(n)
+                continue
+            if _norm_ctrl_name(n) in preferred_norms:
+                chosen_set.add(n)
+                continue
+            # check suggested aliases (fallback: only consult file if other heuristics didn't match)
+            suggested = _load_suggested_aliases()
+            if suggested:
+                for aliases in suggested.values():
+                    if n in aliases:
+                        chosen_set.add(n)
+                        break
+
         return sorted(list(chosen_set))
 
     # -------- Superset de campos para “comprimir” el CSV ----------------------
@@ -1127,6 +1160,14 @@ def _make_rd():
             if throttle_candidates is None:
                 throttle_candidates = ["Throttle", "Regulator", "CombinedThrottleBrake"]
 
+    # If still missing, consult suggested aliases with normalization
+    suggested = _load_suggested_aliases()
+    if suggested:
+        if (not brake_candidates or len(brake_candidates) == 0) and "brake" in suggested:
+            brake_candidates = suggested.get("brake", brake_candidates or [])
+        if (not throttle_candidates or len(throttle_candidates) == 0) and "throttle" in suggested:
+            throttle_candidates = suggested.get("throttle", throttle_candidates or [])
+
     # Resuelve el primer control que exista para cada función
     # ensure candidates are iterable lists (definitive lists for downstream closures)
     bc: list[str] = list(brake_candidates or [])
@@ -1189,9 +1230,7 @@ def _make_rd():
                     RD_ERRORS.inc()
                 # record retry and possibly escalate (use fallbacks)
                 # only call record_retry when the client initialized retry state
-                if hasattr(self.c, "_retry_counts") and hasattr(
-                    self.c, "_record_retry"
-                ):
+                if hasattr(self.c, "_retry_counts") and hasattr(self.c, "_record_retry"):
                     record_retry = getattr(self.c, "_record_retry")
                 else:
 
@@ -1204,9 +1243,7 @@ def _make_rd():
                 max_retries = getattr(self.c, "_max_retries", 3)
                 if retry_counts.get(name or "brake", 0) > max_retries:
                     try:
-                        self.c.logger.error(
-                            "max retries exceeded for brake %s -> emergency", name
-                        )
+                        self.c.logger.error("max retries exceeded for brake %s -> emergency", name)
                     except Exception:
                         pass
                     emergency_fn = getattr(self.c, "emergency_stop", lambda r: None)
@@ -1231,9 +1268,7 @@ def _make_rd():
                 try:
                     if not allow_rate_fn(name):
                         try:
-                            self.c.logger.debug(
-                                "rate-limited throttle command %s", name
-                            )
+                            self.c.logger.debug("rate-limited throttle command %s", name)
                         except Exception:
                             pass
                         return
@@ -1258,9 +1293,7 @@ def _make_rd():
             except Exception:
                 if RD_ERRORS is not None:
                     RD_ERRORS.inc()
-                if hasattr(self.c, "_retry_counts") and hasattr(
-                    self.c, "_record_retry"
-                ):
+                if hasattr(self.c, "_retry_counts") and hasattr(self.c, "_record_retry"):
                     record_retry = getattr(self.c, "_record_retry")
                 else:
 
@@ -1273,9 +1306,7 @@ def _make_rd():
                 max_retries = getattr(self.c, "_max_retries", 3)
                 if retry_counts.get(name or "throttle", 0) > max_retries:
                     try:
-                        self.c.logger.error(
-                            "max retries exceeded for throttle %s -> emergency", name
-                        )
+                        self.c.logger.error("max retries exceeded for throttle %s -> emergency", name)
                     except Exception:
                         pass
                     emergency_fn = getattr(self.c, "emergency_stop", lambda r: None)

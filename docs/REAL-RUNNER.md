@@ -1,3 +1,42 @@
+# Runbook: configurar Self-hosted runner para tests reales (hardware RD)
+
+Este documento describe pasos para preparar una máquina Windows que ejecute tests reales que usan `py-raildriver` y DLLs del juego.
+
+Requisitos mínimos
+- Windows Server / Windows 10/11 x64
+- Python 3.11 (64-bit)
+- Visual C++ Redistributable (última versión)
+- Acceso al directorio `RailWorks/plugins` con `RailDriver64.dll` o `RailDriver.dll`
+
+Variables de entorno importantes
+- `RAILWORKS_PLUGINS` o `TSC_RD_DLL_DIR`: carpeta donde está la DLL `RailDriver*.dll`.
+- `TSC_RD` (opcional): especifica el proveedor/objeto RailDriver a usar.
+
+Protección y etiqueta del runner
+- Registrar el runner self-hosted con GitHub y añadir la label `real-hw`.
+- En los workflows que ejecuten tests reales, usar `runs-on: self-hosted` y `labels: [real-hw]`.
+- No registrar el runner en una red pública ni abrir puertos innecesarios.
+
+Pruebas de smoke
+
+1) Comprobar detección de DLL:
+
+```powershell
+$env:RAILWORKS_PLUGINS = 'C:\Program Files (x86)\Steam\steamapps\common\RailWorks\plugins'
+python -c "from ingestion.rd_client import _locate_raildriver_dll; print(_locate_raildriver_dll())"
+```
+
+2) Ejecutar test de humo local (no en CI todavía):
+
+```powershell
+python -m pytest tests/test_real_smoke.py -q
+```
+
+Si el test no encuentra DLL, ajusta `RAILWORKS_PLUGINS` o `TSC_RD_DLL_DIR`.
+
+Notas de seguridad
+- Evitar exponer la máquina a internet; usar credenciales separadas.
+- Mantener políticas de acceso para el usuario que ejecuta el runner (no use admin sin necesidad).
 # Real-runner (self-hosted) runbook
 
 This document explains how to prepare a Windows self-hosted runner for running tests marked `real`.
