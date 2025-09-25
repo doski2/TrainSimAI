@@ -11,8 +11,7 @@ from dataclasses import replace
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional
 
-from runtime.actuators import (debug_trace, load_rd_from_spec, scan_for_rd,
-                               send_to_rd)
+from runtime.actuators import debug_trace, load_rd_from_spec, scan_for_rd, send_to_rd
 from runtime.braking_era import EraCurve
 from runtime.braking_v0 import BrakingConfig
 from runtime.csv_logger import CSVLogger
@@ -31,8 +30,7 @@ else:
         from runtime.event_stream import NonBlockingEventStream  # type: ignore
     except Exception:
         try:
-            from ingestion.event_stream import \
-                NonBlockingEventStream  # type: ignore
+            from ingestion.event_stream import NonBlockingEventStream  # type: ignore
         except Exception:
 
             class NonBlockingEventStream:

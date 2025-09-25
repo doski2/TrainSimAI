@@ -1,8 +1,12 @@
 ﻿import importlib
 import time
 
-from ingestion.rd_client import (RD_ACK_LATENCY, RD_EMERGENCY,
-                                 RD_EMERGENCY_GAUGE, RD_RETRIES)
+from ingestion.rd_client import (
+    RD_ACK_LATENCY,
+    RD_EMERGENCY,
+    RD_EMERGENCY_GAUGE,
+    RD_RETRIES,
+)
 
 
 def test_metrics_presence_and_behavior(tmp_path, make_client):
