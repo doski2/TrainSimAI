@@ -6,7 +6,8 @@ from math import ceil
 from pathlib import Path
 from typing import List, Optional
 
-from runtime.braking_v0 import BrakingConfig, clamp, effective_distance, kph_to_mps
+from runtime.braking_v0 import (BrakingConfig, clamp, effective_distance,
+                                kph_to_mps)
 
 """Braking ERA implementation.
 
@@ -145,7 +146,8 @@ def compute_target_speed_kph_era(
         try:
             import numpy as _np
 
-            from runtime.braking_v0 import compute_target_speed_kph as _compute_v0
+            from runtime.braking_v0 import \
+                compute_target_speed_kph as _compute_v0
         except Exception:
             # no debería pasar, pero en caso de import fallido devolvemos crucero seguro
             return v_now_kph, "CRUISE"

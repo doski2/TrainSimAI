@@ -139,12 +139,10 @@ if not USE_FAKE:
     if _os.environ.get("TSC_FAKE_RD") == "1":
         USE_FAKE = True
 if USE_FAKE:
-    from ingestion.rd_fake import (
-        FakeListener as Listener,
-    )  # type: ignore  # noqa: E402, F811
-    from ingestion.rd_fake import (
-        FakeRailDriver as RailDriver,
-    )  # type: ignore  # noqa: E402, F811
+    from ingestion.rd_fake import \
+        FakeListener as Listener  # type: ignore  # noqa: E402, F811
+    from ingestion.rd_fake import \
+        FakeRailDriver as RailDriver  # type: ignore  # noqa: E402, F811
 
 
 # Claves especiales disponibles en Listener (no se suscriben; se evalúan siempre)
