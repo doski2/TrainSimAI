@@ -43,6 +43,10 @@ def write_header():
                 "rd_intermediate_count",
                 "rd_full_count",
                 "rd_total",
+                # Game metrics
+                "score",
+                "smoothness",
+                "penalties",
             ]
         )
 
@@ -52,9 +56,14 @@ def reset_rd_log():
 
 
 def analyze_rd_log():
+    """Parse `rd_send.log` and return counts + numeric values list.
+
+    Returns: (zeros, intermediate, full, values_list)
+    """
     if not RD_LOG.exists():
-        return 0, 0, 0
+        return 0, 0, 0, []
     zeros = inter = full = 0
+    values = []
     text = RD_LOG.read_text(encoding="utf-8", errors="ignore")
     for ln in text.splitlines():
         ln = ln.strip()
@@ -75,13 +84,42 @@ def analyze_rd_log():
                 continue
         except Exception:
             continue
+        values.append(v)
         if v == 0.0:
             zeros += 1
         elif v == 1.0:
             full += 1
         else:
             inter += 1
-    return zeros, inter, full
+    return zeros, inter, full, values
+
+
+def compute_game_metrics(values, hz=HZ):
+    """Compute simple game metrics from a list of brake values.
+
+    - smoothness: 0..100 (higher is smoother). Computed from RMS of first
+      derivative (delta per sample). Lower derivative => higher smoothness.
+    - penalties: count of abrupt changes (abs(delta) > 0.5).
+    - score: base on smoothness minus penalty cost.
+
+    These are intentionally simple heuristics for gameplay and reproducibility.
+    """
+    if not values:
+        return 0.0, 0.0, 0
+    # compute deltas between consecutive samples
+    deltas = [values[i] - values[i - 1] for i in range(1, len(values))]
+    # rms of derivative
+    import math
+
+    rms = math.sqrt(sum(d * d for d in deltas) / len(deltas)) if deltas else 0.0
+    # normalize rms to a 0..100 smoothness score (heuristic)
+    smoothness = max(0.0, 100.0 - (rms * 100.0))
+    # count penalties (abrupt changes)
+    penalties = sum(1 for d in deltas if abs(d) > 0.5)
+    # score: smoothness reduced by penalty cost
+    score = max(0.0, smoothness - penalties * 10.0)
+    # round for CSV friendliness
+    return round(score, 2), round(smoothness, 2), int(penalties)
 
 
 def run_sweep():
@@ -129,10 +167,28 @@ def run_sweep():
                         p.kill()
                         print("Process timeout, killed")
                     time.sleep(0.2)
-                    zeros, inter, full = analyze_rd_log()
+                    zeros, inter, full, values = analyze_rd_log()
                     total = zeros + inter + full
+                    score, smoothness, penalties = compute_game_metrics(values, hz=HZ)
                     with SUMMARY_CSV.open("a", newline="", encoding="utf-8") as fh:
-                        csv.writer(fh).writerow([r, s, h, fall, HZ, DURATION, str(RUN_FILE), zeros, inter, full, total])
+                        csv.writer(fh).writerow(
+                            [
+                                r,
+                                s,
+                                h,
+                                fall,
+                                HZ,
+                                DURATION,
+                                str(RUN_FILE),
+                                zeros,
+                                inter,
+                                full,
+                                total,
+                                score,
+                                smoothness,
+                                penalties,
+                            ]
+                        )
     print(f"Sweep finished. Summary: {SUMMARY_CSV}")
 
 
