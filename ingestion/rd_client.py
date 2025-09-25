@@ -78,6 +78,35 @@ def _maybe_start_prometheus_exporter() -> None:
         return
 
 
+def _norm_ctrl_name(name: str) -> str:
+    """Normaliza un nombre de control para comparación robusta.
+
+    - lower-case
+    - quita sufijo 'hz'
+    - elimina caracteres no alfanuméricos
+    """
+    if not name:
+        return ""
+    s = name.lower()
+    s = s.replace("hz", "")
+    s = re.sub(r"[^a-z0-9]", "", s)
+    return s
+
+
+def _load_suggested_aliases() -> Dict[str, List[str]]:
+    """Carga `profiles/suggested_aliases.json` si existe, devuelve dict vacío si no."""
+    try:
+        p = Path(__file__).resolve().parents[1] / "profiles" / "suggested_aliases.json"
+        if p.exists():
+            import json as _json
+
+            with p.open("r", encoding="utf-8") as fh:
+                return _json.load(fh)
+    except Exception:
+        pass
+    return {}
+
+
 # NOTE: Starting an HTTP exporter at module import can cause surprising side-effects
 # (server started on import). We prefer to start it explicitly when the runtime
 # is constructed (RDClient.__init__) so tests and importers aren't affected.
@@ -961,21 +990,11 @@ class RDClient:
 
     def _common_controls(self) -> List[str]:
         names = set(self.ctrl_index_by_name.keys())
-
-        # normalization helpers: canonicalize names for matching
-        def canon_name(n: str) -> str:
-            # strip common suffixes like 'Hz' and normalize case
-            nn = n
-            # remove trailing Hz markers (1000Hz / 500Hz) and underscores variations
-            nn = re.sub(r"(?i)hz$", "", nn)
-            nn = re.sub(r"(?i)_hz$", "", nn)
-            return nn.lower()
-
-        # build a canonical map: canon -> [originals]
-        canon_map: Dict[str, List[str]] = {}
+        # prepare normalized map: norm -> original names
+        norm_map: Dict[str, List[str]] = {}
         for n in names:
-            c = canon_name(n)
-            canon_map.setdefault(c, []).append(n)
+            k = _norm_ctrl_name(n)
+            norm_map.setdefault(k, []).append(n)
         # Try to delegate to the centralized controls mapping when available.
         try:
             # local import to avoid cycles
@@ -999,28 +1018,20 @@ class RDClient:
                     # prefer the original name as present on the driver
                     out.append(n)
 
+            # Additionally, consult suggested_aliases fallback
+            suggested = _load_suggested_aliases()
+            if suggested:
+                for canon, aliases in suggested.items():
+                    for a in aliases:
+                        if a in names:
+                            out.append(a)
+
             chosen = [n for n in out if n in names]
             if chosen:
                 return sorted(set(chosen))
         except Exception:
             # Fall back to the historical heuristic below
             pass
-
-        # Attempt to load suggested aliases from profiles/suggested_aliases.json
-        suggested_aliases = {}
-        try:
-            p = (
-                Path(__file__).resolve().parent.parent
-                / "profiles"
-                / "suggested_aliases.json"
-            )
-            if p.exists():
-                import json
-
-                with p.open("r", encoding="utf-8") as fh:
-                    suggested_aliases = json.load(fh)
-        except Exception:
-            suggested_aliases = {}
 
         # Alias / variantes habituales y útiles
         preferred = {
@@ -1075,17 +1086,24 @@ class RDClient:
             r"^(PZB_|Sifa|AFB|LZB_|BrakePipe|TrainBrake|VirtualBrake|VirtualEngineBrake|Headlights|CabLight|Doors)",
             re.I,
         )
-        chosen_set = {n for n in names if (n in preferred or rx.match(n))}
 
-        # If suggested_aliases defines groups like 'brake'/'throttle', prefer those
-        try:
-            for group, aliases in suggested_aliases.items():
-                for a in aliases:
-                    # accept if any alias present in names (case-insensitive canonical match)
-                    for cand in canon_map.get(canon_name(a), []):
-                        chosen_set.add(cand)
-        except Exception:
-            pass
+        # use normalized matching: if normalized name matches a preferred normalized
+        preferred_norms = {_norm_ctrl_name(p) for p in preferred}
+        chosen_set = set()
+        for n in names:
+            if n in preferred or rx.match(n):
+                chosen_set.add(n)
+                continue
+            if _norm_ctrl_name(n) in preferred_norms:
+                chosen_set.add(n)
+                continue
+            # check suggested aliases
+            suggested = _load_suggested_aliases()
+            if suggested:
+                for aliases in suggested.values():
+                    if n in aliases:
+                        chosen_set.add(n)
+                        break
 
         return sorted(list(chosen_set))
 
@@ -1146,7 +1164,6 @@ def _make_rd():
 
     # Si no hay inyección, o faltan candidatos concretos, intentar el mapping central
     if brake_candidates is None or throttle_candidates is None:
-        # Try profiles.controls first
         try:
             from profiles import controls as _controls  # type: ignore
 
@@ -1155,25 +1172,7 @@ def _make_rd():
             if throttle_candidates is None:
                 throttle_candidates = _controls.CONTROLS.get("throttle", [])
         except Exception:
-            # fallback: try suggested_aliases from profiles dir
-            try:
-                p = (
-                    Path(__file__).resolve().parent.parent
-                    / "profiles"
-                    / "suggested_aliases.json"
-                )
-                if p.exists():
-                    import json
-
-                    with p.open("r", encoding="utf-8") as fh:
-                        suggested = json.load(fh)
-                    if brake_candidates is None and "brake" in suggested:
-                        brake_candidates = list(suggested.get("brake") or [])
-                    if throttle_candidates is None and "throttle" in suggested:
-                        throttle_candidates = list(suggested.get("throttle") or [])
-            except Exception:
-                pass
-            # Final fallback: lists historically used
+            # Fallback: listas históricas para compatibilidad
             if brake_candidates is None:
                 brake_candidates = [
                     "TrainBrakeControl",
@@ -1187,6 +1186,18 @@ def _make_rd():
                 ]
             if throttle_candidates is None:
                 throttle_candidates = ["Throttle", "Regulator", "CombinedThrottleBrake"]
+
+    # If still missing, consult suggested aliases with normalization
+    suggested = _load_suggested_aliases()
+    if suggested:
+        if (
+            not brake_candidates or len(brake_candidates) == 0
+        ) and "brake" in suggested:
+            brake_candidates = suggested.get("brake", brake_candidates or [])
+        if (
+            not throttle_candidates or len(throttle_candidates) == 0
+        ) and "throttle" in suggested:
+            throttle_candidates = suggested.get("throttle", throttle_candidates or [])
 
     # Resuelve el primer control que exista para cada función
     # ensure candidates are iterable lists (definitive lists for downstream closures)

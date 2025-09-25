@@ -1,51 +1,60 @@
-## Developer guide - TrainSimAI
+## Developer setup (Windows)
 
-This file documents how developers should set up their environment, run linters and tests, and normalize EOL on Windows.
+Este documento contiene pasos mínimos para contribuir y mantener formato/lint en Windows PowerShell.
 
-Prerequisites
-- Windows x64, Python 3.11 recommended
-- Create a virtualenv: `python -m venv .venv` and activate it
+1) Entorno Python
 
-Install dependencies
 ```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
 pip install -r requirements.txt
-python -m pip install --user pre-commit black isort ruff
 ```
 
-Pre-commit (recommended)
-- Install hooks once per clone:
+2) Pre-commit (formateo/lint)
+
+Instala las herramientas y registra los hooks:
+
 ```powershell
+$env:PATH += ";$env:USERPROFILE\AppData\Roaming\Python\Python311\Scripts"
+python -m pip install --user pre-commit black isort ruff
 pre-commit install
 ```
-- To check all files locally (before pushing):
+
+Comprobar antes de push:
+
 ```powershell
-pre-commit run --all-files --show-diff-on-failure
+pre-commit run --all-files
 ```
 
-EOL handling on Windows
-- Ensure the repository uses LF for python files. Recommended:
+Si `pre-commit` muestra cambios, aplícalos y haz commit antes de pushear.
+
+3) EOL en Windows
+
+El repositorio fuerza `LF` para Python con `.gitattributes`. Si ves CRLF localmente:
+
 ```powershell
 git config core.autocrlf false
 git add --renormalize .
-git commit -m "chore: renormalize EOL to LF"
-```
-The repository contains a `.gitattributes` file which enforces `*.py text eol=lf`.
-
-Formatting and linting
-```powershell
-python -m black .
-python -m isort .
-python -m ruff check . --select F,E,W
+git commit -m "chore: normalize EOL to LF" -a
 ```
 
-Run tests
+4) Ejecutar tests
+
+Tests seguros para CI (no hardware):
+
 ```powershell
-# run not-real (safe) tests
 python -m pytest -q -m "not real"
 ```
 
-If you need to run real-hardware tests use a self-hosted runner labelled `real-hw` and follow `docs/REAL-RUNNER.md`.
+Tests que requieren hardware / DLL: sólo en runners self-hosted con label `real-hw`.
 
+5) Normas rápidas
+- Ejecutar `pre-commit run --all-files` antes de push.
+- Si editas archivos de perfil (`profiles/`) documenta alias añadidos en `profiles/suggested_aliases.json`.
+
+---
+Ficha: si quieres puedo añadir un script PowerShell `scripts/normalize-eol.ps1` para automatizar la normalización en Windows.
 # Developer instructions
 
 Windows development quickstart
