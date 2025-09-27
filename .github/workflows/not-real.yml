@@ -90,7 +90,9 @@ jobs:
         shell: pwsh
         run: |
           # Run unit tests (override pytest.ini addopts to ensure unmarked tests run)
-          python -m pytest -q -o addopts=
+          # Generate junit xml and capture console output to pytest.log so the
+          # Upload artifact step can find and store test results.
+          python -m pytest -q -o addopts= --junitxml=pytest-results.xml | Tee-Object -FilePath pytest.log
       - name: Upload pytest results
         if: always()
         uses: actions/upload-artifact@v4
