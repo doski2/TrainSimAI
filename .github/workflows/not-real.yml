@@ -47,6 +47,16 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Ensure fake RailDriver on hosted runners
+        shell: pwsh
+        run: |
+          # Fail early on hosted runners if the fake RailDriver flag is not set.
+          if (-not $Env:TSC_FAKE_RD -or $Env:TSC_FAKE_RD -ne '1') {
+            Write-Error "TSC_FAKE_RD is not set to '1'. Aborting to prevent loading native RailDriver DLLs on a hosted runner."
+            exit 1
+          } else {
+            Write-Host "TSC_FAKE_RD present: $Env:TSC_FAKE_RD"
+          }
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -76,6 +86,16 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Ensure fake RailDriver on hosted runners
+        shell: pwsh
+        run: |
+          # Fail early on hosted runners if the fake RailDriver flag is not set.
+          if (-not $Env:TSC_FAKE_RD -or $Env:TSC_FAKE_RD -ne '1') {
+            Write-Error "TSC_FAKE_RD is not set to '1'. Aborting to prevent loading native RailDriver DLLs on a hosted runner."
+            exit 1
+          } else {
+            Write-Host "TSC_FAKE_RD present: $Env:TSC_FAKE_RD"
+          }
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
